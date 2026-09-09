@@ -1,0 +1,64 @@
+services:
+  web:
+    volumes:
+      - /etc/nginx/aural-test-ip.crt:/etc/ssl/certs/aural-test-ip.crt:ro
+    networks: [default, supabase]
+    image: ${AURAL_IMAGE:?Set AURAL_IMAGE}
+    env_file:
+      - path: ./app.env
+        format: raw
+    environment:
+      NODE_EXTRA_CA_CERTS: /etc/ssl/certs/aural-test-ip.crt
+      NODE_ENV: production
+      PORT: "3000"
+    restart: unless-stopped
+    mem_limit: 1536m
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+  voice:
+    volumes:
+      - /etc/nginx/aural-test-ip.crt:/etc/ssl/certs/aural-test-ip.crt:ro
+    networks: [default, supabase]
+    image: ${AURAL_IMAGE:?Set AURAL_IMAGE}
+    command: ["node", "--import", "tsx", "server/voice-relay.ts"]
+    env_file:
+      - path: ./app.env
+        format: raw
+    environment:
+      NODE_EXTRA_CA_CERTS: /etc/ssl/certs/aural-test-ip.crt
+      NODE_ENV: production
+      VOICE_RELAY_PORT: "8766"
+    restart: unless-stopped
+    mem_limit: 768m
+    healthcheck:
+      test: ["CMD", "node", "-e", "const W=require('ws');const s=new W('ws://127.0.0.1:8766');s.on('open',()=>{s.close();process.exit(0)});s.on('error',()=>process.exit(1));setTimeout(()=>process.exit(1),3000)"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+  gateway:
+    image: nginx:stable-alpine
+    ports:
+      - "127.0.0.1:${AURAL_HTTP_PORT:-13001}:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      web:
+        condition: service_healthy
+      voice:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/login"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+networks:
+  default:
+  supabase:
+    external: true
+    name: aural-supabase

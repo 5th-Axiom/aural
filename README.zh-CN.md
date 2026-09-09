@@ -470,3 +470,7 @@ Authorization: Bearer dlv_your_key_here
 <p align="center">
   <sub>由 <a href="https://aural-ai.com">AuraTerra Nexus</a> 构建——倾听每一个声音，捕捉每一份洞察。</sub>
 </p>
+
+## 部署到测试环境
+
+配置好 `.env.test.local` 后，运行 `npm run deploy:test`，通过 `ssh cd` 部署网页和语音中继。首次配置、HTTPS 入口与排障见 [测试部署说明](deploy/test/README.md)。

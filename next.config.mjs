@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: { cpus: 2, webpackMemoryOptimizations: true },
   allowedDevOrigins: ["127.0.0.1"],
   serverExternalPackages: [
     "pdf-parse",

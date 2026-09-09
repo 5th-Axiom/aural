@@ -34,6 +34,7 @@ export async function createClient() {
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_ANON_KEY!,
     {
+      cookieOptions: { name: `sb-${new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).hostname.split(".")[0]}-auth-token` },
       cookies: {
         getAll() {
           return cookieStore.getAll();

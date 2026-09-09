@@ -41,3 +41,6 @@ test-results/
 # Misc
 *.pem
 .vercel
+
+# Dedicated test-deployment secrets
+.env.test-access.txt
