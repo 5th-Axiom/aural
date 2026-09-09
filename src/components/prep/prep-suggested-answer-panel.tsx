@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { useAuth } from "@/components/auth-provider";
 import { PrepContextDrawer } from "@/components/prep/prep-context-drawer";
 import type { PrepContextInitial } from "@/components/prep/prep-context-types";
@@ -7,65 +9,65 @@ import { AiButton } from "@/components/ui/ai-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
 } from "@/components/ui/popover";
 import {
-    plainToRichHtml,
-    RichTextEditor,
-    richTextToPlain,
-    sanitizeRichHtml,
+  plainToRichHtml,
+  RichTextEditor,
+  richTextToPlain,
+  sanitizeRichHtml,
 } from "@/components/ui/rich-text-editor";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-    StreamingTextPanels,
-    type StreamPanelPhase,
+  StreamingTextPanels,
+  type StreamPanelPhase,
 } from "@/components/ui/streaming-text-panels";
 import { Textarea } from "@/components/ui/textarea";
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import {
-    countSpeakableUnits,
-    estimateSpeakMinutes,
-    inferSuggestedAnswerStructure,
-    structureTagLabel,
+  countSpeakableUnits,
+  estimateSpeakMinutes,
+  inferSuggestedAnswerStructure,
+  structureTagLabel,
 } from "@/lib/prep/answer-rubric";
 import { parseHintLayers } from "@/lib/prep/hint-layers";
 import {
-    segmentAnswerHighlights,
-    splitSuggestedAnswerParagraphs,
-    stripVerifyMarkers,
+  segmentAnswerHighlights,
+  splitSuggestedAnswerParagraphs,
+  stripVerifyMarkers,
 } from "@/lib/prep/sanitize-hint";
 import {
-    deleteSuggestedAnswerCache,
-    getSuggestedAnswerCache,
-    setSuggestedAnswerCache,
+  deleteSuggestedAnswerCache,
+  getSuggestedAnswerCache,
+  setSuggestedAnswerCache,
 } from "@/lib/prep/suggested-answer-cache";
 import {
-    PREP_SUGGESTED_ANSWER_EMPTY_HINT,
-    PREP_SUGGESTED_ANSWER_EMPTY_HINT_NO_CONTEXT,
+  PREP_SUGGESTED_ANSWER_EMPTY_HINT,
+  PREP_SUGGESTED_ANSWER_EMPTY_HINT_NO_CONTEXT,
 } from "@/lib/prep/ui-copy";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import {
-    Bookmark,
-    Clock,
-    Lightbulb,
-    ListTree,
-    Loader2,
-    MessageSquarePlus,
-    Mic,
-    PanelRightClose,
-    RefreshCw,
-    SlidersHorizontal,
-    Sparkles,
-    Wand2,
+  Bookmark,
+  Clock,
+  Lightbulb,
+  ListTree,
+  Loader2,
+  MessageSquarePlus,
+  Mic,
+  PanelRightClose,
+  RefreshCw,
+  SlidersHorizontal,
+  Sparkles,
+  Wand2,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { readPrepStream } from "./prep-stream";
@@ -156,6 +158,7 @@ function SuggestedAnswerMeta({
   answerText: string;
   questionType?: string | null;
 }) {
+  const ui = useUiTranslation();
   const units = countSpeakableUnits(answerText);
   const minutes = estimateSpeakMinutes(units);
   const structure = inferSuggestedAnswerStructure(questionType, answerText);
@@ -165,11 +168,12 @@ function SuggestedAnswerMeta({
   return (
     <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
       <Badge variant="secondary" className="gap-1 font-normal">
-        {units} words
+        {units}
+        {ui("words")}
       </Badge>
       <Badge variant="secondary" className="gap-1 font-normal">
-        <Clock className="h-3 w-3" aria-hidden />
-        ~{minutes} min
+        <Clock className="h-3 w-3" aria-hidden />~{minutes}
+        {ui("min")}
       </Badge>
       <Badge
         variant="outline"
@@ -237,6 +241,7 @@ function AskForChangesPopover({
   disabled?: boolean;
   onSubmit: (instruction: string) => void;
 }) {
+  const ui = useUiTranslation();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
 
@@ -259,20 +264,20 @@ function AskForChangesPopover({
               size="icon"
               className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
               disabled={disabled || loading}
-              aria-label="Ask for changes"
+              aria-label={ui("Ask for changes")}
             >
               <MessageSquarePlus className="h-3.5 w-3.5" />
             </Button>
           </PopoverTrigger>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="text-xs">
-          Ask for changes
+          {ui("Ask for changes")}
         </TooltipContent>
       </Tooltip>
       <PopoverContent side="bottom" align="end" className="w-72 p-3">
-        <p className="text-xs font-semibold">Ask for changes</p>
+        <p className="text-xs font-semibold">{ui("Ask for changes")}</p>
         <p className="mt-0.5 text-[11px] text-muted-foreground">
-          Tell the coach how to rewrite this answer.
+          {ui("Tell the coach how to rewrite this answer.")}
         </p>
         <Textarea
           value={text}
@@ -297,7 +302,7 @@ function AskForChangesPopover({
             onClick={submit}
           >
             <Wand2 className="h-3 w-3" aria-hidden />
-            Rewrite
+            {ui("Rewrite")}
           </Button>
         </div>
       </PopoverContent>
@@ -306,12 +311,13 @@ function AskForChangesPopover({
 }
 
 function AnswerOutline({ outline }: { outline: string[] }) {
+  const ui = useUiTranslation();
   if (outline.length === 0) return null;
   return (
     <div className="rounded-lg border border-primary/15 bg-primary/5 px-3 py-2.5">
       <p className="flex items-center gap-1.5 text-xs font-semibold text-foreground/80">
         <ListTree className="h-3.5 w-3.5 text-primary" aria-hidden />
-        Outline
+        {ui("Outline")}
       </p>
       <ol className="mt-1.5 space-y-1">
         {outline.map((item, index) => (
@@ -357,6 +363,7 @@ export function PrepSuggestedAnswerPanel({
   onPracticeAnswer,
   onToggleRightPanel,
 }: Props) {
+  const ui = useUiTranslation();
   const { user } = useAuth();
   const userId = user?.id ?? null;
   const { toast } = useToast();
@@ -375,11 +382,11 @@ export function PrepSuggestedAnswerPanel({
   const saveAnswer = trpc.answerBank.create.useMutation({
     onSuccess: () => {
       void utils.answerBank.list.invalidate();
-      toast({ title: "Saved to your answer bank" });
+      toast({ title: ui("Saved to your answer bank") });
     },
     onError: (err) => {
       toast({
-        title: "Could not save answer",
+        title: ui("Could not save answer"),
         description: err.message,
         variant: "destructive",
       });
@@ -470,14 +477,14 @@ export function PrepSuggestedAnswerPanel({
             });
           }
           toast({
-            title: "Suggested answer incomplete",
+            title: ui("Suggested answer incomplete"),
             description: message,
             variant: "destructive",
           });
         } else {
           setLoadError(message);
           toast({
-            title: "Suggested answer failed",
+            title: ui("Suggested answer failed"),
             description: message,
             variant: "destructive",
           });
@@ -490,7 +497,7 @@ export function PrepSuggestedAnswerPanel({
         }
       }
     },
-    [
+    [ui,
       editedAnswer,
       hint,
       interviewId,
@@ -545,8 +552,7 @@ export function PrepSuggestedAnswerPanel({
     getSuggestedAnswerCache(userId, interviewId, questionId)?.questionType;
 
   const layers = parseHintLayers(hint);
-  const generatedAnswer =
-    layers.answer || (layers.outline.length ? "" : hint);
+  const generatedAnswer = layers.answer || (layers.outline.length ? "" : hint);
 
   useEffect(() => {
     if (!showFinal) return;
@@ -563,8 +569,10 @@ export function PrepSuggestedAnswerPanel({
     if (!questionId || loading) return false;
     if (!canUseHint) {
       toast({
-        title: "Suggested answer unavailable",
-        description: "AI token limits are not enforced in self-hosted builds.",
+        title: ui("Suggested answer unavailable"),
+        description: ui(
+          "AI token limits are not enforced in self-hosted builds.",
+        ),
         variant: "destructive",
       });
       return false;
@@ -613,233 +621,237 @@ export function PrepSuggestedAnswerPanel({
 
   return (
     <TooltipProvider delayDuration={200}>
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex shrink-0 items-start justify-between gap-3 border-b bg-background px-5 py-3.5">
-        <div className="flex min-w-0 items-start gap-2.5">
-          <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400">
-            <Lightbulb className="h-4 w-4" aria-hidden />
-          </div>
-          <div className="min-w-0">
-            <h3 className="text-sm font-semibold tracking-tight">Suggested answer</h3>
-            <p className="text-xs text-muted-foreground">Based on your JD and resume</p>
-          </div>
-        </div>
-        <div className="flex shrink-0 items-center gap-0.5">
-          {questionId ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
-                  onClick={() => setContextOpen(true)}
-                  aria-label="Practice context"
-                >
-                  <SlidersHorizontal className="h-4 w-4 shrink-0" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs">
-                Practice context
-              </TooltipContent>
-            </Tooltip>
-          ) : null}
-          {onToggleRightPanel ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
-                  onClick={onToggleRightPanel}
-                  aria-label="Hide suggested answer panel"
-                >
-                  <PanelRightClose className="h-4 w-4 shrink-0" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs">
-                Hide suggested answer panel
-              </TooltipContent>
-            </Tooltip>
-          ) : null}
-        </div>
-      </div>
-
-      <PrepContextDrawer
-        interviewId={interviewId}
-        open={contextOpen}
-        onOpenChange={setContextOpen}
-        fallbackInitial={prepContext}
-        onContextSaved={onContextSaved}
-      />
-
-      {!questionId ? (
-        <div className="px-5 py-6">
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            Select a question to generate a suggested answer.
-          </p>
-        </div>
-      ) : (
-        <ScrollArea className="h-full min-h-0 flex-1">
-          <div className="px-5 py-4 pb-8">
-            <div
-              className={cn(
-                "rounded-xl border border-border/80 bg-card/80 shadow-sm",
-                showStreamPanels || showPreparing
-                  ? "px-4 pb-4 pt-2"
-                  : "p-4",
-              )}
-            >
-              {showEmpty ? (
-                <div className="flex flex-col items-center justify-center gap-5 py-6 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    {hasContext
-                      ? PREP_SUGGESTED_ANSWER_EMPTY_HINT
-                      : PREP_SUGGESTED_ANSWER_EMPTY_HINT_NO_CONTEXT}
-                  </p>
-                  {!canUseHint ? (
-                    <p className="text-xs text-destructive">
-                      You need {hintTokenCost} AI tokens for a suggested answer
-                      {aiTokensRemaining != null
-                        ? ` (${aiTokensRemaining.toLocaleString()} remaining).`
-                        : "."}
-                    </p>
-                  ) : null}
-                  <AiButton
-                    type="button"
-                    wrapperClassName="w-full max-w-xs"
-                    className="w-full"
-                    disabled={!canUseHint}
-                    onClick={handleShow}
-                  >
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Show suggested answer
-                  </AiButton>
-                </div>
-              ) : null}
-              {showPreparing ? (
-                <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
-                  <span>Preparing suggested answer…</span>
-                </div>
-              ) : null}
-              {showStreamPanels ? (
-                hint.trim() ? (
-                  <div className="flex flex-col gap-3 py-2">
-                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                      <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-primary" />
-                      Writing suggested answer…
-                    </div>
-                    <AnswerOutline outline={layers.outline} />
-                    {layers.answer.trim() ? (
-                      <AnswerParagraphs answerText={layers.answer} />
-                    ) : null}
-                  </div>
-                ) : (
-                  <StreamingTextPanels
-                    phase={streamPhase}
-                    thinkingText={thinkingText}
-                    contentText=""
-                    thinkingLabel="Preparing suggested answer"
-                    thinkingCompleteLabel="Outline ready"
-                    contentLabel="Writing suggested answer"
-                    contentCompleteLabel="Finishing up"
-                    className="py-2"
-                  />
-                )
-              ) : null}
-              {showFinal ? (
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-wrap items-center gap-1">
-                    <SuggestedAnswerMeta
-                      answerText={answerPlain || hint}
-                      questionType={questionType ?? cachedType}
-                    />
-                    <IconActionButton
-                      icon={Bookmark}
-                      label="Save answer"
-                      loading={saveAnswer.isLoading}
-                      disabled={!hasAnswer || saveAnswer.isLoading}
-                      onClick={handleSaveAnswer}
-                    />
-                    <AskForChangesPopover
-                      loading={loading}
-                      disabled={!canUseHint}
-                      onSubmit={handleRefine}
-                    />
-                    <IconActionButton
-                      icon={RefreshCw}
-                      label="Refresh"
-                      disabled={loading || !canUseHint}
-                      spinning={loading}
-                      onClick={handleRegenerate}
-                    />
-                  </div>
-
-                  <AnswerOutline outline={layers.outline} />
-
-                  {hasAnswer || editedAnswer ? (
-                    <RichTextEditor
-                      value={editedAnswer}
-                      onChange={setEditedAnswer}
-                      placeholder="Edit the suggested answer…"
-                      resizable
-                    />
-                  ) : null}
-
-                  <div className="space-y-3 border-t border-border/60 pt-3">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="mr-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                        Tune
-                      </span>
-                      {REFINEMENT_PRESETS.map((preset) => (
-                        <Button
-                          key={preset.id}
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled={loading || !canUseHint}
-                          className="h-6 rounded-full px-2.5 text-[11px] font-normal"
-                          onClick={() => handleRefine(preset.instruction)}
-                        >
-                          {preset.label}
-                        </Button>
-                      ))}
-                    </div>
-                    {onPracticeAnswer ? (
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="h-8 w-full gap-1.5 text-xs"
-                        disabled={!hasAnswer}
-                        onClick={handlePractice}
-                      >
-                        <Mic className="h-3.5 w-3.5" aria-hidden />
-                        Practice this answer
-                      </Button>
-                    ) : null}
-                  </div>
-                </div>
-              ) : null}
-              {hasRequested && !loading && !hint.trim() && loadError ? (
-                <div className="flex flex-col justify-center space-y-3 py-2">
-                  <p className="text-sm text-destructive">{loadError}</p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRegenerate}
-                  >
-                    Try again
-                  </Button>
-                </div>
-              ) : null}
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b bg-background px-5 py-3.5">
+          <div className="flex min-w-0 items-start gap-2.5">
+            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400">
+              <Lightbulb className="h-4 w-4" aria-hidden />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold tracking-tight">
+                {ui("Suggested answer")}
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                {ui("Based on your JD and resume")}
+              </p>
             </div>
           </div>
-        </ScrollArea>
-      )}
-    </div>
+          <div className="flex shrink-0 items-center gap-0.5">
+            {questionId ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                    onClick={() => setContextOpen(true)}
+                    aria-label={ui("Practice context")}
+                  >
+                    <SlidersHorizontal className="h-4 w-4 shrink-0" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs">
+                  {ui("Practice context")}
+                </TooltipContent>
+              </Tooltip>
+            ) : null}
+            {onToggleRightPanel ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                    onClick={onToggleRightPanel}
+                    aria-label={ui("Hide suggested answer panel")}
+                  >
+                    <PanelRightClose className="h-4 w-4 shrink-0" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs">
+                  {ui("Hide suggested answer panel")}
+                </TooltipContent>
+              </Tooltip>
+            ) : null}
+          </div>
+        </div>
+
+        <PrepContextDrawer
+          interviewId={interviewId}
+          open={contextOpen}
+          onOpenChange={setContextOpen}
+          fallbackInitial={prepContext}
+          onContextSaved={onContextSaved}
+        />
+
+        {!questionId ? (
+          <div className="px-5 py-6">
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {ui("Select a question to generate a suggested answer.")}
+            </p>
+          </div>
+        ) : (
+          <ScrollArea className="h-full min-h-0 flex-1">
+            <div className="px-5 py-4 pb-8">
+              <div
+                className={cn(
+                  "rounded-xl border border-border/80 bg-card/80 shadow-sm",
+                  showStreamPanels || showPreparing ? "px-4 pb-4 pt-2" : "p-4",
+                )}
+              >
+                {showEmpty ? (
+                  <div className="flex flex-col items-center justify-center gap-5 py-6 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      {hasContext
+                        ? PREP_SUGGESTED_ANSWER_EMPTY_HINT
+                        : PREP_SUGGESTED_ANSWER_EMPTY_HINT_NO_CONTEXT}
+                    </p>
+                    {!canUseHint ? (
+                      <p className="text-xs text-destructive">
+                        {ui("You need")}
+                        {hintTokenCost}
+                        {ui("AI tokens for a suggested answer")}
+                        {aiTokensRemaining != null
+                          ? ` (${aiTokensRemaining.toLocaleString()} remaining).`
+                          : "."}
+                      </p>
+                    ) : null}
+                    <AiButton
+                      type="button"
+                      wrapperClassName="w-full max-w-xs"
+                      className="w-full"
+                      disabled={!canUseHint}
+                      onClick={handleShow}
+                    >
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      {ui("Show suggested answer")}
+                    </AiButton>
+                  </div>
+                ) : null}
+                {showPreparing ? (
+                  <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
+                    <span>{ui("Preparing suggested answer…")}</span>
+                  </div>
+                ) : null}
+                {showStreamPanels ? (
+                  hint.trim() ? (
+                    <div className="flex flex-col gap-3 py-2">
+                      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                        <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-primary" />
+                        {ui("Writing suggested answer…")}
+                      </div>
+                      <AnswerOutline outline={layers.outline} />
+                      {layers.answer.trim() ? (
+                        <AnswerParagraphs answerText={layers.answer} />
+                      ) : null}
+                    </div>
+                  ) : (
+                    <StreamingTextPanels
+                      phase={streamPhase}
+                      thinkingText={thinkingText}
+                      contentText=""
+                      thinkingLabel="Preparing suggested answer"
+                      thinkingCompleteLabel="Outline ready"
+                      contentLabel="Writing suggested answer"
+                      contentCompleteLabel="Finishing up"
+                      className="py-2"
+                    />
+                  )
+                ) : null}
+                {showFinal ? (
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-wrap items-center gap-1">
+                      <SuggestedAnswerMeta
+                        answerText={answerPlain || hint}
+                        questionType={questionType ?? cachedType}
+                      />
+                      <IconActionButton
+                        icon={Bookmark}
+                        label={ui("Save answer")}
+                        loading={saveAnswer.isLoading}
+                        disabled={!hasAnswer || saveAnswer.isLoading}
+                        onClick={handleSaveAnswer}
+                      />
+                      <AskForChangesPopover
+                        loading={loading}
+                        disabled={!canUseHint}
+                        onSubmit={handleRefine}
+                      />
+                      <IconActionButton
+                        icon={RefreshCw}
+                        label={ui("Refresh")}
+                        disabled={loading || !canUseHint}
+                        spinning={loading}
+                        onClick={handleRegenerate}
+                      />
+                    </div>
+
+                    <AnswerOutline outline={layers.outline} />
+
+                    {hasAnswer || editedAnswer ? (
+                      <RichTextEditor
+                        value={editedAnswer}
+                        onChange={setEditedAnswer}
+                        placeholder={ui("Edit the suggested answer…")}
+                        resizable
+                      />
+                    ) : null}
+
+                    <div className="space-y-3 border-t border-border/60 pt-3">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="mr-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                          {ui("Tune")}
+                        </span>
+                        {REFINEMENT_PRESETS.map((preset) => (
+                          <Button
+                            key={preset.id}
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={loading || !canUseHint}
+                            className="h-6 rounded-full px-2.5 text-[11px] font-normal"
+                            onClick={() => handleRefine(preset.instruction)}
+                          >
+                            {preset.label}
+                          </Button>
+                        ))}
+                      </div>
+                      {onPracticeAnswer ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="h-8 w-full gap-1.5 text-xs"
+                          disabled={!hasAnswer}
+                          onClick={handlePractice}
+                        >
+                          <Mic className="h-3.5 w-3.5" aria-hidden />
+                          {ui("Practice this answer")}
+                        </Button>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : null}
+                {hasRequested && !loading && !hint.trim() && loadError ? (
+                  <div className="flex flex-col justify-center space-y-3 py-2">
+                    <p className="text-sm text-destructive">{loadError}</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRegenerate}
+                    >
+                      {ui("Try again")}
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </ScrollArea>
+        )}
+      </div>
     </TooltipProvider>
   );
 }

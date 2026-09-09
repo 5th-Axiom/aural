@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { useProject } from "@/components/project-provider";
 import {
   PracticeSessionsDashboard,
@@ -9,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc/client";
 
 export default function PracticesPage() {
+  const ui = useUiTranslation();
   const { currentProject, isLoading: projectLoading } = useProject();
   const projectId = currentProject?.id;
   const practices = trpc.prep.listSessions.useQuery(
@@ -27,7 +30,7 @@ export default function PracticesPage() {
 
   return (
     <PracticeSessionsDashboard
-      title="Practices"
+      title={ui("Practices")}
       subtitle={
         currentProject
           ? `Review coaching practice runs across interviews in ${currentProject.name}.`

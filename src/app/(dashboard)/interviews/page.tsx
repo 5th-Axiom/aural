@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { useAppLocale } from "@/components/app-locale-provider";
 import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
@@ -84,7 +86,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { exportToXlsx } from "@/lib/export-xlsx";
 import {
-  INTERVIEW_TEMPLATES,
+  getInterviewTemplates,
   type InterviewTemplate,
 } from "@/lib/interview-templates";
 import { useProject } from "@/components/project-provider";
@@ -182,14 +184,25 @@ const TEMPLATE_ICONS: Record<string, LucideIcon> = {
 /* ------------------------------------------------------------------ */
 
 export default function InterviewsPage() {
+  const ui = useUiTranslation();
   const router = useRouter();
   const { toast } = useToast();
   const { locale, t } = useAppLocale();
   const utils = trpc.useUtils();
   const { currentProject } = useProject();
   const projectId = currentProject?.id;
+  const [templateRole, setTemplateRole] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+  const positions = trpc.interview.positions.useQuery(
+    { projectId: projectId! },
+    { enabled: !!projectId },
+  );
   const interviews = trpc.interview.list.useQuery(
-    { limit: 100, projectId: projectId ?? undefined },
+    {
+      limit: 100,
+      projectId: projectId ?? undefined,
+      roleTitle: roleFilter || undefined,
+    },
     { enabled: !!projectId },
   );
 
@@ -217,7 +230,7 @@ export default function InterviewsPage() {
     },
     onError: (err) => {
       toast({
-        title: "Failed to create interview",
+        title: ui("Failed to create interview"),
         description: err.message,
         variant: "destructive",
       });
@@ -231,10 +244,12 @@ export default function InterviewsPage() {
       setCreatingTemplateId(template.id);
       createFromTemplate.mutate({
         templateId: template.id,
+        roleTitle: templateRole.trim() || undefined,
+        language: locale,
         projectId: projectId ?? undefined,
       });
     },
-    [creatingTemplateId, createFromTemplate, projectId],
+    [creatingTemplateId, createFromTemplate, projectId, locale, templateRole],
   );
 
   const TIME_RANGE_OPTIONS = [
@@ -257,7 +272,10 @@ export default function InterviewsPage() {
   ] as const;
 
   const isFiltering =
-    searchQuery.trim() || timeRange !== "ALL" || statusFilter !== "ALL";
+    roleFilter ||
+    searchQuery.trim() ||
+    timeRange !== "ALL" ||
+    statusFilter !== "ALL";
 
   const formatDate = useCallback(
     (date: Date | string) => {
@@ -346,10 +364,12 @@ export default function InterviewsPage() {
   const processedInterviews = useMemo(() => {
     let result = interviews.data?.interviews ?? [];
 
+    if (roleFilter) result = result.filter((iv) => iv.roleTitle === roleFilter);
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
         (iv) =>
+          (iv.roleTitle ?? "").toLowerCase().includes(q) ||
           iv.title.toLowerCase().includes(q) ||
           (iv.description ?? "").toLowerCase().includes(q),
       );
@@ -419,7 +439,15 @@ export default function InterviewsPage() {
     }
 
     return result;
-  }, [interviews.data, searchQuery, statusFilter, timeRange, sortKey, sortDir]);
+  }, [
+    interviews.data,
+    roleFilter,
+    searchQuery,
+    statusFilter,
+    timeRange,
+    sortKey,
+    sortDir,
+  ]);
 
   const totalPages = Math.max(
     1,
@@ -450,6 +478,7 @@ export default function InterviewsPage() {
   const handleExport = useCallback(() => {
     const rows = processedInterviews.map((iv) => ({
       Title: iv.title,
+      岗位: iv.roleTitle ?? "",
       Description: iv.description || "",
       Channels: [
         iv.chatEnabled && "Chat",
@@ -491,7 +520,7 @@ export default function InterviewsPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <FileText className="mr-2 h-4 w-4" />
-            Details
+            {ui("Details")}
           </Link>
         </DropdownMenuItem>
         {interview.publicSlug && (
@@ -501,11 +530,11 @@ export default function InterviewsPage() {
               navigator.clipboard.writeText(
                 `${window.location.origin}/i/${interview.publicSlug}`,
               );
-              toast({ title: "Link copied!" });
+              toast({ title: ui("Link copied!") });
             }}
           >
             <ExternalLink className="mr-2 h-4 w-4" />
-            Copy Link
+            {ui("Copy Link")}
           </DropdownMenuItem>
         )}
         <DropdownMenuItem
@@ -515,7 +544,7 @@ export default function InterviewsPage() {
           }}
         >
           <Copy className="mr-2 h-4 w-4" />
-          Duplicate
+          {ui("Duplicate")}
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={(e) => {
@@ -524,7 +553,7 @@ export default function InterviewsPage() {
           }}
         >
           <CheckSquare className="mr-2 h-4 w-4" />
-          Select
+          {ui("Select")}
         </DropdownMenuItem>
         <DropdownMenuItem
           className="text-destructive"
@@ -534,7 +563,7 @@ export default function InterviewsPage() {
           }}
         >
           <Trash2 className="mr-2 h-4 w-4" />
-          Delete
+          {ui("Delete")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -585,7 +614,23 @@ export default function InterviewsPage() {
       </div>
 
       {/* Filter bar */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <select
+          aria-label="按岗位筛选"
+          className="h-9 w-full sm:w-44 rounded-md border bg-background px-3"
+          value={roleFilter}
+          onChange={(e) => {
+            setRoleFilter(e.target.value);
+            setPage(0);
+          }}
+        >
+          <option value="">全部岗位</option>
+          {(positions.data || []).map((role) => (
+            <option key={role} value={role}>
+              {role}
+            </option>
+          ))}
+        </select>
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -645,7 +690,7 @@ export default function InterviewsPage() {
           disabled={processedInterviews.length === 0}
         >
           <Download className="mr-2 h-4 w-4" />
-          Export
+          {ui("Export")}
         </Button>
 
         {selectedIds.size > 0 && (
@@ -683,17 +728,18 @@ export default function InterviewsPage() {
               {t("interviews.title").toLowerCase()}?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. All selected interviews and their
-              sessions will be permanently deleted.
+              {ui(
+                "This action cannot be undone. All selected interviews and their sessions will be permanently deleted.",
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{ui("Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBatchDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {ui("Delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -708,14 +754,15 @@ export default function InterviewsPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this interview?</AlertDialogTitle>
+            <AlertDialogTitle>{ui("Delete this interview?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. The interview and all its sessions
-              will be permanently deleted.
+              {ui(
+                "This action cannot be undone. The interview and all its sessions will be permanently deleted.",
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{ui("Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (singleDeleteId) {
@@ -725,7 +772,7 @@ export default function InterviewsPage() {
               }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {ui("Delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -758,12 +805,25 @@ export default function InterviewsPage() {
                 {t("dashboard.noInterviews")}
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Pick a template to get started instantly, or create from scratch.
+                {ui(
+                  "Pick a template to get started instantly, or create from scratch.",
+                )}
               </p>
             </div>
 
+            <Input
+              aria-label="模板岗位"
+              value={templateRole}
+              maxLength={100}
+              onChange={(e) => setTemplateRole(e.target.value)}
+              placeholder={
+                locale === "zh"
+                  ? "岗位（可选，留空使用模板默认岗位）"
+                  : "Position (optional; defaults to template position)"
+              }
+            />
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {INTERVIEW_TEMPLATES.map((tpl) => {
+              {getInterviewTemplates(locale).map((tpl) => {
                 const Icon = TEMPLATE_ICONS[tpl.icon] ?? FileText;
                 const isCreating = creatingTemplateId === tpl.id;
                 return (
@@ -789,6 +849,9 @@ export default function InterviewsPage() {
                       <div className="min-w-0 flex-1">
                         <h4 className="font-semibold leading-tight">
                           {tpl.title}
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            {tpl.roleTitle}
+                          </span>
                         </h4>
                       </div>
                       <Sparkles className="h-4 w-4 shrink-0 text-muted-foreground/40 transition-colors group-hover:text-primary/60" />
@@ -799,12 +862,14 @@ export default function InterviewsPage() {
                     <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground/70">
                       <span className="inline-flex items-center gap-1">
                         <MessageSquare className="h-3 w-3" />
-                        {tpl.questions.length} questions
+                        {tpl.questions.length}
+                        {ui("questions")}
                       </span>
                       {tpl.timeLimitMinutes ? (
                         <span className="inline-flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          {tpl.timeLimitMinutes} min
+                          {tpl.timeLimitMinutes}
+                          {ui("min")}
                         </span>
                       ) : null}
                     </div>
@@ -823,7 +888,7 @@ export default function InterviewsPage() {
                   <Plus className="h-5 w-5" />
                 </div>
                 <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground">
-                  Create from scratch
+                  {ui("Create from scratch")}
                 </span>
               </Link>
             </div>
@@ -867,6 +932,11 @@ export default function InterviewsPage() {
                       <CardTitle className="text-base truncate">
                         {interview.title}
                       </CardTitle>
+                      {interview.roleTitle && (
+                        <Badge variant="secondary" className="mt-1">
+                          {interview.roleTitle}
+                        </Badge>
+                      )}
                       <CardDescription className="mt-1 line-clamp-2">
                         {interview.description ?? t("dashboard.noData")}
                       </CardDescription>
@@ -880,12 +950,12 @@ export default function InterviewsPage() {
                       {interview._count.questions}{" "}
                       {t("dashboard.questions").toLowerCase()}
                     </span>
-                    <span>&middot;</span>
+                    <span>{ui("·")}</span>
                     <span>
                       {interview._count.sessions}{" "}
                       {t("sidebar.sessions").toLowerCase()}
                     </span>
-                    <span>&middot;</span>
+                    <span>{ui("·")}</span>
                     <span>{formatDateShort(interview.createdAt)}</span>
                   </div>
                   <div className="mt-3 flex items-center gap-2">
@@ -978,7 +1048,7 @@ export default function InterviewsPage() {
                   className="text-center"
                 />
                 <SortableHead
-                  label="Created"
+                  label={ui("Created")}
                   sortKey="date"
                   activeKey={sortKey}
                   direction={sortDir}
@@ -1029,6 +1099,9 @@ export default function InterviewsPage() {
                     </TableCell>
                     <TableCell className="max-w-md">
                       <div className="font-medium">{interview.title}</div>
+                      {interview.roleTitle && (
+                        <Badge variant="secondary">{interview.roleTitle}</Badge>
+                      )}
                       {interview.description && (
                         <div className="mt-0.5 text-xs text-muted-foreground line-clamp-1">
                           {interview.description}
@@ -1106,7 +1179,7 @@ export default function InterviewsPage() {
           {processedInterviews.length > PAGE_SIZE_OPTIONS[0] && (
             <div className="flex items-center justify-between border-t px-4 py-3">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>Rows per page</span>
+                <span>{ui("Rows per page")}</span>
                 <select
                   className="rounded border bg-background px-2 py-1 text-sm"
                   value={pageSize}
@@ -1124,7 +1197,8 @@ export default function InterviewsPage() {
                 <span className="ml-2">
                   {page * pageSize + 1}–
                   {Math.min((page + 1) * pageSize, processedInterviews.length)}{" "}
-                  of {processedInterviews.length}
+                  {ui("of")}
+                  {processedInterviews.length}
                 </span>
               </div>
               <div className="flex items-center gap-2">

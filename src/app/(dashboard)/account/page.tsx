@@ -1,4 +1,5 @@
 "use client";
+import { useUiTranslation } from "@/hooks/use-ui-translation";
 
 import { useAppLocale } from "@/components/app-locale-provider";
 import { useAuth } from "@/components/auth-provider";
@@ -7,15 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import {
-  REAUTH_OTP_LENGTH,
-  createEmptyReauthOtp,
-} from "@/lib/auth/reauth-otp";
+import { REAUTH_OTP_LENGTH, createEmptyReauthOtp } from "@/lib/auth/reauth-otp";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export default function AccountPage() {
+  const ui = useUiTranslation();
   const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const { t } = useAppLocale();
@@ -61,7 +60,10 @@ export default function AccountPage() {
 
   const handleOtpChange = (index: number, value: string) => {
     if (value.length > 1) {
-      const chars = value.replace(/\D/g, "").slice(0, REAUTH_OTP_LENGTH).split("");
+      const chars = value
+        .replace(/\D/g, "")
+        .slice(0, REAUTH_OTP_LENGTH)
+        .split("");
       const next = [...otp];
       chars.forEach((c, i) => {
         if (index + i < REAUTH_OTP_LENGTH) next[index + i] = c;
@@ -198,7 +200,10 @@ export default function AccountPage() {
 
   const handleDeleteOtpChange = (index: number, value: string) => {
     if (value.length > 1) {
-      const chars = value.replace(/\D/g, "").slice(0, REAUTH_OTP_LENGTH).split("");
+      const chars = value
+        .replace(/\D/g, "")
+        .slice(0, REAUTH_OTP_LENGTH)
+        .split("");
       const next = [...deleteOtp];
       chars.forEach((c, i) => {
         if (index + i < REAUTH_OTP_LENGTH) next[index + i] = c;
@@ -286,7 +291,7 @@ export default function AccountPage() {
       if (ok) {
         setDeleteResendCooldown(60);
         toast({
-          title: "Code resent",
+          title: ui("Code resent"),
           description: `A new code was sent to ${user?.email}`,
         });
         setDeleteOtp(createEmptyReauthOtp());
@@ -349,11 +354,14 @@ export default function AccountPage() {
       <div className="space-y-8">
         {/* Email */}
         <section>
-          <h2 className="text-base font-semibold mb-2">{t("account.email")}</h2>
+          <h2 className="text-base font-semibold mb-2">
+            {user?.app_metadata?.phone ? "手机号" : t("account.email")}
+          </h2>
           <Card>
             <CardContent className="py-3 px-4">
               <p className="text-sm">
-                {t("account.emailValue", { email: user?.email ?? "—" })}
+                {user?.app_metadata?.phone ||
+                  t("account.emailValue", { email: user?.email ?? "—" })}
               </p>
             </CardContent>
           </Card>
@@ -389,146 +397,151 @@ export default function AccountPage() {
           </Card>
         </section>
 
-        {/* Password */}
-        <section>
-          <h2 className="text-base font-semibold mb-2">
-            {t("account.password")}
-          </h2>
-          <Card>
-            <CardContent className="py-3 px-4 space-y-3">
-              {passwordStep === "idle" && (
-                <>
-                  <p className="text-sm">{t("account.passwordDescription")}</p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setPasswordStep("form")}
-                  >
-                    {t("account.changePassword")}
-                  </Button>
-                </>
-              )}
-
-              {passwordStep === "form" && (
-                <>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">
-                      {t("auth.newPassword")}
-                    </label>
-                    <Input
-                      type="password"
-                      placeholder={t("auth.passwordHint")}
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      minLength={8}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">
-                      {t("account.confirmPassword")}
-                    </label>
-                    <Input
-                      type="password"
-                      placeholder={t("auth.repeatPassword")}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      minLength={8}
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      disabled={passwordLoading}
-                      onClick={handleSendCode}
-                    >
-                      {passwordLoading && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      )}
-                      {t("common.continue")}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={passwordLoading}
-                      onClick={resetPasswordState}
-                    >
-                      {t("account.cancel")}
-                    </Button>
-                  </div>
-                </>
-              )}
-
-              {passwordStep === "verify" && (
-                <>
-                  <p className="text-sm text-muted-foreground">
-                    {t("account.verifyCodeDescription", {
-                      email: user?.email ?? "",
-                    })}
-                  </p>
-                  <div className="flex justify-center gap-1.5">
-                    {otp.map((digit, i) => (
-                      <Input
-                        key={i}
-                        ref={(el) => {
-                          otpRefs.current[i] = el;
-                        }}
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={REAUTH_OTP_LENGTH}
-                        value={digit}
-                        onChange={(e) => handleOtpChange(i, e.target.value)}
-                        onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                        className="h-11 w-10 text-center text-lg font-semibold"
-                        autoFocus={i === 0}
-                      />
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      disabled={
-                        passwordLoading ||
-                        otp.join("").length !== REAUTH_OTP_LENGTH
-                      }
-                      onClick={handleVerifyAndUpdate}
-                    >
-                      {passwordLoading && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      )}
-                      {t("account.verifyAndUpdate")}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={passwordLoading}
-                      onClick={resetPasswordState}
-                    >
-                      {t("account.cancel")}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground text-center">
-                    {t("auth.didntReceiveCode")}{" "}
-                    {resendCooldown > 0 ? (
-                      <span>
-                        {t("auth.resendIn", { seconds: resendCooldown })}
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={handleResend}
-                        disabled={passwordLoading}
-                        className="text-primary hover:underline font-medium"
+        {!user?.app_metadata?.phone && (
+          <>
+            {/* Password */}
+            <section>
+              <h2 className="text-base font-semibold mb-2">
+                {t("account.password")}
+              </h2>
+              <Card>
+                <CardContent className="py-3 px-4 space-y-3">
+                  {passwordStep === "idle" && (
+                    <>
+                      <p className="text-sm">
+                        {t("account.passwordDescription")}
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setPasswordStep("form")}
                       >
-                        {t("auth.resend")}
-                      </button>
-                    )}
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </section>
+                        {t("account.changePassword")}
+                      </Button>
+                    </>
+                  )}
 
+                  {passwordStep === "form" && (
+                    <>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                          {t("auth.newPassword")}
+                        </label>
+                        <Input
+                          type="password"
+                          placeholder={t("auth.passwordHint")}
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          minLength={8}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                          {t("account.confirmPassword")}
+                        </label>
+                        <Input
+                          type="password"
+                          placeholder={t("auth.repeatPassword")}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          minLength={8}
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          disabled={passwordLoading}
+                          onClick={handleSendCode}
+                        >
+                          {passwordLoading && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          )}
+                          {t("common.continue")}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={passwordLoading}
+                          onClick={resetPasswordState}
+                        >
+                          {t("account.cancel")}
+                        </Button>
+                      </div>
+                    </>
+                  )}
+
+                  {passwordStep === "verify" && (
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        {t("account.verifyCodeDescription", {
+                          email: user?.email ?? "",
+                        })}
+                      </p>
+                      <div className="flex justify-center gap-1.5">
+                        {otp.map((digit, i) => (
+                          <Input
+                            key={i}
+                            ref={(el) => {
+                              otpRefs.current[i] = el;
+                            }}
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={REAUTH_OTP_LENGTH}
+                            value={digit}
+                            onChange={(e) => handleOtpChange(i, e.target.value)}
+                            onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                            className="h-11 w-10 text-center text-lg font-semibold"
+                            autoFocus={i === 0}
+                          />
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          disabled={
+                            passwordLoading ||
+                            otp.join("").length !== REAUTH_OTP_LENGTH
+                          }
+                          onClick={handleVerifyAndUpdate}
+                        >
+                          {passwordLoading && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          )}
+                          {t("account.verifyAndUpdate")}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={passwordLoading}
+                          onClick={resetPasswordState}
+                        >
+                          {t("account.cancel")}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground text-center">
+                        {t("auth.didntReceiveCode")}{" "}
+                        {resendCooldown > 0 ? (
+                          <span>
+                            {t("auth.resendIn", { seconds: resendCooldown })}
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={handleResend}
+                            disabled={passwordLoading}
+                            className="text-primary hover:underline font-medium"
+                          >
+                            {t("auth.resend")}
+                          </button>
+                        )}
+                      </p>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </section>
+          </>
+        )}
         {/* Danger Zone */}
         <section>
           <h2 className="text-base font-semibold mb-2 text-destructive">

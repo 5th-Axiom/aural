@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { useAppLocale } from "@/components/app-locale-provider";
 import { useOrg, type OrgInfo } from "@/components/org-provider";
 import { useProject } from "@/components/project-provider";
@@ -38,6 +40,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 function OrgSection({ org, isCurrent }: { org: OrgInfo; isCurrent: boolean }) {
+  const ui = useUiTranslation();
   const { toast } = useToast();
   const { locale } = useAppLocale();
   const router = useRouter();
@@ -93,7 +96,7 @@ function OrgSection({ org, isCurrent }: { org: OrgInfo; isCurrent: boolean }) {
         </Badge>
         {isCurrent && (
           <Badge variant="secondary" className="text-xs">
-            {isZh ? "当前" : "Current"}
+            {isZh ? "当前" : ui("Current")}
           </Badge>
         )}
         <div className="flex-1" />
@@ -104,7 +107,7 @@ function OrgSection({ org, isCurrent }: { org: OrgInfo; isCurrent: boolean }) {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
-                title={isZh ? "成员" : "Members"}
+                title={isZh ? "成员" : ui("Members")}
                 onClick={() => setCurrentOrg(org.id)}
               >
                 <Users className="h-4 w-4" />
@@ -115,7 +118,7 @@ function OrgSection({ org, isCurrent }: { org: OrgInfo; isCurrent: boolean }) {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
-                title={isZh ? "组织设置" : "Organization Settings"}
+                title={isZh ? "组织设置" : ui("Organization Settings")}
                 onClick={() => setCurrentOrg(org.id)}
               >
                 <Settings className="h-4 w-4" />
@@ -128,13 +131,13 @@ function OrgSection({ org, isCurrent }: { org: OrgInfo; isCurrent: boolean }) {
             <DialogTrigger asChild>
               <Button size="sm" variant="outline">
                 <Plus className="mr-2 h-4 w-4" />
-                {isZh ? "新建项目" : "New project"}
+                {isZh ? "新建项目" : ui("New project")}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>
-                  {isZh ? "创建项目" : "Create Project"}
+                  {isZh ? "创建项目" : ui("Create Project")}
                 </DialogTitle>
                 <DialogDescription>
                   {isZh
@@ -144,7 +147,7 @@ function OrgSection({ org, isCurrent }: { org: OrgInfo; isCurrent: boolean }) {
               </DialogHeader>
               <div className="space-y-4 py-2">
                 <div className="space-y-2">
-                  <Label>{isZh ? "名称" : "Name"}</Label>
+                  <Label>{isZh ? "名称" : ui("Name")}</Label>
                   <Input
                     value={projectName}
                     onChange={(e) => setProjectName(e.target.value)}
@@ -155,12 +158,14 @@ function OrgSection({ org, isCurrent }: { org: OrgInfo; isCurrent: boolean }) {
                 </div>
                 <div className="space-y-2">
                   <Label>
-                    {isZh ? "描述（可选）" : "Description (optional)"}
+                    {isZh ? "描述（可选）" : ui("Description (optional)")}
                   </Label>
                   <Textarea
                     value={projectDesc}
                     onChange={(e) => setProjectDesc(e.target.value)}
-                    placeholder={isZh ? "简要描述..." : "Brief description..."}
+                    placeholder={
+                      isZh ? "简要描述..." : ui("Brief description...")
+                    }
                   />
                 </div>
               </div>
@@ -169,7 +174,7 @@ function OrgSection({ org, isCurrent }: { org: OrgInfo; isCurrent: boolean }) {
                   variant="outline"
                   onClick={() => setNewProjectOpen(false)}
                 >
-                  {isZh ? "取消" : "Cancel"}
+                  {isZh ? "取消" : ui("Cancel")}
                 </Button>
                 <Button
                   onClick={() =>
@@ -186,7 +191,7 @@ function OrgSection({ org, isCurrent }: { org: OrgInfo; isCurrent: boolean }) {
                   {createProjectMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  {isZh ? "创建" : "Create"}
+                  {isZh ? "创建" : ui("Create")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -198,7 +203,7 @@ function OrgSection({ org, isCurrent }: { org: OrgInfo; isCurrent: boolean }) {
         <div className="rounded-lg border border-dashed p-8 text-center">
           <FolderKanban className="mx-auto h-8 w-8 text-muted-foreground/50" />
           <p className="mt-2 text-sm text-muted-foreground">
-            {isZh ? "还没有项目" : "No projects yet"}
+            {isZh ? "还没有项目" : ui("No projects yet")}
           </p>
         </div>
       ) : (
@@ -237,7 +242,7 @@ function OrgSection({ org, isCurrent }: { org: OrgInfo; isCurrent: boolean }) {
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7"
-                        title={isZh ? "项目设置" : "Project Settings"}
+                        title={isZh ? "项目设置" : ui("Project Settings")}
                       >
                         <Settings className="h-3.5 w-3.5" />
                       </Button>
@@ -264,7 +269,7 @@ function OrgSection({ org, isCurrent }: { org: OrgInfo; isCurrent: boolean }) {
                     {project._count.sessions === 1
                       ? isZh
                         ? "场会话"
-                        : "session"
+                        : ui("session")
                       : isZh
                         ? "场会话"
                         : "sessions"}
@@ -280,6 +285,7 @@ function OrgSection({ org, isCurrent }: { org: OrgInfo; isCurrent: boolean }) {
 }
 
 export default function OrganizationsPage() {
+  const ui = useUiTranslation();
   const { orgs, currentOrg } = useOrg();
   const { locale } = useAppLocale();
   const ownedCount = orgs.filter((o) => o.role === "OWNER").length;
@@ -293,12 +299,12 @@ export default function OrganizationsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">
-            {isZh ? "组织" : "Organizations"}
+            {isZh ? "组织" : ui("Organizations")}
           </h1>
           <p className="text-muted-foreground">
             {isZh
               ? "管理你的组织和项目。"
-              : "Manage your organizations and projects."}
+              : ui("Manage your organizations and projects.")}
           </p>
         </div>
         {limitReached ? (
@@ -308,14 +314,14 @@ export default function OrganizationsPage() {
                 <span tabIndex={0}>
                   <Button disabled>
                     <Plus className="mr-2 h-4 w-4" />
-                    {isZh ? "新建组织" : "New Organization"}
+                    {isZh ? "新建组织" : ui("New Organization")}
                   </Button>
                 </span>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-xs text-center">
                 {isZh
-                    ? `你已达到 ${orgLimit} 个组织的上限。`
-                    : `You\u2019ve reached the limit of ${orgLimit} organizations.`}
+                  ? `你已达到 ${orgLimit} 个组织的上限。`
+                  : `You\u2019ve reached the limit of ${orgLimit} organizations.`}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -323,7 +329,7 @@ export default function OrganizationsPage() {
           <Link href="/org/new">
             <Button>
               <Plus className="mr-2 h-4 w-4" />
-              {isZh ? "新建组织" : "New Organization"}
+              {isZh ? "新建组织" : ui("New Organization")}
             </Button>
           </Link>
         )}

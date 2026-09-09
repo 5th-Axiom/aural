@@ -76,8 +76,10 @@ AURAL_DEPLOY_HOST=cd AURAL_DEPLOY_DIR=/home/deploy/aural-test AURAL_HTTP_PORT=13
 
 访问入口为 `https://47.108.226.96`，宿主机配置见 `ip-nginx.conf`。使用仅匹配此 IP 的 Nginx 虚拟主机、自签名 TLS 证书和密码入口；首次浏览器访问需信任证书。入口密码保存在本机 `.env.test.local` 的 `TEST_ACCESS_PASSWORD`，不写入 Git。
 
-密码校验后签发一天有效的 HttpOnly/Secure 访问 Cookie，并登录共享测试账号。网页、API、Supabase 和 WebSocket 均经过入口校验；入口有请求频率限制。所有体验者共享同一账号和数据。此功能仅在显式设置 `TEST_ACCESS_ENABLED=true` 时开启，不应用于正式生产环境。
+本期版本中，密码校验后签发一天有效的 HttpOnly/Secure 访问 Cookie，再进入手机号登录页。网页、API、Supabase 和 WebSocket 均经过入口校验；入口有请求频率限制。手机号可以任意填写，验证码固定为 `123456`。同一手机号对应同一账号，不同手机号拥有独立账号。此功能仅在显式设置 `TEST_ACCESS_ENABLED=true` 时开启，不应用于正式生产环境。
 
 Supabase 已独立部署，说明见 [supabase/README.md](supabase/README.md)。服务端与浏览器均使用 HTTPS `/supabase`，确保录音签名链接能在浏览器访问。容器通过挂载 IP 证书并设置 `NODE_EXTRA_CA_CERTS` 信任该证书。宿主 Nginx 仅允许本机和 Aural 的两个 Docker 子网绕过外层密码门禁，Supabase JWT/RLS 校验仍保留；若重建网络改变网段，需要同步更新 `ip-nginx.conf`。部署 Compose 需要预先存在 `aural-supabase` 网络。构建使用 Node 22、Webpack 与两路并发，在本机生成 linux/amd64 镜像，避免共享服务器构建时内存不足。
 
 修改入口密码后重新运行部署命令。若还要使旧访问 Cookie 立即失效，同时更换 `TEST_ACCESS_SECRET`。应用发布不会重置 Supabase 数据库，也不会自动执行后续数据库迁移。
+
+发布本期功能前，先在目标数据库执行 `supabase/migrations/006_phone_roles_resume.sql`，配置 `MOCK_PHONE_AUTH_ENABLED=true` 和至少 32 字符的 `MOCK_PHONE_AUTH_SECRET`（创建账号后需保持稳定），并同步 `ip-nginx.conf`，移除旧的 `/login` 强制跳转。然后运行部署命令。2026-09-09 已完成以上步骤并发布到 IP 测试环境，详见 [STATUS.md](STATUS.md)。管理员手机号为 `13800138000`，验证码为 `123456`，保留原测试账号及历史数据。

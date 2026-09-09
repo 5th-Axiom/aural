@@ -1,132 +1,137 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { AiGlowBorder } from "@/components/ui/ai-glow-border";
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-    ChatComposer,
-    type ChatComposerControl,
+  ChatComposer,
+  type ChatComposerControl,
 } from "@/components/ui/chat-composer";
 import {
-    CoachSpeakingWave,
-    type CoachSpeakingPhase,
+  CoachSpeakingWave,
+  type CoachSpeakingPhase,
 } from "@/components/ui/coach-speaking-wave";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
 } from "@/components/ui/sheet";
 import { StreamingTextPanels } from "@/components/ui/streaming-text-panels";
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { PrepVoiceRecording } from "@/hooks/use-prep-voice-capture";
 import { useToast } from "@/hooks/use-toast";
 import { useVolcengineTts } from "@/hooks/use-volcengine-tts";
 import { isAbortError } from "@/lib/abort-error";
 import { computeMediaRetention, type PlanTier } from "@/lib/media-retention";
-import { formatPrepAudioDuration, resolveBlobDuration } from "@/lib/prep/answer-audio";
+import {
+  formatPrepAudioDuration,
+  resolveBlobDuration,
+} from "@/lib/prep/answer-audio";
 import { resolvePrepResponseLanguage } from "@/lib/prep/answer-quality";
 import { prepareCoachTtsText } from "@/lib/prep/coach-tts-text";
 import {
-    abortPrepFeedbackDiag,
-    finishPrepFeedbackDiag,
-    getPrepFeedbackDiagTraceId,
-    markPrepFeedbackDiag,
-    markRecordingComplete,
-    startPrepFeedbackDiag,
+  abortPrepFeedbackDiag,
+  finishPrepFeedbackDiag,
+  getPrepFeedbackDiagTraceId,
+  markPrepFeedbackDiag,
+  markRecordingComplete,
+  startPrepFeedbackDiag,
 } from "@/lib/prep/feedback-latency-diag";
 import {
-    hasPartialFeedbackHeader,
-    parsePartialPrepFeedback,
+  hasPartialFeedbackHeader,
+  parsePartialPrepFeedback,
 } from "@/lib/prep/parse-partial-feedback-json";
 import {
-    clearPracticeDraft,
-    loadPracticeDraft,
-    savePracticeDraft,
+  clearPracticeDraft,
+  loadPracticeDraft,
+  savePracticeDraft,
 } from "@/lib/prep/practice-drafts";
 import { buildPracticeResumeState } from "@/lib/prep/practice-resume-state";
 import {
-    buildVoiceDeliveryMetrics,
-    type VoiceDeliveryMetrics,
+  buildVoiceDeliveryMetrics,
+  type VoiceDeliveryMetrics,
 } from "@/lib/prep/voice-delivery";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import {
-    Bookmark,
-    BookmarkCheck,
-    CheckCircle2,
-    ChevronLeft,
-    ChevronRight,
-    Info,
-    ListOrdered,
-    Loader2,
-    MessageSquareText,
-    Mic,
-    Sparkles,
-    Target,
-    Timer,
-    TrendingUp,
-    Waves,
-    X,
+  Bookmark,
+  BookmarkCheck,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Info,
+  ListOrdered,
+  Loader2,
+  MessageSquareText,
+  Mic,
+  Sparkles,
+  Target,
+  Timer,
+  TrendingUp,
+  Waves,
+  X,
 } from "lucide-react";
 import {
-    useCallback,
-    useEffect,
-    useLayoutEffect,
-    useMemo,
-    useRef,
-    useState,
-    type ReactNode,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
 } from "react";
 import { AnswerTargetChips } from "./practice-answer-targets";
 import {
-    NextActionStrip,
-    NextBestMoveBar,
-    SampleAnswerDialog,
-    type PracticeNextAction,
+  NextActionStrip,
+  NextBestMoveBar,
+  SampleAnswerDialog,
+  type PracticeNextAction,
 } from "./practice-next-move";
 import {
-    PRACTICE_RETRY_SCORE_BAR,
-    PracticeQuestionNavigator,
-    type PracticeQuestionStatus,
+  PRACTICE_RETRY_SCORE_BAR,
+  PracticeQuestionNavigator,
+  type PracticeQuestionStatus,
 } from "./practice-question-navigator";
 import {
-    PracticeTourHelpButton,
-    PracticeTourOverlay,
-    PracticeTourProvider,
+  PracticeTourHelpButton,
+  PracticeTourOverlay,
+  PracticeTourProvider,
 } from "./practice-tour";
 import { PrepContextDrawer } from "./prep-context-drawer";
 import { readPrepStream } from "./prep-stream";
 import {
-    PrepSuggestedAnswerPanel,
-    type PrepContextInitial,
+  PrepSuggestedAnswerPanel,
+  type PrepContextInitial,
 } from "./prep-suggested-answer-panel";
 import {
-    EMPTY_FEEDBACK,
-    normalizePrepQuestionOptions,
-    scoreTone,
-    type PrepAttempt,
-    type PrepFeedback,
-    type PrepQuestion,
-    type PrepQuestionOption,
+  EMPTY_FEEDBACK,
+  normalizePrepQuestionOptions,
+  scoreTone,
+  type PrepAttempt,
+  type PrepFeedback,
+  type PrepQuestion,
+  type PrepQuestionOption,
 } from "./prep-types";
 import { VoiceDeliveryTimeline } from "./voice-delivery-timeline";
 
@@ -305,8 +310,12 @@ function normalizeFeedback(feedback?: PrepFeedback): PrepFeedback {
 }
 
 function formatMinutes(seconds: number): string {
-  const min = Math.floor(seconds / 60).toString().padStart(2, "0");
-  const sec = Math.max(0, seconds % 60).toString().padStart(2, "0");
+  const min = Math.floor(seconds / 60)
+    .toString()
+    .padStart(2, "0");
+  const sec = Math.max(0, seconds % 60)
+    .toString()
+    .padStart(2, "0");
   return `${min}:${sec}`;
 }
 
@@ -371,6 +380,7 @@ export function PracticeSessionChat({
   onFinish: () => void;
   isFinishing?: boolean;
 }) {
+  const ui = useUiTranslation();
   const { toast } = useToast();
   const scrollEndRef = useRef<HTMLDivElement>(null);
   const desktopScrollAreaRef = useRef<HTMLDivElement>(null);
@@ -455,7 +465,7 @@ export function PracticeSessionChat({
     },
     onError: (err) => {
       toast({
-        title: "Could not update answer bank",
+        title: ui("Could not update answer bank"),
         description: err.message,
         variant: "destructive",
       });
@@ -465,8 +475,10 @@ export function PracticeSessionChat({
     onSuccess: (data, variables) => {
       if (!data.slug) {
         toast({
-          title: "Could not open preview",
-          description: "Publish the interview before opening a preview session.",
+          title: ui("Could not open preview"),
+          description: ui(
+            "Publish the interview before opening a preview session.",
+          ),
           variant: "destructive",
         });
         return;
@@ -484,7 +496,7 @@ export function PracticeSessionChat({
     },
     onError: (err) => {
       toast({
-        title: "Could not open preview",
+        title: ui("Could not open preview"),
         description: err.message,
         variant: "destructive",
       });
@@ -570,11 +582,12 @@ export function PracticeSessionChat({
       : undefined;
 
   const getChatScrollViewport = useCallback((): HTMLElement | null => {
-    for (const root of [desktopScrollAreaRef.current, mobileScrollAreaRef.current]) {
+    for (const root of [
+      desktopScrollAreaRef.current,
+      mobileScrollAreaRef.current,
+    ]) {
       if (!root) continue;
-      const viewport = root.querySelector(
-        "[data-radix-scroll-area-viewport]",
-      );
+      const viewport = root.querySelector("[data-radix-scroll-area-viewport]");
       if (
         viewport instanceof HTMLElement &&
         viewport.offsetHeight > 0 &&
@@ -854,9 +867,7 @@ export function PracticeSessionChat({
         setPinnedMessageId(resumeState.pinnedMessageId);
         const resumedQuestion = questions[resumeState.questionIndex];
         if (resumedQuestion) {
-          setDraft(
-            loadPracticeDraft(sessionId, resumedQuestion.id) ?? "",
-          );
+          setDraft(loadPracticeDraft(sessionId, resumedQuestion.id) ?? "");
         }
         promptStartedAtRef.current = Date.now();
         sessionSpeakRef.current = sessionId;
@@ -937,8 +948,7 @@ export function PracticeSessionChat({
     };
   }, [coachMuted, mode, playPendingFromGesture]);
 
-  const questionScrollTarget =
-    pinnedQuestionIndex ?? speakingQuestionIndex;
+  const questionScrollTarget = pinnedQuestionIndex ?? speakingQuestionIndex;
 
   useLayoutEffect(() => {
     if (questionScrollTarget !== null) {
@@ -999,55 +1009,61 @@ export function PracticeSessionChat({
     });
   };
 
-  const ensureQuestionInThread = useCallback((index: number) => {
-    setMessages((prev) => {
-      const exists = prev.some(
-        (message) =>
-          message.kind === "question" && message.questionIndex === index,
-      );
-      if (exists) return prev;
+  const ensureQuestionInThread = useCallback(
+    (index: number) => {
+      setMessages((prev) => {
+        const exists = prev.some(
+          (message) =>
+            message.kind === "question" && message.questionIndex === index,
+        );
+        if (exists) return prev;
+        const question = questions[index];
+        if (!question) return prev;
+        return [...prev, questionMessage(question, index)];
+      });
+    },
+    [questions],
+  );
+
+  const navigateToQuestion = useCallback(
+    (index: number) => {
+      if (index < 0 || index >= questions.length || submitting) return;
       const question = questions[index];
-      if (!question) return prev;
-      return [...prev, questionMessage(question, index)];
-    });
-  }, [questions]);
+      if (!question) return;
 
-  const navigateToQuestion = useCallback((index: number) => {
-    if (index < 0 || index >= questions.length || submitting) return;
-    const question = questions[index];
-    if (!question) return;
+      // Keep unsent work: stash the current draft before switching questions.
+      if (activePrompt && draftRef.current.trim()) {
+        savePracticeDraft(sessionId, activePrompt.questionId, draftRef.current);
+      }
 
-    // Keep unsent work: stash the current draft before switching questions.
-    if (activePrompt && draftRef.current.trim()) {
-      savePracticeDraft(sessionId, activePrompt.questionId, draftRef.current);
-    }
-
-    stopGeneration();
-    setQuestionIndex(index);
-    setDraft(loadPracticeDraft(sessionId, question.id) ?? "");
-    setAwaitingRetry(false);
-    setDrillScript(null);
-    clearPendingAudio();
-    ensureQuestionInThread(index);
-    setActivePrompt({
-      kind: "question",
-      questionId: question.id,
-      questionIndex: index,
-      prompt: question.text,
-    });
-    promptStartedAtRef.current = Date.now();
-    setPinnedMessageId(null);
-    setPinnedQuestionIndex(index);
-    speakQuestionWithGesture(question.text);
-  }, [
-    activePrompt,
-    clearPendingAudio,
-    ensureQuestionInThread,
-    questions,
-    sessionId,
-    speakQuestionWithGesture,
-    submitting,
-  ]);
+      stopGeneration();
+      setQuestionIndex(index);
+      setDraft(loadPracticeDraft(sessionId, question.id) ?? "");
+      setAwaitingRetry(false);
+      setDrillScript(null);
+      clearPendingAudio();
+      ensureQuestionInThread(index);
+      setActivePrompt({
+        kind: "question",
+        questionId: question.id,
+        questionIndex: index,
+        prompt: question.text,
+      });
+      promptStartedAtRef.current = Date.now();
+      setPinnedMessageId(null);
+      setPinnedQuestionIndex(index);
+      speakQuestionWithGesture(question.text);
+    },
+    [
+      activePrompt,
+      clearPendingAudio,
+      ensureQuestionInThread,
+      questions,
+      sessionId,
+      speakQuestionWithGesture,
+      submitting,
+    ],
+  );
 
   const submitQuestionAnswer = async (
     prompt: Extract<ActivePrompt, { kind: "question" }>,
@@ -1215,7 +1231,7 @@ export function PracticeSessionChat({
           },
           onPersistWarning: (message) => {
             toast({
-              title: "Could not save attempt",
+              title: ui("Could not save attempt"),
               description: message,
               variant: "destructive",
             });
@@ -1229,7 +1245,10 @@ export function PracticeSessionChat({
             if (attemptId) {
               setMessages((prev) =>
                 prev.map((message) => {
-                  if (message.id !== feedbackId || message.kind !== "feedback") {
+                  if (
+                    message.id !== feedbackId ||
+                    message.kind !== "feedback"
+                  ) {
                     return message;
                   }
                   return { ...message, attemptId };
@@ -1239,7 +1258,10 @@ export function PracticeSessionChat({
             if (!audioUrl) return;
             setMessages((prev) =>
               prev.map((message) => {
-                if (message.id !== answerMessageId || message.kind !== "answer") {
+                if (
+                  message.id !== answerMessageId ||
+                  message.kind !== "answer"
+                ) {
                   return message;
                 }
                 if (
@@ -1305,7 +1327,9 @@ export function PracticeSessionChat({
     });
   };
 
-  const submitDraft = async (ctx?: { recording?: PrepVoiceRecording | null }) => {
+  const submitDraft = async (ctx?: {
+    recording?: PrepVoiceRecording | null;
+  }) => {
     const answerText = draft.trim();
     if (!activePrompt || submitting) return;
     if (!answerText) return;
@@ -1364,7 +1388,10 @@ export function PracticeSessionChat({
         audioCreatedAt: messageAudioUrl ? new Date().toISOString() : undefined,
       },
     ]);
-    markPrepFeedbackDiag("user_message_shown", { mode, hasAudio: Boolean(messageAudioUrl) });
+    markPrepFeedbackDiag("user_message_shown", {
+      mode,
+      hasAudio: Boolean(messageAudioUrl),
+    });
 
     try {
       await submitQuestionAnswer(
@@ -1435,8 +1462,7 @@ export function PracticeSessionChat({
       moved = true;
 
       const rect = chatRightContainerRef.current.getBoundingClientRect();
-      const maxChatWidth =
-        rect.width - RIGHT_PANEL_MIN_PX - PANEL_DIVIDER_PX;
+      const maxChatWidth = rect.width - RIGHT_PANEL_MIN_PX - PANEL_DIVIDER_PX;
       const chatWidth = Math.min(
         Math.max(ev.clientX - rect.left, CHAT_PANEL_MIN_PX),
         maxChatWidth,
@@ -1641,9 +1667,7 @@ export function PracticeSessionChat({
         }
         case "next":
           if (message) setNextMoveDismissedId(message.id);
-          navigateToQuestion(
-            (message?.questionIndex ?? questionIndex) + 1,
-          );
+          navigateToQuestion((message?.questionIndex ?? questionIndex) + 1);
           break;
         case "answer_bank": {
           const attemptId = message?.attemptId;
@@ -1653,7 +1677,9 @@ export function PracticeSessionChat({
         }
         case "real_interview": {
           const targetQuestionId =
-            message?.questionId ?? activePrompt?.questionId ?? currentQuestion?.id;
+            message?.questionId ??
+            activePrompt?.questionId ??
+            currentQuestion?.id;
           if (!targetQuestionId) return;
           if (message) setNextMoveDismissedId(message.id);
           previewMutation.mutate({ interviewId, questionId: targetQuestionId });
@@ -1691,7 +1717,7 @@ export function PracticeSessionChat({
   if (questions.length === 0) {
     return (
       <div className="rounded-lg border p-8 text-center text-sm text-muted-foreground">
-        No questions are available for this practice session.
+        {ui("No questions are available for this practice session.")}
       </div>
     );
   }
@@ -1714,271 +1740,424 @@ export function PracticeSessionChat({
 
   return (
     <PracticeTourProvider>
-    <TooltipProvider delayDuration={200}>
-    <div className="flex h-screen min-h-[720px] flex-col bg-background">
-      <header className="shrink-0 border-b bg-card px-3 py-2 md:px-6 md:py-3">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="truncate text-lg font-semibold">{interviewTitle}</h2>
-              <Badge variant="secondary" className="gap-1">
-                {mode === "VOICE" ? (
-                  <Mic className="h-3 w-3" />
-                ) : (
-                  <MessageSquareText className="h-3 w-3" />
-                )}
-                {mode}
-              </Badge>
-              <Badge variant="outline">AI coach</Badge>
-              {bestScoreForCurrent !== null ? (
-                <Badge variant="outline" className="gap-1">
-                  <Target className="h-3 w-3" />
-                  Best {bestScoreForCurrent.toFixed(1)}
+      <TooltipProvider delayDuration={200}>
+        <div className="flex h-screen min-h-[720px] flex-col bg-background">
+          <header className="shrink-0 border-b bg-card px-3 py-2 md:px-6 md:py-3">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="truncate text-lg font-semibold">
+                    {interviewTitle}
+                  </h2>
+                  <Badge variant="secondary" className="gap-1">
+                    {mode === "VOICE" ? (
+                      <Mic className="h-3 w-3" />
+                    ) : (
+                      <MessageSquareText className="h-3 w-3" />
+                    )}
+                    {mode}
+                  </Badge>
+                  <Badge variant="outline">{ui("AI coach")}</Badge>
+                  {bestScoreForCurrent !== null ? (
+                    <Badge variant="outline" className="gap-1">
+                      <Target className="h-3 w-3" />
+                      {ui("Best")}
+                      {bestScoreForCurrent.toFixed(1)}
+                    </Badge>
+                  ) : null}
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {ui("Voice practice with feedback after every answer")}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Sheet open={navSheetOpen} onOpenChange={setNavSheetOpen}>
+                  <SheetTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1.5 px-2.5 text-xs lg:hidden"
+                    >
+                      <ListOrdered className="h-3.5 w-3.5" aria-hidden />
+                      {ui("Questions")}
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent
+                    side="left"
+                    className="flex w-[19rem] flex-col gap-0 p-0"
+                  >
+                    <SheetHeader className="sr-only">
+                      <SheetTitle>{ui("Practice questions")}</SheetTitle>
+                    </SheetHeader>
+                    <div className="flex min-h-0 flex-1 flex-col pt-9">
+                      <PracticeQuestionNavigator
+                        statuses={questionStatuses}
+                        currentIndex={questionIndex}
+                        disabled={submitting}
+                        onNavigate={(index) => {
+                          setNavSheetOpen(false);
+                          navigateToQuestion(index);
+                        }}
+                      />
+                    </div>
+                  </SheetContent>
+                </Sheet>
+                <PracticeTourHelpButton />
+                <Badge className="gap-1">
+                  <span className="h-2 w-2 rounded-full bg-primary-foreground" />
+                  {ui("Connected")}
                 </Badge>
-              ) : null}
+                {remainingSeconds !== null ? (
+                  <div className="inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium">
+                    <Timer className="h-4 w-4" />
+                    {formatMinutes(remainingSeconds)}
+                  </div>
+                ) : null}
+              </div>
             </div>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Voice practice with feedback after every answer
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Sheet open={navSheetOpen} onOpenChange={setNavSheetOpen}>
-              <SheetTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-8 gap-1.5 px-2.5 text-xs lg:hidden"
+            <div
+              className="mt-3 flex items-center gap-4"
+              data-tour="practice-progress"
+            >
+              <Progress value={progress} className="h-1.5 flex-1" />
+              <span className="shrink-0 text-xs font-medium text-muted-foreground">
+                Q{questionIndex + 1} / {questions.length}
+              </span>
+            </div>
+            {currentPromptText ? (
+              <p className="mt-1.5 text-xs text-muted-foreground line-clamp-1">
+                {currentPromptText}
+              </p>
+            ) : null}
+          </header>
+
+          <div
+            ref={splitContainerRef}
+            className="hidden min-h-0 flex-1 overflow-x-auto overflow-y-hidden lg:flex"
+          >
+            {navPanelOpen ? (
+              <>
+                <aside
+                  className="flex shrink-0 flex-col bg-muted/10"
+                  style={{ width: navWidth }}
+                  data-tour="practice-navigator"
                 >
-                  <ListOrdered className="h-3.5 w-3.5" aria-hidden />
-                  Questions
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="flex w-[19rem] flex-col gap-0 p-0">
-                <SheetHeader className="sr-only">
-                  <SheetTitle>Practice questions</SheetTitle>
-                </SheetHeader>
-                <div className="flex min-h-0 flex-1 flex-col pt-9">
                   <PracticeQuestionNavigator
                     statuses={questionStatuses}
                     currentIndex={questionIndex}
                     disabled={submitting}
-                    onNavigate={(index) => {
-                      setNavSheetOpen(false);
-                      navigateToQuestion(index);
+                    onNavigate={navigateToQuestion}
+                    onToggleSidebar={() => setNavPanelOpen(false)}
+                  />
+                </aside>
+                <PanelResizeDivider
+                  onPointerDown={handleNavSplitPointerDown}
+                  ariaLabel="Resize questions panel"
+                />
+              </>
+            ) : (
+              <CollapsedPanelRail
+                side="left"
+                label={ui("Questions")}
+                meta={`${questionIndex + 1}/${questions.length}`}
+                onClick={() => setNavPanelOpen(true)}
+                ariaLabel="Show questions panel"
+              />
+            )}
+            <div ref={chatRightContainerRef} className="flex min-h-0 flex-1">
+              <section
+                className="relative flex min-h-0 min-w-0 shrink-0 flex-col"
+                style={
+                  rightPanelOpen
+                    ? { width: `${splitPercent}%`, minWidth: CHAT_PANEL_MIN_PX }
+                    : { flex: 1, minWidth: CHAT_PANEL_MIN_PX }
+                }
+              >
+                <ScrollArea ref={desktopScrollAreaRef} className="flex-1">
+                  <div
+                    className="mx-auto flex w-full max-w-4xl flex-col gap-5 px-6 pt-8"
+                    style={{ paddingBottom: desktopChatPadding }}
+                  >
+                    {messages.map((message) => (
+                      <ChatMessageView
+                        key={message.id}
+                        message={message}
+                        inputMode={mode}
+                        speakingQuestionIndex={speakingQuestionIndex}
+                        registerQuestionAnchor={registerQuestionAnchor}
+                        registerMessageAnchor={registerMessageAnchor}
+                        coachSpeakingActive={coachSpeakingActive}
+                        coachSpeakingTarget={coachSpeakingTarget}
+                        coachFeedbackMessageId={coachFeedbackMessageId}
+                        coachSpeakingPhase={coachSpeakingPhaseForUi}
+                        planTier={planTier}
+                        mediaRetentionDays={mediaRetentionDays}
+                        currentQuestionIndex={questionIndex}
+                        latestFeedbackId={latestFeedback?.id ?? null}
+                        canNextQuestion={canGoNextQuestion}
+                        actionsDisabled={
+                          submitting || previewMutation.isLoading
+                        }
+                        bookmarkedAttemptIds={bookmarkedAttemptIds}
+                        bookmarkPending={toggleBookmark.isLoading}
+                        onToggleBookmark={handleToggleBookmark}
+                        onNextAction={handleNextAction}
+                      />
+                    ))}
+                    <div ref={scrollEndRef} aria-hidden />
+                  </div>
+                </ScrollArea>
+
+                <div
+                  ref={desktopOverlayRef}
+                  className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-background via-background/95 to-transparent px-6 pb-4 pt-10"
+                >
+                  <div className="pointer-events-auto mx-auto w-full max-w-4xl">
+                    {showNextMoveBar && latestFeedback?.feedback ? (
+                      <NextBestMoveBar
+                        feedback={latestFeedback.feedback}
+                        canNext={canGoNextQuestion}
+                        disabled={submitting || previewMutation.isLoading}
+                        onAction={(action) =>
+                          handleNextAction(action, latestFeedback)
+                        }
+                        onDismiss={() =>
+                          setNextMoveDismissedId(latestFeedback.id)
+                        }
+                        className="mb-2"
+                      />
+                    ) : null}
+                    {drillScript !== null ? (
+                      <DrillBanner onDismiss={() => setDrillScript(null)} />
+                    ) : null}
+                    <div data-tour="practice-composer">
+                      <ChatComposer
+                        className="border bg-card/95 shadow-lg backdrop-blur-sm"
+                        value={draft}
+                        onChange={setDraft}
+                        onSubmit={submitDraft}
+                        onStop={stopGeneration}
+                        isGenerating={submitting}
+                        disabled={!activePrompt || aiTokensBlocked}
+                        controlRef={desktopComposerControl}
+                        submitDisabled={
+                          !activePrompt ||
+                          aiTokensBlocked ||
+                          !canGradeAi ||
+                          !draft.trim()
+                        }
+                        placeholder={
+                          aiTokensBlocked
+                            ? ui("Add AI tokens to submit answers…")
+                            : !activePrompt
+                              ? ui("Select a question to continue...")
+                              : awaitingRetry
+                                ? ui(
+                                    "Revise your answer using the feedback, then send again...",
+                                  )
+                                : mode === "VOICE"
+                                  ? ui("Speak or edit your transcript...")
+                                  : ui("Type your answer...")
+                        }
+                        questionNav={{
+                          onBeforeNavigate: primeFromUserGesture,
+                          onPrevious: () =>
+                            navigateToQuestion(questionIndex - 1),
+                          onNext: () => navigateToQuestion(questionIndex + 1),
+                          canPrevious: questionIndex > 0,
+                          canNext: questionIndex < questions.length - 1,
+                          disabled: submitting,
+                        }}
+                        voice={composerVoice}
+                        sessionActions={composerSessionActions}
+                        aiTokenBalance={composerAiTokens}
+                        aiTokensBlocked={composerAiTokensBlocked}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <AlertDialog
+                  open={finishDialogOpen}
+                  onOpenChange={setFinishDialogOpen}
+                >
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        {ui("Finish practice?")}
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {ui(
+                          "Your progress will be saved. You can start another practice session later.",
+                        )}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel disabled={isFinishing}>
+                        {ui("Keep practicing")}
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        disabled={isFinishing}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          onFinish();
+                        }}
+                      >
+                        {isFinishing ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            {ui("Saving...")}
+                          </>
+                        ) : (
+                          ui("Finish practice")
+                        )}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </section>
+
+              {rightPanelOpen ? (
+                <>
+                  <PanelResizeDivider
+                    onPointerDown={handleSplitPointerDown}
+                    ariaLabel="Resize panels"
+                  />
+
+                  <aside
+                    className="flex min-h-0 flex-1 flex-col bg-muted/20"
+                    style={{ minWidth: RIGHT_PANEL_MIN_PX }}
+                    data-tour="practice-suggested"
+                  >
+                    <PrepSuggestedAnswerPanel
+                      interviewId={interviewId}
+                      interviewTitle={interviewTitle}
+                      questionId={currentQuestion?.id ?? null}
+                      questionText={currentQuestion?.text ?? null}
+                      questionType={currentQuestion?.type ?? null}
+                      hasContext={hasContext}
+                      prepContext={prepContext}
+                      onContextSaved={onPrepContextSaved}
+                      canUseHint={canHintAi}
+                      onPracticeAnswer={handlePracticeAnswer}
+                      onToggleRightPanel={() => setRightPanelOpen(false)}
+                    />
+                  </aside>
+                </>
+              ) : (
+                <CollapsedPanelRail
+                  side="right"
+                  label={ui("Suggested")}
+                  onClick={() => setRightPanelOpen(true)}
+                  ariaLabel="Show suggested answer panel"
+                />
+              )}
+            </div>
+          </div>
+
+          <div className="flex min-h-0 flex-1 flex-col lg:hidden">
+            <section className="relative flex min-h-0 flex-1 flex-col">
+              <ScrollArea ref={mobileScrollAreaRef} className="flex-1">
+                <div
+                  className="flex flex-col gap-5 px-4 pt-6"
+                  style={{ paddingBottom: mobileChatPadding }}
+                >
+                  {messages.map((message) => (
+                    <ChatMessageView
+                      key={message.id}
+                      message={message}
+                      inputMode={mode}
+                      speakingQuestionIndex={speakingQuestionIndex}
+                      registerQuestionAnchor={registerQuestionAnchor}
+                      registerMessageAnchor={registerMessageAnchor}
+                      coachSpeakingActive={coachSpeakingActive}
+                      coachSpeakingTarget={coachSpeakingTarget}
+                      coachFeedbackMessageId={coachFeedbackMessageId}
+                      coachSpeakingPhase={coachSpeakingPhaseForUi}
+                      planTier={planTier}
+                      mediaRetentionDays={mediaRetentionDays}
+                      currentQuestionIndex={questionIndex}
+                      latestFeedbackId={latestFeedback?.id ?? null}
+                      canNextQuestion={canGoNextQuestion}
+                      actionsDisabled={submitting || previewMutation.isLoading}
+                      bookmarkedAttemptIds={bookmarkedAttemptIds}
+                      bookmarkPending={toggleBookmark.isLoading}
+                      onToggleBookmark={handleToggleBookmark}
+                      onNextAction={handleNextAction}
+                    />
+                  ))}
+                  <div ref={scrollEndRef} aria-hidden />
+                </div>
+              </ScrollArea>
+              <div
+                ref={mobileOverlayRef}
+                className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-background via-background/95 to-transparent px-4 pb-4 pt-8"
+              >
+                <div className="pointer-events-auto">
+                  {showNextMoveBar && latestFeedback?.feedback ? (
+                    <NextBestMoveBar
+                      feedback={latestFeedback.feedback}
+                      canNext={canGoNextQuestion}
+                      disabled={submitting || previewMutation.isLoading}
+                      onAction={(action) =>
+                        handleNextAction(action, latestFeedback)
+                      }
+                      onDismiss={() =>
+                        setNextMoveDismissedId(latestFeedback.id)
+                      }
+                      className="mb-2"
+                    />
+                  ) : null}
+                  {drillScript !== null ? (
+                    <DrillBanner onDismiss={() => setDrillScript(null)} />
+                  ) : null}
+                  <ChatComposer
+                    className="border bg-card/95 shadow-lg backdrop-blur-sm"
+                    value={draft}
+                    onChange={setDraft}
+                    onSubmit={submitDraft}
+                    onStop={stopGeneration}
+                    isGenerating={submitting}
+                    disabled={!activePrompt || aiTokensBlocked}
+                    controlRef={mobileComposerControl}
+                    submitDisabled={
+                      !activePrompt ||
+                      aiTokensBlocked ||
+                      !canGradeAi ||
+                      !draft.trim()
+                    }
+                    placeholder={
+                      aiTokensBlocked
+                        ? ui("Add AI tokens to submit answers…")
+                        : !activePrompt
+                          ? ui("Select a question to continue...")
+                          : awaitingRetry
+                            ? ui(
+                                "Revise your answer using the feedback, then send again...",
+                              )
+                            : mode === "VOICE"
+                              ? ui("Speak or edit your transcript...")
+                              : ui("Type your answer...")
+                    }
+                    questionNav={{
+                      onBeforeNavigate: primeFromUserGesture,
+                      onPrevious: () => navigateToQuestion(questionIndex - 1),
+                      onNext: () => navigateToQuestion(questionIndex + 1),
+                      canPrevious: questionIndex > 0,
+                      canNext: questionIndex < questions.length - 1,
+                      disabled: submitting,
                     }}
+                    voice={composerVoice}
+                    sessionActions={composerSessionActions}
+                    aiTokenBalance={composerAiTokens}
+                    aiTokensBlocked={composerAiTokensBlocked}
                   />
                 </div>
-              </SheetContent>
-            </Sheet>
-            <PracticeTourHelpButton />
-            <Badge className="gap-1">
-              <span className="h-2 w-2 rounded-full bg-primary-foreground" />
-              Connected
-            </Badge>
-            {remainingSeconds !== null ? (
-              <div className="inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium">
-                <Timer className="h-4 w-4" />
-                {formatMinutes(remainingSeconds)}
               </div>
-            ) : null}
-          </div>
-        </div>
-        <div className="mt-3 flex items-center gap-4" data-tour="practice-progress">
-          <Progress value={progress} className="h-1.5 flex-1" />
-          <span className="shrink-0 text-xs font-medium text-muted-foreground">
-            Q{questionIndex + 1} / {questions.length}
-          </span>
-        </div>
-        {currentPromptText ? (
-          <p className="mt-1.5 text-xs text-muted-foreground line-clamp-1">
-            {currentPromptText}
-          </p>
-        ) : null}
-      </header>
-
-      <div
-        ref={splitContainerRef}
-        className="hidden min-h-0 flex-1 overflow-x-auto overflow-y-hidden lg:flex"
-      >
-        {navPanelOpen ? (
-          <>
+            </section>
             <aside
-              className="flex shrink-0 flex-col bg-muted/10"
-              style={{ width: navWidth }}
-              data-tour="practice-navigator"
-            >
-              <PracticeQuestionNavigator
-                statuses={questionStatuses}
-                currentIndex={questionIndex}
-                disabled={submitting}
-                onNavigate={navigateToQuestion}
-                onToggleSidebar={() => setNavPanelOpen(false)}
-              />
-            </aside>
-            <PanelResizeDivider
-              onPointerDown={handleNavSplitPointerDown}
-              ariaLabel="Resize questions panel"
-            />
-          </>
-        ) : (
-          <CollapsedPanelRail
-            side="left"
-            label="Questions"
-            meta={`${questionIndex + 1}/${questions.length}`}
-            onClick={() => setNavPanelOpen(true)}
-            ariaLabel="Show questions panel"
-          />
-        )}
-        <div
-          ref={chatRightContainerRef}
-          className="flex min-h-0 flex-1"
-        >
-        <section
-          className="relative flex min-h-0 min-w-0 shrink-0 flex-col"
-          style={
-            rightPanelOpen
-              ? { width: `${splitPercent}%`, minWidth: CHAT_PANEL_MIN_PX }
-              : { flex: 1, minWidth: CHAT_PANEL_MIN_PX }
-          }
-        >
-          <ScrollArea ref={desktopScrollAreaRef} className="flex-1">
-            <div
-              className="mx-auto flex w-full max-w-4xl flex-col gap-5 px-6 pt-8"
-              style={{ paddingBottom: desktopChatPadding }}
-            >
-              {messages.map((message) => (
-                <ChatMessageView
-                  key={message.id}
-                  message={message}
-                  inputMode={mode}
-                  speakingQuestionIndex={speakingQuestionIndex}
-                  registerQuestionAnchor={registerQuestionAnchor}
-                  registerMessageAnchor={registerMessageAnchor}
-                  coachSpeakingActive={coachSpeakingActive}
-                  coachSpeakingTarget={coachSpeakingTarget}
-                  coachFeedbackMessageId={coachFeedbackMessageId}
-                  coachSpeakingPhase={coachSpeakingPhaseForUi}
-                  planTier={planTier}
-                  mediaRetentionDays={mediaRetentionDays}
-                  currentQuestionIndex={questionIndex}
-                  latestFeedbackId={latestFeedback?.id ?? null}
-                  canNextQuestion={canGoNextQuestion}
-                  actionsDisabled={submitting || previewMutation.isLoading}
-                  bookmarkedAttemptIds={bookmarkedAttemptIds}
-                  bookmarkPending={toggleBookmark.isLoading}
-                  onToggleBookmark={handleToggleBookmark}
-                  onNextAction={handleNextAction}
-                />
-              ))}
-              <div ref={scrollEndRef} aria-hidden />
-            </div>
-          </ScrollArea>
-
-          <div
-            ref={desktopOverlayRef}
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-background via-background/95 to-transparent px-6 pb-4 pt-10"
-          >
-            <div className="pointer-events-auto mx-auto w-full max-w-4xl">
-              {showNextMoveBar && latestFeedback?.feedback ? (
-                <NextBestMoveBar
-                  feedback={latestFeedback.feedback}
-                  canNext={canGoNextQuestion}
-                  disabled={submitting || previewMutation.isLoading}
-                  onAction={(action) => handleNextAction(action, latestFeedback)}
-                  onDismiss={() => setNextMoveDismissedId(latestFeedback.id)}
-                  className="mb-2"
-                />
-              ) : null}
-              {drillScript !== null ? (
-                <DrillBanner onDismiss={() => setDrillScript(null)} />
-              ) : null}
-              <div data-tour="practice-composer">
-              <ChatComposer
-                className="border bg-card/95 shadow-lg backdrop-blur-sm"
-                value={draft}
-                onChange={setDraft}
-                onSubmit={submitDraft}
-                onStop={stopGeneration}
-                isGenerating={submitting}
-                disabled={!activePrompt || aiTokensBlocked}
-                controlRef={desktopComposerControl}
-                submitDisabled={
-                  !activePrompt ||
-                  aiTokensBlocked ||
-                  !canGradeAi ||
-                  !draft.trim()
-                }
-                placeholder={
-                  aiTokensBlocked
-                    ? "Add AI tokens to submit answers…"
-                    : !activePrompt
-                      ? "Select a question to continue..."
-                      : awaitingRetry
-                        ? "Revise your answer using the feedback, then send again..."
-                        : mode === "VOICE"
-                          ? "Speak or edit your transcript..."
-                          : "Type your answer..."
-                }
-                questionNav={{
-                  onBeforeNavigate: primeFromUserGesture,
-                  onPrevious: () => navigateToQuestion(questionIndex - 1),
-                  onNext: () => navigateToQuestion(questionIndex + 1),
-                  canPrevious: questionIndex > 0,
-                  canNext: questionIndex < questions.length - 1,
-                  disabled: submitting,
-                }}
-                voice={composerVoice}
-                sessionActions={composerSessionActions}
-                aiTokenBalance={composerAiTokens}
-                aiTokensBlocked={composerAiTokensBlocked}
-              />
-              </div>
-            </div>
-          </div>
-
-          <AlertDialog open={finishDialogOpen} onOpenChange={setFinishDialogOpen}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Finish practice?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Your progress will be saved. You can start another practice session
-                  later.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={isFinishing}>Keep practicing</AlertDialogCancel>
-                <AlertDialogAction
-                  disabled={isFinishing}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    onFinish();
-                  }}
-                >
-                  {isFinishing ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    "Finish practice"
-                  )}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </section>
-
-        {rightPanelOpen ? (
-          <>
-            <PanelResizeDivider
-              onPointerDown={handleSplitPointerDown}
-              ariaLabel="Resize panels"
-            />
-
-            <aside
-              className="flex min-h-0 flex-1 flex-col bg-muted/20"
-              style={{ minWidth: RIGHT_PANEL_MIN_PX }}
+              className="flex max-h-[40vh] min-h-0 shrink-0 flex-col border-t bg-muted/20"
               data-tour="practice-suggested"
             >
               <PrepSuggestedAnswerPanel
@@ -1992,158 +2171,35 @@ export function PracticeSessionChat({
                 onContextSaved={onPrepContextSaved}
                 canUseHint={canHintAi}
                 onPracticeAnswer={handlePracticeAnswer}
-                onToggleRightPanel={() => setRightPanelOpen(false)}
               />
             </aside>
-          </>
-        ) : (
-          <CollapsedPanelRail
-            side="right"
-            label="Suggested"
-            onClick={() => setRightPanelOpen(true)}
-            ariaLabel="Show suggested answer panel"
-          />
-        )}
-        </div>
-      </div>
-
-      <div className="flex min-h-0 flex-1 flex-col lg:hidden">
-        <section className="relative flex min-h-0 flex-1 flex-col">
-          <ScrollArea ref={mobileScrollAreaRef} className="flex-1">
-            <div
-              className="flex flex-col gap-5 px-4 pt-6"
-              style={{ paddingBottom: mobileChatPadding }}
-            >
-              {messages.map((message) => (
-                <ChatMessageView
-                  key={message.id}
-                  message={message}
-                  inputMode={mode}
-                  speakingQuestionIndex={speakingQuestionIndex}
-                  registerQuestionAnchor={registerQuestionAnchor}
-                  registerMessageAnchor={registerMessageAnchor}
-                  coachSpeakingActive={coachSpeakingActive}
-                  coachSpeakingTarget={coachSpeakingTarget}
-                  coachFeedbackMessageId={coachFeedbackMessageId}
-                  coachSpeakingPhase={coachSpeakingPhaseForUi}
-                  planTier={planTier}
-                  mediaRetentionDays={mediaRetentionDays}
-                  currentQuestionIndex={questionIndex}
-                  latestFeedbackId={latestFeedback?.id ?? null}
-                  canNextQuestion={canGoNextQuestion}
-                  actionsDisabled={submitting || previewMutation.isLoading}
-                  bookmarkedAttemptIds={bookmarkedAttemptIds}
-                  bookmarkPending={toggleBookmark.isLoading}
-                  onToggleBookmark={handleToggleBookmark}
-                  onNextAction={handleNextAction}
-                />
-              ))}
-              <div ref={scrollEndRef} aria-hidden />
-            </div>
-          </ScrollArea>
-          <div
-            ref={mobileOverlayRef}
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-background via-background/95 to-transparent px-4 pb-4 pt-8"
-          >
-            <div className="pointer-events-auto">
-              {showNextMoveBar && latestFeedback?.feedback ? (
-                <NextBestMoveBar
-                  feedback={latestFeedback.feedback}
-                  canNext={canGoNextQuestion}
-                  disabled={submitting || previewMutation.isLoading}
-                  onAction={(action) => handleNextAction(action, latestFeedback)}
-                  onDismiss={() => setNextMoveDismissedId(latestFeedback.id)}
-                  className="mb-2"
-                />
-              ) : null}
-              {drillScript !== null ? (
-                <DrillBanner onDismiss={() => setDrillScript(null)} />
-              ) : null}
-              <ChatComposer
-                className="border bg-card/95 shadow-lg backdrop-blur-sm"
-                value={draft}
-                onChange={setDraft}
-                onSubmit={submitDraft}
-                onStop={stopGeneration}
-                isGenerating={submitting}
-                disabled={!activePrompt || aiTokensBlocked}
-                controlRef={mobileComposerControl}
-                submitDisabled={
-                  !activePrompt ||
-                  aiTokensBlocked ||
-                  !canGradeAi ||
-                  !draft.trim()
-                }
-                placeholder={
-                  aiTokensBlocked
-                    ? "Add AI tokens to submit answers…"
-                    : !activePrompt
-                      ? "Select a question to continue..."
-                      : awaitingRetry
-                        ? "Revise your answer using the feedback, then send again..."
-                        : mode === "VOICE"
-                          ? "Speak or edit your transcript..."
-                          : "Type your answer..."
-                }
-                questionNav={{
-                  onBeforeNavigate: primeFromUserGesture,
-                  onPrevious: () => navigateToQuestion(questionIndex - 1),
-                  onNext: () => navigateToQuestion(questionIndex + 1),
-                  canPrevious: questionIndex > 0,
-                  canNext: questionIndex < questions.length - 1,
-                  disabled: submitting,
-                }}
-                voice={composerVoice}
-                sessionActions={composerSessionActions}
-                aiTokenBalance={composerAiTokens}
-                aiTokensBlocked={composerAiTokensBlocked}
-              />
-            </div>
           </div>
-        </section>
-        <aside
-          className="flex max-h-[40vh] min-h-0 shrink-0 flex-col border-t bg-muted/20"
-          data-tour="practice-suggested"
-        >
-          <PrepSuggestedAnswerPanel
-            interviewId={interviewId}
-            interviewTitle={interviewTitle}
-            questionId={currentQuestion?.id ?? null}
-            questionText={currentQuestion?.text ?? null}
-            questionType={currentQuestion?.type ?? null}
-            hasContext={hasContext}
-            prepContext={prepContext}
-            onContextSaved={onPrepContextSaved}
-            canUseHint={canHintAi}
-            onPracticeAnswer={handlePracticeAnswer}
+
+          <SampleAnswerDialog
+            open={sampleDialog.open}
+            onOpenChange={(open) =>
+              setSampleDialog((prev) => ({ ...prev, open }))
+            }
+            sampleAnswer={sampleDialog.sampleAnswer}
+            questionText={sampleDialog.questionText}
           />
-        </aside>
-      </div>
 
-      <SampleAnswerDialog
-        open={sampleDialog.open}
-        onOpenChange={(open) =>
-          setSampleDialog((prev) => ({ ...prev, open }))
-        }
-        sampleAnswer={sampleDialog.sampleAnswer}
-        questionText={sampleDialog.questionText}
-      />
-
-      <PrepContextDrawer
-        interviewId={interviewId}
-        open={proofDrawerOpen}
-        onOpenChange={setProofDrawerOpen}
-        fallbackInitial={prepContext}
-        onContextSaved={onPrepContextSaved}
-      />
-    </div>
-    <PracticeTourOverlay />
-    </TooltipProvider>
+          <PrepContextDrawer
+            interviewId={interviewId}
+            open={proofDrawerOpen}
+            onOpenChange={setProofDrawerOpen}
+            fallbackInitial={prepContext}
+            onContextSaved={onPrepContextSaved}
+          />
+        </div>
+        <PracticeTourOverlay />
+      </TooltipProvider>
     </PracticeTourProvider>
   );
 }
 
 function DrillBanner({ onDismiss }: { onDismiss: () => void }) {
+  const ui = useUiTranslation();
   return (
     <div className="mb-2 flex items-center gap-2 rounded-xl border border-violet-300/60 bg-violet-50/95 px-3 py-2 text-xs shadow-sm backdrop-blur-sm dark:border-violet-900/50 dark:bg-violet-950/60">
       <Mic
@@ -2151,8 +2207,10 @@ function DrillBanner({ onDismiss }: { onDismiss: () => void }) {
         aria-hidden
       />
       <p className="min-w-0 flex-1 leading-relaxed">
-        <span className="font-semibold">Speaking drill:</span> deliver the
-        suggested answer aloud in your own words, then send it for feedback.
+        <span className="font-semibold">{ui("Speaking drill:")}</span>
+        {ui(
+          "deliver the suggested answer aloud in your own words, then send it for feedback.",
+        )}
       </p>
       <Button
         type="button"
@@ -2160,7 +2218,7 @@ function DrillBanner({ onDismiss }: { onDismiss: () => void }) {
         size="icon"
         className="h-6 w-6 shrink-0 text-muted-foreground"
         onClick={onDismiss}
-        aria-label="Dismiss speaking drill"
+        aria-label={ui("Dismiss speaking drill")}
       >
         <X className="h-3.5 w-3.5" />
       </Button>
@@ -2179,6 +2237,7 @@ function PrepAnswerAudioPlayer({
   audioCreatedAt?: string;
   planTier: PlanTier;
 }) {
+  const ui = useUiTranslation();
   const retention = audioCreatedAt
     ? computeMediaRetention(audioCreatedAt, planTier, true)
     : null;
@@ -2216,7 +2275,9 @@ function PrepAnswerAudioPlayer({
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-[240px] text-xs">
-                  Audio will be auto-deleted in {retention.daysRemaining} days.
+                  {ui("Audio will be auto-deleted in")}
+                  {retention.daysRemaining}
+                  {ui("days.")}
                 </TooltipContent>
               </Tooltip>
             ) : null}
@@ -2252,7 +2313,10 @@ function ChatMessageView({
   inputMode?: Mode;
   speakingQuestionIndex?: number | null;
   registerQuestionAnchor?: (index: number, node: HTMLDivElement | null) => void;
-  registerMessageAnchor?: (messageId: string, node: HTMLDivElement | null) => void;
+  registerMessageAnchor?: (
+    messageId: string,
+    node: HTMLDivElement | null,
+  ) => void;
   coachSpeakingActive?: boolean;
   coachSpeakingTarget?: "question" | "feedback" | null;
   coachFeedbackMessageId?: string | null;
@@ -2271,6 +2335,7 @@ function ChatMessageView({
     message: Extract<ChatMessage, { kind: "feedback" }>,
   ) => void;
 }) {
+  const ui = useUiTranslation();
   if (message.role === "system") {
     return (
       <div className="mx-auto rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
@@ -2304,9 +2369,7 @@ function ChatMessageView({
       className={cn(
         "text-sm transition-shadow",
         questionCoachActive && "px-4 py-3 text-card-foreground",
-        !messageGlowActive &&
-          !isWideCard &&
-          "max-w-[92%] rounded-lg px-4 py-3",
+        !messageGlowActive && !isWideCard && "max-w-[92%] rounded-lg px-4 py-3",
         !messageGlowActive &&
           !isWideCard &&
           isUser &&
@@ -2321,118 +2384,119 @@ function ChatMessageView({
           "w-full rounded-lg px-4 py-3 text-card-foreground",
       )}
     >
-        {message.kind === "intro" ? (
-          <p className="leading-relaxed">{message.content}</p>
-        ) : null}
-        {message.kind === "question" ? (
-          <QuestionBubble
-            content={message.content}
-            questionIndex={message.questionIndex}
-            questionType={message.questionType}
-            questionOptions={message.questionOptions}
-            showCoachWave={showQuestionWave}
-            coachSpeakingPhase={coachSpeakingPhase}
-            isCurrent={
-              currentQuestionIndex !== null &&
-              message.questionIndex === currentQuestionIndex
-            }
-          />
-        ) : null}
-        {message.kind === "followup" ? (
-          <FollowUpBubble content={message.content} />
-        ) : null}
-        {message.kind === "error" ? (
-          <p className="leading-relaxed text-destructive">{message.content}</p>
-        ) : null}
-        {message.kind === "answer" ? (
-          <div>
-            <div className="mb-1 flex items-center gap-1.5 text-xs opacity-80">
-              {message.mode === "VOICE" ? (
-                <Mic className="h-3 w-3" />
-              ) : (
-                <MessageSquareText className="h-3 w-3" />
-              )}
-              Your answer
-            </div>
-            <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
-            {message.audioUrl ? (
-              <PrepAnswerAudioPlayer
-                audioUrl={message.audioUrl}
-                audioDurationMs={message.audioDurationMs}
-                audioCreatedAt={message.audioCreatedAt}
-                planTier={planTier}
-              />
-            ) : message.mode === "VOICE" &&
-              message.audioCreatedAt &&
-              computeMediaRetention(
-                message.audioCreatedAt,
-                planTier,
-                true,
-              ).expired ? (
-              <p className="mt-2 text-xs opacity-80">
-                Audio recording removed after {mediaRetentionDays} days.
-              </p>
-            ) : null}
+      {message.kind === "intro" ? (
+        <p className="leading-relaxed">{message.content}</p>
+      ) : null}
+      {message.kind === "question" ? (
+        <QuestionBubble
+          content={message.content}
+          questionIndex={message.questionIndex}
+          questionType={message.questionType}
+          questionOptions={message.questionOptions}
+          showCoachWave={showQuestionWave}
+          coachSpeakingPhase={coachSpeakingPhase}
+          isCurrent={
+            currentQuestionIndex !== null &&
+            message.questionIndex === currentQuestionIndex
+          }
+        />
+      ) : null}
+      {message.kind === "followup" ? (
+        <FollowUpBubble content={message.content} />
+      ) : null}
+      {message.kind === "error" ? (
+        <p className="leading-relaxed text-destructive">{message.content}</p>
+      ) : null}
+      {message.kind === "answer" ? (
+        <div>
+          <div className="mb-1 flex items-center gap-1.5 text-xs opacity-80">
+            {message.mode === "VOICE" ? (
+              <Mic className="h-3 w-3" />
+            ) : (
+              <MessageSquareText className="h-3 w-3" />
+            )}
+            {ui("Your answer")}
           </div>
-        ) : null}
-        {message.kind === "feedback" ? (
-          message.feedback && hasPartialFeedbackHeader(message.feedback) ? (
-            <div className="space-y-2.5">
-              <FeedbackCard
+          <p className="whitespace-pre-wrap leading-relaxed">
+            {message.content}
+          </p>
+          {message.audioUrl ? (
+            <PrepAnswerAudioPlayer
+              audioUrl={message.audioUrl}
+              audioDurationMs={message.audioDurationMs}
+              audioCreatedAt={message.audioCreatedAt}
+              planTier={planTier}
+            />
+          ) : message.mode === "VOICE" &&
+            message.audioCreatedAt &&
+            computeMediaRetention(message.audioCreatedAt, planTier, true)
+              .expired ? (
+            <p className="mt-2 text-xs opacity-80">
+              {ui("Audio recording removed after")}
+              {mediaRetentionDays}
+              {ui("days.")}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+      {message.kind === "feedback" ? (
+        message.feedback && hasPartialFeedbackHeader(message.feedback) ? (
+          <div className="space-y-2.5">
+            <FeedbackCard
+              feedback={normalizeFeedback(message.feedback)}
+              partial={message.feedbackPartial}
+              coachSpeaking={feedbackCoachActive}
+              coachSpeakingPhase={coachSpeakingPhase}
+              bookmarked={
+                message.attemptId
+                  ? (bookmarkedAttemptIds?.has(message.attemptId) ?? false)
+                  : false
+              }
+              bookmarkPending={bookmarkPending}
+              onToggleBookmark={
+                message.attemptId && onToggleBookmark
+                  ? () => onToggleBookmark(message.attemptId!)
+                  : undefined
+              }
+            />
+            {message.feedbackPartial === false &&
+            message.id === latestFeedbackId &&
+            onNextAction ? (
+              <NextActionStrip
                 feedback={normalizeFeedback(message.feedback)}
-                partial={message.feedbackPartial}
-                coachSpeaking={feedbackCoachActive}
-                coachSpeakingPhase={coachSpeakingPhase}
+                canNext={canNextQuestion}
+                disabled={actionsDisabled}
+                attemptId={message.attemptId}
                 bookmarked={
                   message.attemptId
-                    ? bookmarkedAttemptIds?.has(message.attemptId) ?? false
+                    ? (bookmarkedAttemptIds?.has(message.attemptId) ?? false)
                     : false
                 }
-                bookmarkPending={bookmarkPending}
-                onToggleBookmark={
-                  message.attemptId && onToggleBookmark
-                    ? () => onToggleBookmark(message.attemptId!)
-                    : undefined
-                }
+                onAction={(action) => onNextAction(action, message)}
               />
-              {message.feedbackPartial === false &&
-              message.id === latestFeedbackId &&
-              onNextAction ? (
-                <NextActionStrip
-                  feedback={normalizeFeedback(message.feedback)}
-                  canNext={canNextQuestion}
-                  disabled={actionsDisabled}
-                  attemptId={message.attemptId}
-                  bookmarked={
-                    message.attemptId
-                      ? (bookmarkedAttemptIds?.has(message.attemptId) ?? false)
-                      : false
-                  }
-                  onAction={(action) => onNextAction(action, message)}
-                />
-              ) : null}
-            </div>
-          ) : (
-            <StreamingFeedback
-              phase={message.phase}
-              thinkingText={message.thinkingText}
-              streamingText={message.streamingText}
-              inputMode={inputMode}
-            />
-          )
-        ) : null}
-        {message.kind === "refinement" ? (
-          message.refinement ? (
-            <RefinementCard refinement={message.refinement} />
-          ) : (
-            <StreamingFeedback
-              phase={message.phase}
-              thinkingText={message.thinkingText}
-              streamingText={message.streamingText}
-              inputMode={inputMode}
-            />
-          )
-        ) : null}
+            ) : null}
+          </div>
+        ) : (
+          <StreamingFeedback
+            phase={message.phase}
+            thinkingText={message.thinkingText}
+            streamingText={message.streamingText}
+            inputMode={inputMode}
+          />
+        )
+      ) : null}
+      {message.kind === "refinement" ? (
+        message.refinement ? (
+          <RefinementCard refinement={message.refinement} />
+        ) : (
+          <StreamingFeedback
+            phase={message.phase}
+            thinkingText={message.thinkingText}
+            streamingText={message.streamingText}
+            inputMode={inputMode}
+          />
+        )
+      ) : null}
     </div>
   );
 
@@ -2445,7 +2509,10 @@ function ChatMessageView({
     <div
       ref={(node) => {
         registerMessageAnchor?.(message.id, node);
-        if (message.kind === "question" && message.questionIndex !== undefined) {
+        if (
+          message.kind === "question" &&
+          message.questionIndex !== undefined
+        ) {
           registerQuestionAnchor?.(message.questionIndex, node);
         }
       }}
@@ -2460,9 +2527,7 @@ function ChatMessageView({
       {messageGlowActive ? (
         <AiGlowBorder
           active
-          className={cn(
-            isWideCard ? "w-full max-w-none" : "w-fit max-w-[92%]",
-          )}
+          className={cn(isWideCard ? "w-full max-w-none" : "w-fit max-w-[92%]")}
           roundedClassName={isWideCard ? "rounded-xl" : "rounded-lg"}
           innerClassName={cn(
             isWideCard ? "w-full overflow-hidden" : "w-full min-w-0",
@@ -2494,6 +2559,7 @@ function QuestionBubble({
   coachSpeakingPhase?: CoachSpeakingPhase;
   isCurrent?: boolean;
 }) {
+  const ui = useUiTranslation();
   const isChoiceQuestion =
     questionType === "SINGLE_CHOICE" || questionType === "MULTIPLE_CHOICE";
   const choiceInstruction =
@@ -2503,7 +2569,10 @@ function QuestionBubble({
     <div className="space-y-3">
       <div className="flex min-h-10 items-center gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">Question {(questionIndex ?? 0) + 1}</Badge>
+          <Badge variant="secondary">
+            {ui("Question")}
+            {(questionIndex ?? 0) + 1}
+          </Badge>
           <Badge variant="outline">{questionType}</Badge>
         </div>
         <div className="ml-auto flex h-10 w-[152px] shrink-0 items-center justify-end">
@@ -2543,11 +2612,12 @@ function QuestionBubble({
 }
 
 function FollowUpBubble({ content }: { content: string }) {
+  const ui = useUiTranslation();
   return (
     <div className="space-y-2">
       <div className="inline-flex items-center gap-2 text-sm font-medium text-primary">
         <Sparkles className="h-4 w-4" />
-        Coaching follow-up
+        {ui("Coaching follow-up")}
       </div>
       <p className="text-base font-medium leading-relaxed">{content}</p>
     </div>
@@ -2565,7 +2635,9 @@ function FeedbackCardShell({
     <div
       className={cn(
         "relative w-full overflow-hidden rounded-xl shadow-sm",
-        coachSpeaking ? "ai-border-spin p-[1.5px]" : "border border-border bg-card",
+        coachSpeaking
+          ? "ai-border-spin p-[1.5px]"
+          : "border border-border bg-card",
       )}
     >
       <div className="relative z-[1] min-w-0 overflow-hidden rounded-[10px] bg-card">
@@ -2586,6 +2658,7 @@ function StreamingFeedback({
   streamingText?: string;
   inputMode?: Mode;
 }) {
+  const ui = useUiTranslation();
   const [gradingStep, setGradingStep] = useState(0);
 
   useEffect(() => {
@@ -2632,8 +2705,8 @@ function StreamingFeedback({
             </div>
             <p className="text-xs leading-relaxed text-muted-foreground">
               {inputMode === "VOICE"
-                ? "Reviewing your recording and transcript before scoring."
-                : "Reviewing your answer before scoring."}
+                ? ui("Reviewing your recording and transcript before scoring.")
+                : ui("Reviewing your answer before scoring.")}
             </p>
           </div>
         </div>
@@ -2698,6 +2771,7 @@ function FeedbackCard({
   bookmarkPending?: boolean;
   onToggleBookmark?: () => void;
 }) {
+  const ui = useUiTranslation();
   const showDetails = !partial || hasFeedbackDetails(feedback);
   const showPartialDetailsLoading = partial && !hasFeedbackDetails(feedback);
 
@@ -2705,7 +2779,11 @@ function FeedbackCard({
     <FeedbackCardShell coachSpeaking={coachSpeaking}>
       <div className="relative border-b bg-gradient-to-br from-primary/10 via-background to-muted/20 px-5 py-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-          {partial ? <ScoreRingSkeleton /> : <ScoreRing score={feedback.score} />}
+          {partial ? (
+            <ScoreRingSkeleton />
+          ) : (
+            <ScoreRing score={feedback.score} />
+          )}
           <div className="min-w-0 flex-1 space-y-2">
             <div className="flex min-h-10 flex-wrap items-center gap-x-3 gap-y-2">
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
@@ -2714,7 +2792,7 @@ function FeedbackCard({
                 </h3>
                 <Badge variant="secondary" className="shrink-0 gap-1">
                   <CheckCircle2 className="h-3 w-3" />
-                  Coach feedback
+                  {ui("Coach feedback")}
                 </Badge>
                 {onToggleBookmark ? (
                   <Tooltip>
@@ -2733,8 +2811,8 @@ function FeedbackCard({
                         onClick={onToggleBookmark}
                         aria-label={
                           bookmarked
-                            ? "Remove from answer bank"
-                            : "Save to answer bank"
+                            ? ui("Remove from answer bank")
+                            : ui("Save to answer bank")
                         }
                         aria-pressed={bookmarked}
                       >
@@ -2747,8 +2825,8 @@ function FeedbackCard({
                     </TooltipTrigger>
                     <TooltipContent side="top" className="text-xs">
                       {bookmarked
-                        ? "Remove from answer bank"
-                        : "Save to answer bank"}
+                        ? ui("Remove from answer bank")
+                        : ui("Save to answer bank")}
                     </TooltipContent>
                   </Tooltip>
                 ) : null}
@@ -2766,7 +2844,7 @@ function FeedbackCard({
             {showPartialDetailsLoading ? (
               <div className="flex items-center gap-2 border-t border-primary/10 pt-3 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
-                Building detailed coaching…
+                {ui("Building detailed coaching…")}
               </div>
             ) : null}
           </div>
@@ -2774,72 +2852,77 @@ function FeedbackCard({
       </div>
 
       {showDetails ? (
-      <div className="space-y-4 p-5">
-        <div className="grid gap-3 md:grid-cols-2">
-          <SignalCard
-            title="What worked"
-            items={feedback.strengths}
-            tone="positive"
-            icon={CheckCircle2}
-          />
-          <SignalCard
-            title="Improve next"
-            items={feedback.improvements}
-            tone="action"
-            icon={TrendingUp}
-          />
-          <SignalCard
-            title="Missing signals"
-            items={feedback.missingSignals}
-            tone="neutral"
-            icon={Target}
-          />
-          <SignalCard
-            title="Resume leverage"
-            items={feedback.resumeLeverage}
-            tone="neutral"
-            icon={Sparkles}
-          />
-        </div>
+        <div className="space-y-4 p-5">
+          <div className="grid gap-3 md:grid-cols-2">
+            <SignalCard
+              title={ui("What worked")}
+              items={feedback.strengths}
+              tone="positive"
+              icon={CheckCircle2}
+            />
+            <SignalCard
+              title={ui("Improve next")}
+              items={feedback.improvements}
+              tone="action"
+              icon={TrendingUp}
+            />
+            <SignalCard
+              title={ui("Missing signals")}
+              items={feedback.missingSignals}
+              tone="neutral"
+              icon={Target}
+            />
+            <SignalCard
+              title={ui("Resume leverage")}
+              items={feedback.resumeLeverage}
+              tone="neutral"
+              icon={Sparkles}
+            />
+          </div>
 
-        {feedback.voiceDelivery ? (
-          <VoiceDeliveryPanel delivery={feedback.voiceDelivery} />
-        ) : null}
+          {feedback.voiceDelivery ? (
+            <VoiceDeliveryPanel delivery={feedback.voiceDelivery} />
+          ) : null}
 
-        {feedback.structureSuggestion ? (
-          <div className="rounded-lg border bg-muted/25 p-4">
-            <div className="flex items-center gap-2 text-sm font-semibold">
-              <Target className="h-4 w-4 text-primary" />
-              Structure to try
+          {feedback.structureSuggestion ? (
+            <div className="rounded-lg border bg-muted/25 p-4">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Target className="h-4 w-4 text-primary" />
+                {ui("Structure to try")}
+              </div>
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+                {feedback.structureSuggestion}
+              </p>
             </div>
-            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-              {feedback.structureSuggestion}
-            </p>
-          </div>
-        ) : null}
+          ) : null}
 
-        {feedback.needsUserVerification.length > 0 ? (
-          <div className="rounded-lg border border-amber-200/80 bg-amber-50/90 p-4 text-sm text-amber-950 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-100">
-            <p className="font-medium">Verify before using</p>
-            <ul className="mt-2 list-disc space-y-1 pl-5">
-              {feedback.needsUserVerification.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-      </div>
+          {feedback.needsUserVerification.length > 0 ? (
+            <div className="rounded-lg border border-amber-200/80 bg-amber-50/90 p-4 text-sm text-amber-950 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-100">
+              <p className="font-medium">{ui("Verify before using")}</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                {feedback.needsUserVerification.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </div>
       ) : null}
     </FeedbackCardShell>
   );
 }
 
 function ScoreRingSkeleton() {
+  const ui = useUiTranslation();
   const sizeClass = "h-[4.5rem] w-[4.5rem] rounded-2xl";
   const insetClass = "inset-[5px] rounded-[calc(1rem-5px)]";
 
   return (
-    <div className={cn("relative shrink-0", sizeClass)} role="status" aria-label="Calculating score">
+    <div
+      className={cn("relative shrink-0", sizeClass)}
+      role="status"
+      aria-label={ui("Calculating score")}
+    >
       <div
         className={cn("absolute inset-0", sizeClass)}
         style={{
@@ -2900,24 +2983,40 @@ function VoiceDeliveryPanel({
 }: {
   delivery: NonNullable<PrepFeedback["voiceDelivery"]>;
 }) {
+  const ui = useUiTranslation();
   const metrics = [
-    { label: "Confidence", value: delivery.confidence, hint: "Volume & steadiness" },
-    { label: "Clarity", value: delivery.clarity, hint: "Pace & articulation" },
-    { label: "Tone", value: delivery.tone, hint: "Energy & variation" },
+    {
+      label: ui("Confidence"),
+      value: delivery.confidence,
+      hint: "Volume & steadiness",
+    },
+    {
+      label: ui("Clarity"),
+      value: delivery.clarity,
+      hint: "Pace & articulation",
+    },
+    { label: ui("Tone"), value: delivery.tone, hint: "Energy & variation" },
   ] as const;
 
   return (
     <div className="rounded-lg border border-violet-200/60 bg-gradient-to-br from-violet-50/80 to-background p-4 dark:border-violet-900/40 dark:from-violet-950/25">
       <div className="flex items-center gap-2 text-sm font-semibold">
         <Waves className="h-4 w-4 text-violet-600 dark:text-violet-400" />
-        Voice delivery
+        {ui("Voice delivery")}
       </div>
       <div className="mt-4 grid gap-4 sm:grid-cols-3">
         {metrics.map(({ label, value, hint }) => (
           <div key={label} className="space-y-2">
             <div className="flex items-baseline justify-between gap-2">
-              <span className="text-xs font-medium text-muted-foreground">{label}</span>
-              <span className={cn("text-sm font-bold tabular-nums", scoreTone(value))}>
+              <span className="text-xs font-medium text-muted-foreground">
+                {label}
+              </span>
+              <span
+                className={cn(
+                  "text-sm font-bold tabular-nums",
+                  scoreTone(value),
+                )}
+              >
                 {value}/10
               </span>
             </div>
@@ -2971,6 +3070,7 @@ function SignalCard({
   tone: "positive" | "action" | "neutral";
   icon: typeof CheckCircle2;
 }) {
+  const ui = useUiTranslation();
   const styles = {
     positive:
       "border-emerald-200/70 bg-emerald-50/50 dark:border-emerald-900/40 dark:bg-emerald-950/20",
@@ -3002,7 +3102,9 @@ function SignalCard({
           ))}
         </ul>
       ) : (
-        <p className="mt-2 text-sm text-muted-foreground">No items yet.</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {ui("No items yet.")}
+        </p>
       )}
     </div>
   );
@@ -3010,10 +3112,14 @@ function SignalCard({
 
 function SignalList({ title, items }: { title: string; items: string[] }) {
   return (
-    <SignalCard title={title} items={items} tone="neutral" icon={CheckCircle2} />
+    <SignalCard
+      title={title}
+      items={items}
+      tone="neutral"
+      icon={CheckCircle2}
+    />
   );
 }
-
 
 function RefinementCard({
   refinement,
@@ -3024,6 +3130,7 @@ function RefinementCard({
     stillMissing: string[];
   };
 }) {
+  const ui = useUiTranslation();
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 text-base font-semibold">
@@ -3031,8 +3138,11 @@ function RefinementCard({
         {refinement.verdict}
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        <SignalList title="Still strong" items={refinement.stillStrong} />
-        <SignalList title="Still missing" items={refinement.stillMissing} />
+        <SignalList title={ui("Still strong")} items={refinement.stillStrong} />
+        <SignalList
+          title={ui("Still missing")}
+          items={refinement.stillMissing}
+        />
       </div>
     </div>
   );

@@ -13,7 +13,13 @@ const inter = Inter({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-body",
-  fallback: ["system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+  fallback: [
+    "system-ui",
+    "-apple-system",
+    "BlinkMacSystemFont",
+    "Segoe UI",
+    "sans-serif",
+  ],
 });
 
 const spaceGrotesk = Space_Grotesk({
@@ -81,7 +87,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${spaceGrotesk.variable}`}>
+    <html
+      lang="zh-CN"
+      suppressHydrationWarning
+      className={`${inter.variable} ${spaceGrotesk.variable}`}
+    >
       <body className={inter.className}>
         <Providers>
           {children}

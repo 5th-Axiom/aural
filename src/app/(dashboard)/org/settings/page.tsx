@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { useAppLocale } from "@/components/app-locale-provider";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -30,6 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
 export default function OrgSettingsGeneralPage() {
+  const ui = useUiTranslation();
   const router = useRouter();
   const { toast } = useToast();
   const { locale } = useAppLocale();
@@ -71,7 +74,7 @@ export default function OrgSettingsGeneralPage() {
   if (!currentOrg) {
     return (
       <div className="flex items-center justify-center py-20 text-muted-foreground">
-        {isZh ? "尚未选择组织" : "No organization selected"}
+        {isZh ? "尚未选择组织" : ui("No organization selected")}
       </div>
     );
   }
@@ -82,15 +85,19 @@ export default function OrgSettingsGeneralPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold">{isZh ? "通用" : "General"}</h2>
+        <h2 className="text-xl font-semibold">
+          {isZh ? "通用" : ui("General")}
+        </h2>
         <p className="text-sm text-muted-foreground">
-          {isZh ? "管理你的组织设置。" : "Manage your organization settings."}
+          {isZh
+            ? "管理你的组织设置。"
+            : ui("Manage your organization settings.")}
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>{isZh ? "组织名称" : "Organization Name"}</CardTitle>
+          <CardTitle>{isZh ? "组织名称" : ui("Organization Name")}</CardTitle>
           <CardDescription>
             {isZh
               ? `你当前的组织名称是“${currentOrg.name}”。`
@@ -99,7 +106,7 @@ export default function OrgSettingsGeneralPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="orgName">{isZh ? "名称" : "Name"}</Label>
+            <Label htmlFor="orgName">{isZh ? "名称" : ui("Name")}</Label>
             <Input
               id="orgName"
               value={name}
@@ -118,7 +125,7 @@ export default function OrgSettingsGeneralPage() {
             {updateMutation.isPending && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
-            {isZh ? "保存" : "Save"}
+            {isZh ? "保存" : ui("Save")}
           </Button>
         </CardContent>
       </Card>
@@ -127,19 +134,19 @@ export default function OrgSettingsGeneralPage() {
         <Card className="border-destructive">
           <CardHeader>
             <CardTitle className="text-destructive">
-              {isZh ? "危险区域" : "Danger Zone"}
+              {isZh ? "危险区域" : ui("Danger Zone")}
             </CardTitle>
             <CardDescription>
               {isZh
                 ? "永久删除此组织及其所有数据。"
-                : "Permanently delete this organization and all its data."}
+                : ui("Permanently delete this organization and all its data.")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive">
-                  {isZh ? "删除组织" : "Delete Organization"}
+                  {isZh ? "删除组织" : ui("Delete Organization")}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -152,12 +159,14 @@ export default function OrgSettingsGeneralPage() {
                   <AlertDialogDescription>
                     {isZh
                       ? "此操作无法撤销。所有项目、面试、会话和成员数据都将被永久删除。"
-                      : "This action is irreversible. All projects, interviews, sessions, and member data will be permanently deleted."}
+                      : ui(
+                          "This action is irreversible. All projects, interviews, sessions, and member data will be permanently deleted.",
+                        )}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>
-                    {isZh ? "取消" : "Cancel"}
+                    {isZh ? "取消" : ui("Cancel")}
                   </AlertDialogCancel>
                   <AlertDialogAction
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -166,7 +175,7 @@ export default function OrgSettingsGeneralPage() {
                     {deleteMutation.isPending && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    {isZh ? "永久删除" : "Delete permanently"}
+                    {isZh ? "永久删除" : ui("Delete permanently")}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

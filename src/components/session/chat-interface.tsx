@@ -1,44 +1,46 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { CodeBlock } from "@/components/code-editor/code-block";
 import {
-    CodeEditorCanvas,
-    type CodeEditorCanvasRef,
+  CodeEditorCanvas,
+  type CodeEditorCanvasRef,
 } from "@/components/code-editor/code-editor-canvas";
 import { IntervieweeHelpPopover } from "@/components/session/interviewee-help-popover";
 import type { SessionEndReasonInput } from "@/components/session/session-ended-screen";
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ChatComposer } from "@/components/ui/chat-composer";
 import { Progress } from "@/components/ui/progress";
 import {
-    WhiteboardCanvas,
-    type WhiteboardCanvasRef,
+  WhiteboardCanvas,
+  type WhiteboardCanvasRef,
 } from "@/components/whiteboard/whiteboard-canvas";
 import {
-    useChunkLoadRecovery,
-    useSessionToolChunkPrefetch,
+  useChunkLoadRecovery,
+  useSessionToolChunkPrefetch,
 } from "@/hooks/use-chunk-load-recovery";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { cn } from "@/lib/utils";
 import {
-    Check,
-    Clock,
-    Code2,
-    FileText,
-    Loader2,
-    MessageCircle,
-    Plus,
-    Save,
-    X
+  Check,
+  Clock,
+  Code2,
+  FileText,
+  Loader2,
+  MessageCircle,
+  Plus,
+  Save,
+  X,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -68,8 +70,7 @@ const aiGreetingRequested = new Set<string>();
 
 const CHAT_PREVIOUS_TRANSITION =
   "[I'd like to go back to the previous question and add more to my answer.]";
-const CHAT_NEXT_TRANSITION =
-  "[I'd like to move on to the next question.]";
+const CHAT_NEXT_TRANSITION = "[I'd like to move on to the next question.]";
 
 export function ChatInterface({
   sessionId,
@@ -89,6 +90,7 @@ export function ChatInterface({
   /** Render in static preview mode — shows full layout without API calls */
   preview?: boolean;
 }) {
+  const ui = useUiTranslation();
   useChunkLoadRecovery();
   useSessionToolChunkPrefetch(!preview);
 
@@ -101,7 +103,9 @@ export function ChatInterface({
   const [sending, setSending] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [aiTyping, setAiTyping] = useState(false);
-  const [currentQuestion, setCurrentQuestion] = useState(initialQuestionIndex ?? 0);
+  const [currentQuestion, setCurrentQuestion] = useState(
+    initialQuestionIndex ?? 0,
+  );
   const [whiteboardOpen, setWhiteboardOpen] = useState(false);
   const [codeEditorOpen, setCodeEditorOpen] = useState(false);
   const [finishDialogOpen, setFinishDialogOpen] = useState(false);
@@ -157,7 +161,7 @@ export function ChatInterface({
     snapshotData: string | null;
   }
   const [drawings, setDrawings] = useState<Drawing[]>([
-    { id: crypto.randomUUID(), label: "Drawing 1", snapshotData: null },
+    { id: crypto.randomUUID(), label: ui("Drawing 1"), snapshotData: null },
   ]);
   const [activeDrawingIdx, setActiveDrawingIdx] = useState(0);
 
@@ -168,7 +172,7 @@ export function ChatInterface({
     snapshotData: string | null;
   }
   const [codeSnippets, setCodeSnippets] = useState<CodeSnippet[]>([
-    { id: crypto.randomUUID(), label: "Snippet 1", snapshotData: null },
+    { id: crypto.randomUUID(), label: ui("Snippet 1"), snapshotData: null },
   ]);
   const [activeSnippetIdx, setActiveSnippetIdx] = useState(0);
 
@@ -209,16 +213,20 @@ export function ChatInterface({
               snapshotData,
             },
           };
-          const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+          const blob = new Blob([JSON.stringify(payload)], {
+            type: "application/json",
+          });
           navigator.sendBeacon("/api/trpc/session.saveWhiteboard", blob);
         }
       }
 
       // Save active code snippet
-      const activeSnippet = codeSnippetsRef.current[activeSnippetIdxRef.current];
+      const activeSnippet =
+        codeSnippetsRef.current[activeSnippetIdxRef.current];
       if (activeSnippet) {
         const ce = codeEditorRef.current;
-        const codeSnapshot = ce?.getSnapshotData() ?? activeSnippet.snapshotData;
+        const codeSnapshot =
+          ce?.getSnapshotData() ?? activeSnippet.snapshotData;
         if (codeSnapshot) {
           const payload = {
             json: {
@@ -228,7 +236,9 @@ export function ChatInterface({
               snapshotData: codeSnapshot,
             },
           };
-          const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+          const blob = new Blob([JSON.stringify(payload)], {
+            type: "application/json",
+          });
           navigator.sendBeacon("/api/trpc/session.saveCode", blob);
         }
       }
@@ -288,26 +298,30 @@ export function ChatInterface({
     document.addEventListener("pointerup", onMouseUp);
   }, []);
 
-  const handleProblemChatSplitMouseDown = useCallback((e: React.PointerEvent) => {
-    e.preventDefault();
-    const target = e.currentTarget as HTMLElement;
-    target.setPointerCapture?.(e.pointerId);
-    problemChatDragging.current = true;
-    const onMouseMove = (ev: PointerEvent) => {
-      if (!problemChatDragging.current || !problemChatContainerRef.current) return;
-      const rect = problemChatContainerRef.current.getBoundingClientRect();
-      const pct = ((ev.clientY - rect.top) / rect.height) * 100;
-      setProblemChatSplitPercent(Math.min(Math.max(pct, 22), 78));
-    };
-    const onMouseUp = () => {
-      problemChatDragging.current = false;
-      target.releasePointerCapture?.(e.pointerId);
-      document.removeEventListener("pointermove", onMouseMove);
-      document.removeEventListener("pointerup", onMouseUp);
-    };
-    document.addEventListener("pointermove", onMouseMove);
-    document.addEventListener("pointerup", onMouseUp);
-  }, []);
+  const handleProblemChatSplitMouseDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      const target = e.currentTarget as HTMLElement;
+      target.setPointerCapture?.(e.pointerId);
+      problemChatDragging.current = true;
+      const onMouseMove = (ev: PointerEvent) => {
+        if (!problemChatDragging.current || !problemChatContainerRef.current)
+          return;
+        const rect = problemChatContainerRef.current.getBoundingClientRect();
+        const pct = ((ev.clientY - rect.top) / rect.height) * 100;
+        setProblemChatSplitPercent(Math.min(Math.max(pct, 22), 78));
+      };
+      const onMouseUp = () => {
+        problemChatDragging.current = false;
+        target.releasePointerCapture?.(e.pointerId);
+        document.removeEventListener("pointermove", onMouseMove);
+        document.removeEventListener("pointerup", onMouseUp);
+      };
+      document.addEventListener("pointermove", onMouseMove);
+      document.addEventListener("pointerup", onMouseUp);
+    },
+    [],
+  );
 
   const toggleWhiteboard = useCallback(() => {
     if (isCodingQuestion || isWhiteboardQuestion) {
@@ -378,15 +392,29 @@ export function ChatInterface({
         setActiveSnippetIdx(saved.activeSnippetIdx);
         setTimeout(() => {
           const activeD = saved.drawings[saved.activeDrawingIdx];
-          if (activeD?.snapshotData) whiteboardRef.current?.loadScene(activeD.snapshotData);
+          if (activeD?.snapshotData)
+            whiteboardRef.current?.loadScene(activeD.snapshotData);
           else whiteboardRef.current?.resetScene();
           const activeS = saved.codeSnippets[saved.activeSnippetIdx];
-          if (activeS?.snapshotData) codeEditorRef.current?.loadScene(activeS.snapshotData);
+          if (activeS?.snapshotData)
+            codeEditorRef.current?.loadScene(activeS.snapshotData);
           else codeEditorRef.current?.resetScene();
         }, 150);
       } else {
-        const freshDrawings = [{ id: crypto.randomUUID(), label: "Drawing 1", snapshotData: null as string | null }];
-        const freshSnippets = [{ id: crypto.randomUUID(), label: "Snippet 1", snapshotData: null as string | null }];
+        const freshDrawings = [
+          {
+            id: crypto.randomUUID(),
+            label: ui("Drawing 1"),
+            snapshotData: null as string | null,
+          },
+        ];
+        const freshSnippets = [
+          {
+            id: crypto.randomUUID(),
+            label: ui("Snippet 1"),
+            snapshotData: null as string | null,
+          },
+        ];
         setDrawings(freshDrawings);
         setActiveDrawingIdx(0);
         setCodeSnippets(freshSnippets);
@@ -427,12 +455,13 @@ export function ChatInterface({
     }
 
     prevQuestionRef.current = newIdx;
-  }, [currentQuestion, isCodingQuestion, isWhiteboardQuestion]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ui, currentQuestion, isCodingQuestion, isWhiteboardQuestion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Initialize: get AI greeting (skip when resuming with existing messages)
   useEffect(() => {
     if (preview || initialMessages?.length) return;
-    if (greetingStartedRef.current || aiGreetingRequested.has(sessionId)) return;
+    if (greetingStartedRef.current || aiGreetingRequested.has(sessionId))
+      return;
     greetingStartedRef.current = true;
     aiGreetingRequested.add(sessionId);
     void getAIResponse([]);
@@ -448,7 +477,11 @@ export function ChatInterface({
 
   /** Persist a single drawing to the backend. */
   const persistDrawing = useCallback(
-    async (drawing: { id: string; label: string }, snapshotData: string, imageDataUrl?: string) => {
+    async (
+      drawing: { id: string; label: string },
+      snapshotData: string,
+      imageDataUrl?: string,
+    ) => {
       try {
         await fetch("/api/trpc/session.saveWhiteboard", {
           method: "POST",
@@ -478,7 +511,9 @@ export function ChatInterface({
     const currentSnapshot = wb.getSnapshotData();
 
     const updatedDrawings = drawings.map((d, i) =>
-      i === activeDrawingIdx && currentSnapshot ? { ...d, snapshotData: currentSnapshot } : d,
+      i === activeDrawingIdx && currentSnapshot
+        ? { ...d, snapshotData: currentSnapshot }
+        : d,
     );
 
     const persistOps: Promise<void>[] = [];
@@ -488,7 +523,9 @@ export function ChatInterface({
         drawing.id === updatedDrawings[activeDrawingIdx]?.id
           ? await wb.getImageDataUrl()
           : await wb.exportImageFromData(drawing.snapshotData);
-      persistOps.push(persistDrawing(drawing, drawing.snapshotData, img ?? undefined));
+      persistOps.push(
+        persistDrawing(drawing, drawing.snapshotData, img ?? undefined),
+      );
     }
     await Promise.all(persistOps);
   }, [drawings, activeDrawingIdx, persistDrawing]);
@@ -504,7 +541,9 @@ export function ChatInterface({
       if (!drawing) return;
 
       setDrawings((prev) =>
-        prev.map((d, i) => (i === activeDrawingIdx ? { ...d, snapshotData } : d)),
+        prev.map((d, i) =>
+          i === activeDrawingIdx ? { ...d, snapshotData } : d,
+        ),
       );
 
       await persistDrawing(drawing, snapshotData);
@@ -524,7 +563,9 @@ export function ChatInterface({
       const currentSnapshot = wb.getSnapshotData();
       const currentDrawing = drawings[activeDrawingIdx];
       setDrawings((prev) =>
-        prev.map((d, i) => (i === activeDrawingIdx ? { ...d, snapshotData: currentSnapshot } : d)),
+        prev.map((d, i) =>
+          i === activeDrawingIdx ? { ...d, snapshotData: currentSnapshot } : d,
+        ),
       );
       if (currentDrawing && currentSnapshot) {
         persistDrawing(currentDrawing, currentSnapshot);
@@ -553,11 +594,14 @@ export function ChatInterface({
       const updated = prev.map((d, i) =>
         i === activeDrawingIdx ? { ...d, snapshotData: currentSnapshot } : d,
       );
-      return [...updated, {
-        id: crypto.randomUUID(),
-        label: `Drawing ${updated.length + 1}`,
-        snapshotData: null,
-      }];
+      return [
+        ...updated,
+        {
+          id: crypto.randomUUID(),
+          label: `Drawing ${updated.length + 1}`,
+          snapshotData: null,
+        },
+      ];
     });
     if (currentDrawing && currentSnapshot) {
       persistDrawing(currentDrawing, currentSnapshot);
@@ -573,7 +617,9 @@ export function ChatInterface({
   const renameDrawing = useCallback((drawingId: string, newLabel: string) => {
     const trimmed = newLabel.trim();
     if (!trimmed) return;
-    setDrawings((prev) => prev.map((d) => (d.id === drawingId ? { ...d, label: trimmed } : d)));
+    setDrawings((prev) =>
+      prev.map((d) => (d.id === drawingId ? { ...d, label: trimmed } : d)),
+    );
     setEditingDrawingId(null);
   }, []);
 
@@ -583,13 +629,16 @@ export function ChatInterface({
 
       const drawing = drawings[idx];
 
-      if (!window.confirm(`Delete "${drawing.label}"? This cannot be undone.`)) return;
+      if (!window.confirm(ui("Delete {name}? This cannot be undone.", {name: drawing.label})))
+        return;
 
       fetch("/api/trpc/session.deleteWhiteboard", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ json: { sessionId, drawingId: drawing.id } }),
-      }).catch((err) => console.error("[chat] Failed to delete whiteboard:", err));
+      }).catch((err) =>
+        console.error("[chat] Failed to delete whiteboard:", err),
+      );
 
       setDrawings((prev) => prev.filter((_, i) => i !== idx));
 
@@ -607,11 +656,13 @@ export function ChatInterface({
       }
       lastAutoSave.current = null;
     },
-    [drawings, activeDrawingIdx, sessionId],
+    [ui, drawings, activeDrawingIdx, sessionId],
   );
 
   // ── Save status tracking (whiteboard) ─────────────────────────
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("saved");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">(
+    "saved",
+  );
 
   const handleWhiteboardDirty = useCallback(() => {
     setSaveStatus("idle");
@@ -629,7 +680,9 @@ export function ChatInterface({
     const imageDataUrl = await wb.getImageDataUrl();
     if (snapshotData) {
       setDrawings((prev) =>
-        prev.map((d, i) => (i === activeDrawingIdx ? { ...d, snapshotData } : d)),
+        prev.map((d, i) =>
+          i === activeDrawingIdx ? { ...d, snapshotData } : d,
+        ),
       );
       await persistDrawing(drawing, snapshotData, imageDataUrl ?? undefined);
     }
@@ -665,13 +718,15 @@ export function ChatInterface({
 
     const currentSnapshot = ce.getSnapshotData();
     const updatedSnippets = codeSnippets.map((s, i) =>
-      i === activeSnippetIdx && currentSnapshot ? { ...s, snapshotData: currentSnapshot } : s,
+      i === activeSnippetIdx && currentSnapshot
+        ? { ...s, snapshotData: currentSnapshot }
+        : s,
     );
 
     await Promise.all(
       updatedSnippets
         .filter((s) => s.snapshotData)
-        .map((snippet) => persistCodeSnippet(snippet, snippet.snapshotData!))
+        .map((snippet) => persistCodeSnippet(snippet, snippet.snapshotData!)),
     );
   }, [codeSnippets, activeSnippetIdx, persistCodeSnippet]);
 
@@ -685,7 +740,9 @@ export function ChatInterface({
       if (!snippet) return;
 
       setCodeSnippets((prev) =>
-        prev.map((s, i) => (i === activeSnippetIdx ? { ...s, snapshotData } : s)),
+        prev.map((s, i) =>
+          i === activeSnippetIdx ? { ...s, snapshotData } : s,
+        ),
       );
 
       await persistCodeSnippet(snippet, snapshotData);
@@ -704,7 +761,9 @@ export function ChatInterface({
       const currentSnapshot = ce.getSnapshotData();
       const currentSnippet = codeSnippets[activeSnippetIdx];
       setCodeSnippets((prev) =>
-        prev.map((s, i) => (i === activeSnippetIdx ? { ...s, snapshotData: currentSnapshot } : s)),
+        prev.map((s, i) =>
+          i === activeSnippetIdx ? { ...s, snapshotData: currentSnapshot } : s,
+        ),
       );
       if (currentSnippet && currentSnapshot) {
         persistCodeSnippet(currentSnippet, currentSnapshot);
@@ -732,11 +791,14 @@ export function ChatInterface({
       const updated = prev.map((s, i) =>
         i === activeSnippetIdx ? { ...s, snapshotData: currentSnapshot } : s,
       );
-      return [...updated, {
-        id: crypto.randomUUID(),
-        label: `Snippet ${updated.length + 1}`,
-        snapshotData: null,
-      }];
+      return [
+        ...updated,
+        {
+          id: crypto.randomUUID(),
+          label: `Snippet ${updated.length + 1}`,
+          snapshotData: null,
+        },
+      ];
     });
     if (currentSnippet && currentSnapshot) {
       persistCodeSnippet(currentSnippet, currentSnapshot);
@@ -749,19 +811,25 @@ export function ChatInterface({
 
   const [editingSnippetId, setEditingSnippetId] = useState<string | null>(null);
 
-  const renameCodeSnippet = useCallback((snippetId: string, newLabel: string) => {
-    const trimmed = newLabel.trim();
-    if (!trimmed) return;
-    setCodeSnippets((prev) => prev.map((s) => (s.id === snippetId ? { ...s, label: trimmed } : s)));
-    setEditingSnippetId(null);
-  }, []);
+  const renameCodeSnippet = useCallback(
+    (snippetId: string, newLabel: string) => {
+      const trimmed = newLabel.trim();
+      if (!trimmed) return;
+      setCodeSnippets((prev) =>
+        prev.map((s) => (s.id === snippetId ? { ...s, label: trimmed } : s)),
+      );
+      setEditingSnippetId(null);
+    },
+    [],
+  );
 
   const deleteCodeSnippet = useCallback(
     (idx: number) => {
       if (codeSnippets.length <= 1) return;
 
       const snippet = codeSnippets[idx];
-      if (!window.confirm(`Delete "${snippet.label}"? This cannot be undone.`)) return;
+      if (!window.confirm(ui("Delete {name}? This cannot be undone.", {name: snippet.label})))
+        return;
 
       fetch("/api/trpc/session.deleteCode", {
         method: "POST",
@@ -785,11 +853,13 @@ export function ChatInterface({
       }
       lastCodeAutoSave.current = null;
     },
-    [codeSnippets, activeSnippetIdx, sessionId],
+    [ui, codeSnippets, activeSnippetIdx, sessionId],
   );
 
   // ── Code save status tracking ───────────────────────────────────
-  const [codeSaveStatus, setCodeSaveStatus] = useState<"idle" | "saving" | "saved">("saved");
+  const [codeSaveStatus, setCodeSaveStatus] = useState<
+    "idle" | "saving" | "saved"
+  >("saved");
 
   const handleCodeDirty = useCallback(() => {
     setCodeSaveStatus("idle");
@@ -806,7 +876,9 @@ export function ChatInterface({
     const snapshotData = ce.getSnapshotData();
     if (snapshotData) {
       setCodeSnippets((prev) =>
-        prev.map((s, i) => (i === activeSnippetIdx ? { ...s, snapshotData } : s)),
+        prev.map((s, i) =>
+          i === activeSnippetIdx ? { ...s, snapshotData } : s,
+        ),
       );
       await persistCodeSnippet(snippet, snapshotData);
     }
@@ -831,10 +903,7 @@ export function ChatInterface({
           sessionId,
           interviewId: interview.id,
           messages: conversationHistory.map((m) => ({
-            role:
-              m.role === "ASSISTANT"
-                ? "assistant"
-                : "user",
+            role: m.role === "ASSISTANT" ? "assistant" : "user",
             content: m.content,
           })),
           currentQuestionIndex: questionIndex,
@@ -862,7 +931,7 @@ export function ChatInterface({
 
       if (!options?.ignoreQuestionAdvance && data.questionAdvanced) {
         setCurrentQuestion((prev) =>
-          Math.min(prev + 1, interview.questions.length)
+          Math.min(prev + 1, interview.questions.length),
         );
       }
 
@@ -911,7 +980,13 @@ export function ChatInterface({
       });
       onComplete("INTERVIEW_TIME_LIMIT_REACHED");
     })();
-  }, [remainingSeconds, saveAllDrawings, saveAllCodeSnippets, sessionId, onComplete]);
+  }, [
+    remainingSeconds,
+    saveAllDrawings,
+    saveAllCodeSnippets,
+    sessionId,
+    onComplete,
+  ]);
 
   const handleFinishInterview = useCallback(async () => {
     if (preview || finishing) return;
@@ -928,7 +1003,14 @@ export function ChatInterface({
     } finally {
       setFinishing(false);
     }
-  }, [preview, finishing, saveAllDrawings, saveAllCodeSnippets, sessionId, onComplete]);
+  }, [
+    preview,
+    finishing,
+    saveAllDrawings,
+    saveAllCodeSnippets,
+    sessionId,
+    onComplete,
+  ]);
 
   async function handleQuestionTransition(direction: "next" | "previous") {
     if (preview || sending || aiTyping) return;
@@ -938,7 +1020,8 @@ export function ChatInterface({
     if (
       targetIdx < 0 ||
       targetIdx >= interview.questions.length ||
-      (direction === "next" && currentQuestion >= interview.questions.length - 1) ||
+      (direction === "next" &&
+        currentQuestion >= interview.questions.length - 1) ||
       (direction === "previous" && currentQuestion <= 0)
     ) {
       return;
@@ -1056,7 +1139,11 @@ export function ChatInterface({
       if (!sendRes.ok) {
         const body = await sendRes.json().catch(() => ({}));
         const errMsg = body?.error?.json?.message ?? body?.error?.message ?? "";
-        if (errMsg.includes("session time has been reached") || (body?.error?.json?.data?.code === "FORBIDDEN" && errMsg.includes("time"))) {
+        if (
+          errMsg.includes("session time has been reached") ||
+          (body?.error?.json?.data?.code === "FORBIDDEN" &&
+            errMsg.includes("time"))
+        ) {
           setSending(false);
           onComplete("ACCOUNT_SESSION_TIME_LIMIT_REACHED");
           return;
@@ -1107,7 +1194,8 @@ export function ChatInterface({
               className="w-20 rounded bg-transparent px-2 py-1 text-xs outline-none ring-1 ring-primary"
               onBlur={(e) => renameCodeSnippet(s.id, e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") renameCodeSnippet(s.id, e.currentTarget.value);
+                if (e.key === "Enter")
+                  renameCodeSnippet(s.id, e.currentTarget.value);
                 if (e.key === "Escape") setEditingSnippetId(null);
               }}
             />
@@ -1116,20 +1204,23 @@ export function ChatInterface({
               className="px-2.5 py-1"
               onClick={() => switchCodeSnippet(i)}
               onDoubleClick={() => setEditingSnippetId(s.id)}
-              title="Double-click to rename"
+              title={ui("Double-click to rename")}
             >
               {s.label}
             </button>
           )}
           {codeSnippets.length > 1 && (
             <button
-              onClick={(e) => { e.stopPropagation(); deleteCodeSnippet(i); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                deleteCodeSnippet(i);
+              }}
               className={`mr-0.5 rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100 ${
                 i === activeSnippetIdx
                   ? "hover:bg-primary-foreground/20"
                   : "hover:bg-muted-foreground/20"
               }`}
-              title="Delete snippet"
+              title={ui("Delete snippet")}
             >
               <X className="h-3 w-3" />
             </button>
@@ -1139,10 +1230,10 @@ export function ChatInterface({
       <button
         onClick={addNewCodeSnippet}
         className="flex items-center gap-0.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
-        title="New snippet"
+        title={ui("New snippet")}
       >
         <Plus className="h-3 w-3" />
-        New
+        {ui("New")}
       </button>
       <div className="ml-auto">
         <button
@@ -1153,7 +1244,7 @@ export function ChatInterface({
               ? "text-secondary-600 dark:text-secondary-400"
               : "text-muted-foreground hover:bg-muted"
           }`}
-          title="Save snippet"
+          title={ui("Save snippet")}
         >
           {codeSaveStatus === "saving" ? (
             <Loader2 className="h-3 w-3 animate-spin" />
@@ -1162,16 +1253,28 @@ export function ChatInterface({
           ) : (
             <Save className="h-3 w-3" />
           )}
-          {codeSaveStatus === "saved" ? "Saved" : "Save"}
+          {codeSaveStatus === "saved" ? ui("Saved") : ui("Save")}
         </button>
       </div>
     </div>
   );
 
-  const previewMessages: Message[] = preview ? [
-    { id: "p-1", role: "ASSISTANT", content: `Hi! I'm ${interview.aiName}. Let's start — ${interview.questions[0]?.text ?? "tell me about yourself."}`, timestamp: "" },
-    { id: "p-2", role: "USER", content: "Sure, I have been working as a software engineer for...", timestamp: "" },
-  ] : [];
+  const previewMessages: Message[] = preview
+    ? [
+        {
+          id: "p-1",
+          role: "ASSISTANT",
+          content: `Hi! I'm ${interview.aiName}. Let's start — ${interview.questions[0]?.text ?? "tell me about yourself."}`,
+          timestamp: "",
+        },
+        {
+          id: "p-2",
+          role: "USER",
+          content: "Sure, I have been working as a software engineer for...",
+          timestamp: "",
+        },
+      ]
+    : [];
   const displayMessages = (preview ? previewMessages : messages).filter(
     (m) => m.role !== "SYSTEM",
   );
@@ -1207,7 +1310,10 @@ export function ChatInterface({
         )}
       >
         <Clock className="h-3.5 w-3.5" />
-        <span>{formatTime(remainingSeconds)} left</span>
+        <span>
+          {formatTime(remainingSeconds)}
+          {ui("left")}
+        </span>
       </div>
     ) : null;
 
@@ -1224,17 +1330,15 @@ export function ChatInterface({
               {interview.title}
             </h1>
             <p className="hidden text-xs text-muted-foreground md:block">
-              Chat Interview with {interview.aiName}
+              {ui("Chat Interview with")}
+              {interview.aiName}
             </p>
           </div>
           <div className="flex items-center gap-2">
             <IntervieweeHelpPopover mode="chat" />
           </div>
         </div>
-        <div
-          className="mt-2 flex items-center gap-3"
-          data-tour="chat-progress"
-        >
+        <div className="mt-2 flex items-center gap-3" data-tour="chat-progress">
           <Progress value={progress} className="h-1.5 flex-1" />
           <span className="shrink-0 text-xs font-medium text-muted-foreground">
             Q{Math.min(currentQuestion + 1, interview.questions.length)} /{" "}
@@ -1254,14 +1358,17 @@ export function ChatInterface({
     <AlertDialog open={finishDialogOpen} onOpenChange={setFinishDialogOpen}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Finish interview?</AlertDialogTitle>
+          <AlertDialogTitle>{ui("Finish interview?")}</AlertDialogTitle>
           <AlertDialogDescription>
-            Your responses will be saved and submitted. You won&apos;t be able to
-            continue this session afterward.
+            {ui(
+              "Your responses will be saved and submitted. You won't be able to continue this session afterward.",
+            )}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={finishing}>Keep going</AlertDialogCancel>
+          <AlertDialogCancel disabled={finishing}>
+            {ui("Keep going")}
+          </AlertDialogCancel>
           <AlertDialogAction
             disabled={finishing}
             onClick={(event) => {
@@ -1272,10 +1379,10 @@ export function ChatInterface({
             {finishing ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
+                {ui("Saving...")}
               </>
             ) : (
-              "Finish interview"
+              ui("Finish interview")
             )}
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -1305,7 +1412,7 @@ export function ChatInterface({
           isGenerating={sending || aiTyping}
           disabled={preview}
           submitDisabled={preview || !input.trim()}
-          placeholder="Type your response..."
+          placeholder={ui("Type your response...")}
           compact={compact}
           textareaRef={inputRef}
           questionNav={composerQuestionNav}
@@ -1344,7 +1451,11 @@ export function ChatInterface({
                   : "bg-muted"
               }`}
             >
-              <p className={`whitespace-pre-wrap ${compact ? "text-xs" : "text-sm"}`}>{msg.content}</p>
+              <p
+                className={`whitespace-pre-wrap ${compact ? "text-xs" : "text-sm"}`}
+              >
+                {msg.content}
+              </p>
             </div>
           </div>
         ))}
@@ -1373,11 +1484,22 @@ export function ChatInterface({
         {renderFinishDialog()}
 
         {/* Split view: side-by-side on desktop, stacked on mobile */}
-        <div ref={splitContainerRef} className={isMobile ? "flex flex-1 flex-col overflow-hidden" : "flex flex-1 overflow-hidden"}>
+        <div
+          ref={splitContainerRef}
+          className={
+            isMobile
+              ? "flex flex-1 flex-col overflow-hidden"
+              : "flex flex-1 overflow-hidden"
+          }
+        >
           {/* Left panel — question description + chat */}
           <div
             className={`flex min-w-0 shrink-0 flex-col overflow-x-hidden ${isMobile ? "max-h-[45vh] border-b" : ""}`}
-            style={isMobile ? undefined : { width: `${splitPercent}%`, minWidth: 260 }}
+            style={
+              isMobile
+                ? undefined
+                : { width: `${splitPercent}%`, minWidth: 260 }
+            }
           >
             <div
               ref={problemChatContainerRef}
@@ -1391,22 +1513,31 @@ export function ChatInterface({
                 <div className="mb-3 flex items-center gap-2">
                   <FileText className="h-4 w-4 text-muted-foreground" />
                   <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Problem
+                    {ui("Problem")}
                   </span>
                 </div>
-                <h2 className="mb-3 text-base font-semibold leading-snug">{currentQ?.text}</h2>
+                <h2 className="mb-3 text-base font-semibold leading-snug">
+                  {currentQ?.text}
+                </h2>
                 {currentQ?.description && (
-                  <p className="mb-3 whitespace-pre-wrap text-sm text-muted-foreground">{currentQ.description}</p>
+                  <p className="mb-3 whitespace-pre-wrap text-sm text-muted-foreground">
+                    {currentQ.description}
+                  </p>
                 )}
                 {isCodingQuestion && currentQ?.starterCode?.code && (
                   <div className="overflow-hidden rounded-md border bg-zinc-950">
                     <div className="flex items-center gap-1.5 border-b border-zinc-800 bg-zinc-900 px-3 py-1.5">
                       <Code2 className="h-3 w-3 text-zinc-400" />
                       <span className="text-[10px] font-medium uppercase tracking-wide text-zinc-400">
-                        Starter Code — {currentQ.starterCode.language}
+                        {ui("Starter Code —")}
+                        {currentQ.starterCode.language}
                       </span>
                     </div>
-                    <CodeBlock code={currentQ.starterCode.code} language={currentQ.starterCode.language} className="max-h-48" />
+                    <CodeBlock
+                      code={currentQ.starterCode.code}
+                      language={currentQ.starterCode.language}
+                      className="max-h-48"
+                    />
                   </div>
                 )}
               </div>
@@ -1420,7 +1551,9 @@ export function ChatInterface({
               <div className="relative flex min-h-0 flex-1 flex-col">
                 <div className="flex items-center gap-1.5 border-b bg-card px-3 py-1.5">
                   <MessageCircle className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-xs font-medium text-muted-foreground">Chat</span>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {ui("Chat")}
+                  </span>
                 </div>
                 {renderMessages(true)}
                 {renderFloatingComposer(true)}
@@ -1471,7 +1604,8 @@ export function ChatInterface({
                           className="w-20 rounded bg-transparent px-2 py-1 text-xs outline-none ring-1 ring-primary"
                           onBlur={(e) => renameDrawing(d.id, e.target.value)}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter") renameDrawing(d.id, e.currentTarget.value);
+                            if (e.key === "Enter")
+                              renameDrawing(d.id, e.currentTarget.value);
                             if (e.key === "Escape") setEditingDrawingId(null);
                           }}
                         />
@@ -1480,20 +1614,23 @@ export function ChatInterface({
                           className="px-2.5 py-1"
                           onClick={() => switchDrawing(i)}
                           onDoubleClick={() => setEditingDrawingId(d.id)}
-                          title="Double-click to rename"
+                          title={ui("Double-click to rename")}
                         >
                           {d.label}
                         </button>
                       )}
                       {drawings.length > 1 && (
                         <button
-                          onClick={(e) => { e.stopPropagation(); deleteDrawing(i); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteDrawing(i);
+                          }}
                           className={`mr-0.5 rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100 ${
                             i === activeDrawingIdx
                               ? "hover:bg-primary-foreground/20"
                               : "hover:bg-muted-foreground/20"
                           }`}
-                          title="Delete drawing"
+                          title={ui("Delete drawing")}
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -1503,10 +1640,10 @@ export function ChatInterface({
                   <button
                     onClick={addNewDrawing}
                     className="flex items-center gap-0.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
-                    title="New drawing"
+                    title={ui("New drawing")}
                   >
                     <Plus className="h-3 w-3" />
-                    New
+                    {ui("New")}
                   </button>
                   <div className="ml-auto">
                     <button
@@ -1517,7 +1654,7 @@ export function ChatInterface({
                           ? "text-secondary-600 dark:text-secondary-400"
                           : "text-muted-foreground hover:bg-muted"
                       }`}
-                      title="Save drawing"
+                      title={ui("Save drawing")}
                     >
                       {saveStatus === "saving" ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
@@ -1526,7 +1663,7 @@ export function ChatInterface({
                       ) : (
                         <Save className="h-3 w-3" />
                       )}
-                      {saveStatus === "saved" ? "Saved" : "Save"}
+                      {saveStatus === "saved" ? ui("Saved") : ui("Save")}
                     </button>
                   </div>
                 </div>
@@ -1584,7 +1721,11 @@ export function ChatInterface({
                 "flex min-h-0 min-w-0 flex-col overflow-hidden bg-card",
                 isMobile ? "h-[45vh] border-t" : "shrink-0 border-l",
               )}
-              style={isMobile ? undefined : { width: `${toolSplitPercent}%`, minWidth: 280 }}
+              style={
+                isMobile
+                  ? undefined
+                  : { width: `${toolSplitPercent}%`, minWidth: 280 }
+              }
             >
               {whiteboardOpen ? (
                 <>
@@ -1605,7 +1746,8 @@ export function ChatInterface({
                             className="w-20 rounded bg-transparent px-2 py-1 text-xs outline-none ring-1 ring-primary"
                             onBlur={(e) => renameDrawing(d.id, e.target.value)}
                             onKeyDown={(e) => {
-                              if (e.key === "Enter") renameDrawing(d.id, e.currentTarget.value);
+                              if (e.key === "Enter")
+                                renameDrawing(d.id, e.currentTarget.value);
                               if (e.key === "Escape") setEditingDrawingId(null);
                             }}
                           />
@@ -1614,20 +1756,23 @@ export function ChatInterface({
                             className="px-2.5 py-1"
                             onClick={() => switchDrawing(i)}
                             onDoubleClick={() => setEditingDrawingId(d.id)}
-                            title="Double-click to rename"
+                            title={ui("Double-click to rename")}
                           >
                             {d.label}
                           </button>
                         )}
                         {drawings.length > 1 && (
                           <button
-                            onClick={(e) => { e.stopPropagation(); deleteDrawing(i); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteDrawing(i);
+                            }}
                             className={`mr-0.5 rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100 ${
                               i === activeDrawingIdx
                                 ? "hover:bg-primary-foreground/20"
                                 : "hover:bg-muted-foreground/20"
                             }`}
-                            title="Delete drawing"
+                            title={ui("Delete drawing")}
                           >
                             <X className="h-3 w-3" />
                           </button>
@@ -1637,10 +1782,10 @@ export function ChatInterface({
                     <button
                       onClick={addNewDrawing}
                       className="flex items-center gap-0.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
-                      title="New drawing"
+                      title={ui("New drawing")}
                     >
                       <Plus className="h-3 w-3" />
-                      New
+                      {ui("New")}
                     </button>
                     <div className="ml-auto">
                       <button
@@ -1651,7 +1796,7 @@ export function ChatInterface({
                             ? "text-secondary-600 dark:text-secondary-400"
                             : "text-muted-foreground hover:bg-muted"
                         }`}
-                        title="Save drawing"
+                        title={ui("Save drawing")}
                       >
                         {saveStatus === "saving" ? (
                           <Loader2 className="h-3 w-3 animate-spin" />
@@ -1660,7 +1805,7 @@ export function ChatInterface({
                         ) : (
                           <Save className="h-3 w-3" />
                         )}
-                        {saveStatus === "saved" ? "Saved" : "Save"}
+                        {saveStatus === "saved" ? ui("Saved") : ui("Save")}
                       </button>
                     </div>
                   </div>

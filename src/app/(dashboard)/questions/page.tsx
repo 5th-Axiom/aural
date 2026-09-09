@@ -1,68 +1,70 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { useAppLocale } from "@/components/app-locale-provider";
 import { useProject } from "@/components/project-provider";
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { exportToXlsx } from "@/lib/export-xlsx";
 import { trpc } from "@/lib/trpc/client";
 import {
-    ArrowDown,
-    ArrowUp,
-    ArrowUpDown,
-    Calendar,
-    ChevronLeft,
-    ChevronRight,
-    CircleDot,
-    Code2,
-    Copy,
-    Download,
-    HelpCircle,
-    ListChecks,
-    Loader2,
-    MessageSquare,
-    Microscope,
-    PenLine,
-    Search,
-    Trash2,
-    X,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  CircleDot,
+  Code2,
+  Copy,
+  Download,
+  HelpCircle,
+  ListChecks,
+  Loader2,
+  MessageSquare,
+  Microscope,
+  PenLine,
+  Search,
+  Trash2,
+  X,
 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 
@@ -210,38 +212,42 @@ function getSortValue(q: QuestionRow, key: SortKey): string | number {
 /* ------------------------------------------------------------------ */
 
 export default function QuestionsPage() {
+  const ui = useUiTranslation();
   const { locale } = useAppLocale();
   const { toast } = useToast();
   const utils = trpc.useUtils();
   const { currentProject } = useProject();
   const projectId = currentProject?.id;
   const isZh = locale === "zh";
-  const questionTypeMeta = useMemo(() => ({
-    OPEN_ENDED: {
-      ...QUESTION_TYPE_META.OPEN_ENDED,
-      label: isZh ? "开放题" : "Open Ended",
-    },
-    SINGLE_CHOICE: {
-      ...QUESTION_TYPE_META.SINGLE_CHOICE,
-      label: isZh ? "单选题" : "Single Choice",
-    },
-    MULTIPLE_CHOICE: {
-      ...QUESTION_TYPE_META.MULTIPLE_CHOICE,
-      label: isZh ? "多选题" : "Multiple Choice",
-    },
-    CODING: {
-      ...QUESTION_TYPE_META.CODING,
-      label: isZh ? "编程题" : "Coding",
-    },
-    WHITEBOARD: {
-      ...QUESTION_TYPE_META.WHITEBOARD,
-      label: isZh ? "白板题" : "Whiteboard",
-    },
-    RESEARCH: {
-      ...QUESTION_TYPE_META.RESEARCH,
-      label: isZh ? "调研题" : "Research",
-    },
-  }), [isZh]);
+  const questionTypeMeta = useMemo(
+    () => ({
+      OPEN_ENDED: {
+        ...QUESTION_TYPE_META.OPEN_ENDED,
+        label: isZh ? "开放题" : "Open Ended",
+      },
+      SINGLE_CHOICE: {
+        ...QUESTION_TYPE_META.SINGLE_CHOICE,
+        label: isZh ? "单选题" : "Single Choice",
+      },
+      MULTIPLE_CHOICE: {
+        ...QUESTION_TYPE_META.MULTIPLE_CHOICE,
+        label: isZh ? "多选题" : "Multiple Choice",
+      },
+      CODING: {
+        ...QUESTION_TYPE_META.CODING,
+        label: isZh ? "编程题" : "Coding",
+      },
+      WHITEBOARD: {
+        ...QUESTION_TYPE_META.WHITEBOARD,
+        label: isZh ? "白板题" : "Whiteboard",
+      },
+      RESEARCH: {
+        ...QUESTION_TYPE_META.RESEARCH,
+        label: isZh ? "调研题" : "Research",
+      },
+    }),
+    [isZh],
+  );
   const typeOptions = [
     { value: "ALL", label: isZh ? "全部类型" : "All Types" },
     { value: "OPEN_ENDED", label: questionTypeMeta.OPEN_ENDED.label },
@@ -454,11 +460,13 @@ export default function QuestionsPage() {
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">{isZh ? "题库" : "Questions"}</h1>
+        <h1 className="text-3xl font-bold">
+          {isZh ? "题库" : ui("Questions")}
+        </h1>
         <p className="text-muted-foreground">
           {isZh
             ? "查看所有面试中的题目"
-            : "All questions across your interviews"}
+            : ui("All questions across your interviews")}
         </p>
       </div>
 
@@ -470,7 +478,7 @@ export default function QuestionsPage() {
             placeholder={
               isZh
                 ? "按题目内容、描述或面试搜索..."
-                : "Search by question text, description, or interview..."
+                : ui("Search by question text, description, or interview...")
             }
             value={searchQuery}
             onChange={(e) => {
@@ -527,7 +535,7 @@ export default function QuestionsPage() {
           disabled={processedQuestions.length === 0}
         >
           <Download className="mr-2 h-4 w-4" />
-          {isZh ? "导出" : "Export"}
+          {isZh ? "导出" : ui("Export")}
         </Button>
 
         {selectedIds.size > 0 && (
@@ -552,7 +560,7 @@ export default function QuestionsPage() {
               onClick={() => setSelectedIds(new Set())}
             >
               <X className="mr-1 h-4 w-4" />
-              {isZh ? "取消" : "Cancel"}
+              {isZh ? "取消" : ui("Cancel")}
             </Button>
           </>
         )}
@@ -569,10 +577,10 @@ export default function QuestionsPage() {
             {isFiltering
               ? isZh
                 ? "没有符合筛选条件的题目。"
-                : "No questions match your search."
+                : ui("No questions match your search.")
               : isZh
                 ? "暂无题目。先创建一场面试开始使用。"
-                : "No questions found. Create an interview to get started."}
+                : ui("No questions found. Create an interview to get started.")}
           </p>
         ) : (
           <>
@@ -592,28 +600,28 @@ export default function QuestionsPage() {
                     />
                   </TableHead>
                   <SortableHead
-                    label={isZh ? "题目" : "Question"}
+                    label={isZh ? "题目" : ui("Question")}
                     sortKey="text"
                     activeKey={sortKey}
                     direction={sortDir}
                     onSort={handleSort}
                   />
                   <SortableHead
-                    label={isZh ? "类型" : "Type"}
+                    label={isZh ? "类型" : ui("Type")}
                     sortKey="type"
                     activeKey={sortKey}
                     direction={sortDir}
                     onSort={handleSort}
                   />
                   <SortableHead
-                    label={isZh ? "面试" : "Interview"}
+                    label={isZh ? "面试" : ui("Interview")}
                     sortKey="interview"
                     activeKey={sortKey}
                     direction={sortDir}
                     onSort={handleSort}
                   />
                   <SortableHead
-                    label={isZh ? "创建时间" : "Created"}
+                    label={isZh ? "创建时间" : ui("Created")}
                     sortKey="date"
                     activeKey={sortKey}
                     direction={sortDir}
@@ -673,7 +681,9 @@ export default function QuestionsPage() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
-                          title={isZh ? "复制到其他面试" : "Copy to interview"}
+                          title={
+                            isZh ? "复制到其他面试" : ui("Copy to interview")
+                          }
                           onClick={() => setCopyDialog(q)}
                         >
                           <Copy className="h-4 w-4 text-muted-foreground" />
@@ -688,8 +698,8 @@ export default function QuestionsPage() {
             {processedQuestions.length > PAGE_SIZE_OPTIONS[0] && (
               <div className="flex items-center justify-between border-t px-4 py-3">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>Rows per page</span>
-                  <span>{isZh ? "每页行数" : "Rows per page"}</span>
+                  <span>{ui("Rows per page")}</span>
+                  <span>{isZh ? "每页行数" : ui("Rows per page")}</span>
                   <select
                     className="rounded border bg-background px-2 py-1 text-sm"
                     value={pageSize}
@@ -707,7 +717,7 @@ export default function QuestionsPage() {
                   <span className="ml-2">
                     {page * pageSize + 1}–
                     {Math.min((page + 1) * pageSize, processedQuestions.length)}{" "}
-                    {isZh ? " / 共 " : " of "} {processedQuestions.length}
+                    {isZh ? " / 共 " : ui(" of ")} {processedQuestions.length}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -744,7 +754,7 @@ export default function QuestionsPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {isZh ? "删除题目" : "Delete Questions"}
+              {isZh ? "删除题目" : ui("Delete Questions")}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {isZh
@@ -753,12 +763,14 @@ export default function QuestionsPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{isZh ? "取消" : "Cancel"}</AlertDialogCancel>
+            <AlertDialogCancel>
+              {isZh ? "取消" : ui("Cancel")}
+            </AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={handleBulkDelete}
             >
-              {isZh ? "删除" : "Delete"}
+              {isZh ? "删除" : ui("Delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -777,12 +789,12 @@ export default function QuestionsPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {isZh ? "复制题目到面试" : "Copy Question to Interview"}
+              {isZh ? "复制题目到面试" : ui("Copy Question to Interview")}
             </DialogTitle>
             <DialogDescription>
               {isZh
                 ? "选择要复制到的目标面试。"
-                : "Select the interview you want to copy this question to."}
+                : ui("Select the interview you want to copy this question to.")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
@@ -802,7 +814,9 @@ export default function QuestionsPage() {
             <Select value={copyTarget} onValueChange={setCopyTarget}>
               <SelectTrigger>
                 <SelectValue
-                  placeholder={isZh ? "选择面试..." : "Select an interview..."}
+                  placeholder={
+                    isZh ? "选择面试..." : ui("Select an interview...")
+                  }
                 />
               </SelectTrigger>
               <SelectContent>
@@ -822,7 +836,7 @@ export default function QuestionsPage() {
                 setCopyTarget("");
               }}
             >
-              {isZh ? "取消" : "Cancel"}
+              {isZh ? "取消" : ui("Cancel")}
             </Button>
             <Button
               onClick={handleCopyToInterview}
@@ -832,7 +846,7 @@ export default function QuestionsPage() {
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               <Copy className="mr-2 h-4 w-4" />
-              {isZh ? "复制" : "Copy"}
+              {isZh ? "复制" : ui("Copy")}
             </Button>
           </DialogFooter>
         </DialogContent>

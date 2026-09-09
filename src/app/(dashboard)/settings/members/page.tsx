@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { useAppLocale } from "@/components/app-locale-provider";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
@@ -51,6 +53,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Trash2, Plus, LogOut, Pencil } from "lucide-react";
 
 export default function ProjectMembersPage() {
+  const ui = useUiTranslation();
   const { toast } = useToast();
   const { locale } = useAppLocale();
   const { currentOrg } = useOrg();
@@ -157,7 +160,7 @@ export default function ProjectMembersPage() {
   if (!currentOrg) {
     return (
       <div className="flex items-center justify-center py-20 text-muted-foreground">
-        {isZh ? "尚未选择组织" : "No organization selected"}
+        {isZh ? "尚未选择组织" : ui("No organization selected")}
       </div>
     );
   }
@@ -187,7 +190,9 @@ export default function ProjectMembersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold">{isZh ? "成员" : "Members"}</h2>
+          <h2 className="text-xl font-semibold">
+            {isZh ? "成员" : ui("Members")}
+          </h2>
           <p className="text-sm text-muted-foreground">
             {isZh
               ? `“${currentOrg.name}”中有权访问此项目的成员。`
@@ -199,23 +204,25 @@ export default function ProjectMembersPage() {
             <DialogTrigger asChild>
               <Button size="sm">
                 <Plus className="mr-2 h-4 w-4" />
-                {isZh ? "添加成员" : "Add Member"}
+                {isZh ? "添加成员" : ui("Add Member")}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>
-                  {isZh ? "向项目添加成员" : "Add Member to Project"}
+                  {isZh ? "向项目添加成员" : ui("Add Member to Project")}
                 </DialogTitle>
                 <DialogDescription>
                   {isZh
                     ? "将现有组织成员添加到此项目。"
-                    : "Add an existing organization member to this project."}
+                    : ui(
+                        "Add an existing organization member to this project.",
+                      )}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-2">
                 <div className="space-y-2">
-                  <Label>{isZh ? "邮箱" : "Email"}</Label>
+                  <Label>{isZh ? "邮箱" : ui("Email")}</Label>
                   <Input
                     type="email"
                     placeholder="colleague@company.com"
@@ -224,7 +231,7 @@ export default function ProjectMembersPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>{isZh ? "角色" : "Role"}</Label>
+                  <Label>{isZh ? "角色" : ui("Role")}</Label>
                   <Select
                     value={inviteRole}
                     onValueChange={(v) => setInviteRole(v as typeof inviteRole)}
@@ -234,13 +241,13 @@ export default function ProjectMembersPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="ADMIN">
-                        {isZh ? "管理员" : "Admin"}
+                        {isZh ? "管理员" : ui("Admin")}
                       </SelectItem>
                       <SelectItem value="MEMBER">
-                        {isZh ? "成员" : "Member"}
+                        {isZh ? "成员" : ui("Member")}
                       </SelectItem>
                       <SelectItem value="VIEWER">
-                        {isZh ? "查看者" : "Viewer"}
+                        {isZh ? "查看者" : ui("Viewer")}
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -248,7 +255,7 @@ export default function ProjectMembersPage() {
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setInviteOpen(false)}>
-                  {isZh ? "取消" : "Cancel"}
+                  {isZh ? "取消" : ui("Cancel")}
                 </Button>
                 <Button
                   onClick={() =>
@@ -268,7 +275,7 @@ export default function ProjectMembersPage() {
                   {addProjectMemberMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  {isZh ? "添加" : "Add"}
+                  {isZh ? "添加" : ui("Add")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -281,10 +288,10 @@ export default function ProjectMembersPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{isZh ? "成员" : "Member"}</TableHead>
-                <TableHead>{isZh ? "组织角色" : "Org Role"}</TableHead>
-                <TableHead>{isZh ? "项目角色" : "Project Role"}</TableHead>
-                <TableHead>{isZh ? "加入时间" : "Joined"}</TableHead>
+                <TableHead>{isZh ? "成员" : ui("Member")}</TableHead>
+                <TableHead>{isZh ? "组织角色" : ui("Org Role")}</TableHead>
+                <TableHead>{isZh ? "项目角色" : ui("Project Role")}</TableHead>
+                <TableHead>{isZh ? "加入时间" : ui("Joined")}</TableHead>
                 {isAdmin && <TableHead className="w-10" />}
               </TableRow>
             </TableHeader>
@@ -319,7 +326,7 @@ export default function ProjectMembersPage() {
                                 variant="outline"
                                 className="text-[10px] px-1.5 py-0"
                               >
-                                {isZh ? "项目所有者" : "Project Owner"}
+                                {isZh ? "项目所有者" : ui("Project Owner")}
                               </Badge>
                             )}
                           </div>
@@ -417,12 +424,12 @@ export default function ProjectMembersPage() {
                                 <AlertDialogTitle>
                                   {isZh
                                     ? "从项目中移除"
-                                    : "Remove from Project"}
+                                    : ui("Remove from Project")}
                                 </AlertDialogTitle>
                                 <AlertDialogDescription>
                                   {isZh
                                     ? "确认要将 "
-                                    : "Are you sure you want to remove "}
+                                    : ui("Are you sure you want to remove ")}
                                   <span className="font-medium text-foreground">
                                     {m.profile?.name ?? m.profile?.email}
                                   </span>{" "}
@@ -433,7 +440,7 @@ export default function ProjectMembersPage() {
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>
-                                  {isZh ? "取消" : "Cancel"}
+                                  {isZh ? "取消" : ui("Cancel")}
                                 </AlertDialogCancel>
                                 <AlertDialogAction
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -445,7 +452,7 @@ export default function ProjectMembersPage() {
                                     })
                                   }
                                 >
-                                  {isZh ? "移除" : "Remove"}
+                                  {isZh ? "移除" : ui("Remove")}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -471,13 +478,13 @@ export default function ProjectMembersPage() {
                 disabled={leaveMutation.isPending}
               >
                 <LogOut className="mr-2 h-4 w-4" />
-                {isZh ? "离开组织" : "Leave Organization"}
+                {isZh ? "离开组织" : ui("Leave Organization")}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>
-                  {isZh ? "离开组织" : "Leave Organization"}
+                  {isZh ? "离开组织" : ui("Leave Organization")}
                 </AlertDialogTitle>
                 <AlertDialogDescription>
                   {isZh
@@ -487,7 +494,7 @@ export default function ProjectMembersPage() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>
-                  {isZh ? "取消" : "Cancel"}
+                  {isZh ? "取消" : ui("Cancel")}
                 </AlertDialogCancel>
                 <AlertDialogAction
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -500,7 +507,7 @@ export default function ProjectMembersPage() {
                   {leaveMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  {isZh ? "离开组织" : "Leave Organization"}
+                  {isZh ? "离开组织" : ui("Leave Organization")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

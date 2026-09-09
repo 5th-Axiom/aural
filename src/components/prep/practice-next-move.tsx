@@ -1,26 +1,28 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { Button } from "@/components/ui/button";
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import {
-    ArrowRight,
-    BookOpenText,
-    Bookmark,
-    BookmarkCheck,
-    ExternalLink,
-    FilePlus2,
-    Flag,
-    RotateCcw,
-    Sparkles,
-    X,
+  ArrowRight,
+  BookOpenText,
+  Bookmark,
+  BookmarkCheck,
+  ExternalLink,
+  FilePlus2,
+  Flag,
+  RotateCcw,
+  Sparkles,
+  X,
 } from "lucide-react";
 import type { PrepFeedback } from "./prep-types";
 
@@ -136,7 +138,8 @@ export function NextActionStrip({
             disabled={disabled}
             className={cn(
               "h-7 gap-1.5 rounded-full px-2.5 text-xs font-normal",
-              isBookmarked && "border-amber-200/80 text-amber-600 hover:text-amber-700",
+              isBookmarked &&
+                "border-amber-200/80 text-amber-600 hover:text-amber-700",
             )}
             onClick={() => onAction(action)}
           >
@@ -165,6 +168,7 @@ export function NextBestMoveBar({
   onDismiss: () => void;
   className?: string;
 }) {
+  const ui = useUiTranslation();
   const hasSample = Boolean(feedback.sampleAnswer?.trim());
   const recommendation = recommendNextMove({
     score: feedback.score,
@@ -183,7 +187,9 @@ export function NextBestMoveBar({
     >
       <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
       <p className="min-w-0 flex-1 truncate text-xs leading-tight">
-        <span className="font-semibold text-foreground">Next best move</span>
+        <span className="font-semibold text-foreground">
+          {ui("Next best move")}
+        </span>
         <span className="text-muted-foreground">
           {" — "}
           {recommendation.reason}
@@ -205,7 +211,7 @@ export function NextBestMoveBar({
         size="icon"
         className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
         onClick={onDismiss}
-        aria-label="Dismiss next best move"
+        aria-label={ui("Dismiss next best move")}
       >
         <X className="h-3.5 w-3.5" />
       </Button>
@@ -225,13 +231,14 @@ export function SampleAnswerDialog({
   sampleAnswer: string;
   questionText?: string | null;
 }) {
+  const ui = useUiTranslation();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <BookOpenText className="h-4 w-4 text-primary" aria-hidden />
-            Sample answer
+            {ui("Sample answer")}
           </DialogTitle>
           {questionText ? (
             <DialogDescription className="line-clamp-2">

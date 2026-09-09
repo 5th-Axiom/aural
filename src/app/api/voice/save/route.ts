@@ -1,3 +1,6 @@
+import { assertSessionAccess } from "@/server/session-access";
+import { getAuthUser } from "@/lib/auth";
+import { questionsForCandidate } from "@/lib/session-question-scope";
 import { svgDataUrlToPng } from "@/lib/ai/convert-svg";
 import { extractJson } from "@/lib/ai/extract-json";
 import { buildSummaryPrompt } from "@/lib/ai/prompts/summary";
@@ -33,7 +36,7 @@ const voiceSaveOps: VoiceSaveOps = {
     const { data } = await supabaseAdmin
       .from("sessions")
       .select(
-        `*, interview:interviews!inner(title, objective, language, userId, projectId, assessmentCriteria, questions(text, order, type))`,
+        `*, interview:interviews!inner(title, objective, language, userId, projectId, assessmentCriteria, questions(text, order, type, candidateId))`,
       )
       .eq("id", sessionId)
       .order("order", {
@@ -42,6 +45,11 @@ const voiceSaveOps: VoiceSaveOps = {
       })
       .single();
 
+    if (data?.interview)
+      data.interview.questions = questionsForCandidate(
+        data.interview.questions || [],
+        data.candidateId,
+      );
     return (data as CompletionSession | null) ?? null;
   },
   async loadActivitySegments(sessionId) {
@@ -50,7 +58,7 @@ const voiceSaveOps: VoiceSaveOps = {
       .select("activitySegments")
       .eq("id", sessionId)
       .single();
-    return ((data?.activitySegments as ActivitySegment[]) ?? []);
+    return (data?.activitySegments as ActivitySegment[]) ?? [];
   },
   async closeOpenSegments(sessionId, now) {
     const { data } = await supabaseAdmin
@@ -58,7 +66,7 @@ const voiceSaveOps: VoiceSaveOps = {
       .select("activitySegments")
       .eq("id", sessionId)
       .single();
-    const segments = ((data?.activitySegments as ActivitySegment[]) ?? []);
+    const segments = (data?.activitySegments as ActivitySegment[]) ?? [];
     const closed = segments.map((s) =>
       s.leftAt === null ? { ...s, leftAt: now } : s,
     );
@@ -88,6 +96,11 @@ const voiceSaveOps: VoiceSaveOps = {
       })
       .single();
 
+    if (data?.interview)
+      data.interview.questions = questionsForCandidate(
+        data.interview.questions || [],
+        data.candidateId,
+      );
     return (data as ProgressSession | null) ?? null;
   },
   async updateSession(sessionId, payload) {
@@ -105,6 +118,19 @@ const voiceSaveOps: VoiceSaveOps = {
  */
 export async function POST(req: Request) {
   const payload = (await req.json()) as VoiceSavePayload;
+  if (payload.sessionId) {
+    try {
+      await assertSessionAccess(
+        { supabase: supabaseAdmin, user: await getAuthUser() },
+        payload.sessionId,
+      );
+    } catch {
+      return NextResponse.json(
+        { error: "没有权限保存该面试" },
+        { status: 403 },
+      );
+    }
+  }
   const result = await handleVoiceSave(payload, voiceSaveOps);
   return NextResponse.json(result.body, { status: result.status });
 }
@@ -149,9 +175,7 @@ async function generateSummary(
     );
 
     const codeSnippetsInput = allMessages
-      .filter(
-        (m) => (m.contentType as string) === "CODE" && m.whiteboardData,
-      )
+      .filter((m) => (m.contentType as string) === "CODE" && m.whiteboardData)
       .map((m) => {
         const data = m.whiteboardData as Record<string, unknown>;
         return {

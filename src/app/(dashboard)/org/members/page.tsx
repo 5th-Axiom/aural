@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { useAppLocale } from "@/components/app-locale-provider";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
@@ -50,6 +52,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Trash2, Plus, LogOut, Pencil } from "lucide-react";
 
 export default function MembersPage() {
+  const ui = useUiTranslation();
   const { toast } = useToast();
   const { locale } = useAppLocale();
   const { currentOrg } = useOrg();
@@ -142,7 +145,7 @@ export default function MembersPage() {
   if (!currentOrg) {
     return (
       <div className="flex items-center justify-center py-20 text-muted-foreground">
-        {isZh ? "尚未选择组织" : "No organization selected"}
+        {isZh ? "尚未选择组织" : ui("No organization selected")}
       </div>
     );
   }
@@ -167,7 +170,7 @@ export default function MembersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">
-            {isZh ? "团队成员" : "Team Members"}
+            {isZh ? "团队成员" : ui("Team Members")}
           </h1>
           <p className="text-muted-foreground">
             {isZh
@@ -180,21 +183,23 @@ export default function MembersPage() {
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
-                {isZh ? "邀请成员" : "Invite Member"}
+                {isZh ? "邀请成员" : ui("Invite Member")}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>{isZh ? "邀请成员" : "Invite Member"}</DialogTitle>
+                <DialogTitle>
+                  {isZh ? "邀请成员" : ui("Invite Member")}
+                </DialogTitle>
                 <DialogDescription>
                   {isZh
                     ? "被邀请人必须先拥有账户。"
-                    : "They must have an account to be invited."}
+                    : ui("They must have an account to be invited.")}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-2">
                 <div className="space-y-2">
-                  <Label>{isZh ? "邮箱" : "Email"}</Label>
+                  <Label>{isZh ? "邮箱" : ui("Email")}</Label>
                   <Input
                     type="email"
                     placeholder="colleague@company.com"
@@ -203,7 +208,7 @@ export default function MembersPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>{isZh ? "角色" : "Role"}</Label>
+                  <Label>{isZh ? "角色" : ui("Role")}</Label>
                   <Select
                     value={inviteRole}
                     onValueChange={(v) => setInviteRole(v as typeof inviteRole)}
@@ -213,13 +218,13 @@ export default function MembersPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="ADMIN">
-                        {isZh ? "管理员" : "Admin"}
+                        {isZh ? "管理员" : ui("Admin")}
                       </SelectItem>
                       <SelectItem value="MEMBER">
-                        {isZh ? "成员" : "Member"}
+                        {isZh ? "成员" : ui("Member")}
                       </SelectItem>
                       <SelectItem value="VIEWER">
-                        {isZh ? "查看者" : "Viewer"}
+                        {isZh ? "查看者" : ui("Viewer")}
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -227,7 +232,7 @@ export default function MembersPage() {
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setInviteOpen(false)}>
-                  {isZh ? "取消" : "Cancel"}
+                  {isZh ? "取消" : ui("Cancel")}
                 </Button>
                 <Button
                   onClick={() =>
@@ -244,7 +249,7 @@ export default function MembersPage() {
                   {inviteMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  {isZh ? "邀请" : "Invite"}
+                  {isZh ? "邀请" : ui("Invite")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -257,9 +262,9 @@ export default function MembersPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{isZh ? "成员" : "Member"}</TableHead>
-                <TableHead>{isZh ? "角色" : "Role"}</TableHead>
-                <TableHead>{isZh ? "加入时间" : "Joined"}</TableHead>
+                <TableHead>{isZh ? "成员" : ui("Member")}</TableHead>
+                <TableHead>{isZh ? "角色" : ui("Role")}</TableHead>
+                <TableHead>{isZh ? "加入时间" : ui("Joined")}</TableHead>
                 {isAdmin && <TableHead className="w-10" />}
               </TableRow>
             </TableHeader>
@@ -362,12 +367,12 @@ export default function MembersPage() {
                             <AlertDialogContent>
                               <AlertDialogHeader>
                                 <AlertDialogTitle>
-                                  {isZh ? "移除成员" : "Remove Member"}
+                                  {isZh ? "移除成员" : ui("Remove Member")}
                                 </AlertDialogTitle>
                                 <AlertDialogDescription>
                                   {isZh
                                     ? "确认要将 "
-                                    : "Are you sure you want to remove "}
+                                    : ui("Are you sure you want to remove ")}
                                   <span className="font-medium text-foreground">
                                     {m.profile?.name ?? m.profile?.email}
                                   </span>{" "}
@@ -378,7 +383,7 @@ export default function MembersPage() {
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>
-                                  {isZh ? "取消" : "Cancel"}
+                                  {isZh ? "取消" : ui("Cancel")}
                                 </AlertDialogCancel>
                                 <AlertDialogAction
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -389,7 +394,7 @@ export default function MembersPage() {
                                     })
                                   }
                                 >
-                                  {isZh ? "移除" : "Remove"}
+                                  {isZh ? "移除" : ui("Remove")}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -415,13 +420,13 @@ export default function MembersPage() {
                 disabled={leaveMutation.isPending}
               >
                 <LogOut className="mr-2 h-4 w-4" />
-                {isZh ? "离开组织" : "Leave Organization"}
+                {isZh ? "离开组织" : ui("Leave Organization")}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>
-                  {isZh ? "离开组织" : "Leave Organization"}
+                  {isZh ? "离开组织" : ui("Leave Organization")}
                 </AlertDialogTitle>
                 <AlertDialogDescription>
                   {isZh
@@ -431,7 +436,7 @@ export default function MembersPage() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>
-                  {isZh ? "取消" : "Cancel"}
+                  {isZh ? "取消" : ui("Cancel")}
                 </AlertDialogCancel>
                 <AlertDialogAction
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -444,7 +449,7 @@ export default function MembersPage() {
                   {leaveMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  {isZh ? "离开组织" : "Leave Organization"}
+                  {isZh ? "离开组织" : ui("Leave Organization")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

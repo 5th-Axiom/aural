@@ -1,26 +1,28 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { CodeBlock } from "@/components/code-editor/code-block";
 import {
-    CodeEditorCanvas,
-    type CodeEditorCanvasRef,
+  CodeEditorCanvas,
+  type CodeEditorCanvasRef,
 } from "@/components/code-editor/code-editor-canvas";
 import { IntervieweeHelpPopover } from "@/components/session/interviewee-help-popover";
 import {
-    normalizeSessionEndReason,
-    SessionEndedScreen,
-    type SessionEndReason,
-    type SessionEndReasonInput,
+  normalizeSessionEndReason,
+  SessionEndedScreen,
+  type SessionEndReason,
+  type SessionEndReasonInput,
 } from "@/components/session/session-ended-screen";
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,46 +30,46 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
 } from "@/components/ui/sheet";
 import {
-    WhiteboardCanvas,
-    type WhiteboardCanvasRef,
+  WhiteboardCanvas,
+  type WhiteboardCanvasRef,
 } from "@/components/whiteboard/whiteboard-canvas";
 import {
-    useChunkLoadRecovery,
-    useSessionToolChunkPrefetch,
+  useChunkLoadRecovery,
+  useSessionToolChunkPrefetch,
 } from "@/hooks/use-chunk-load-recovery";
 import { useInterviewRecording } from "@/hooks/use-interview-recording";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useVoice, type InterviewContext } from "@/hooks/use-voice";
 import {
-    AlertCircle,
-    Check,
-    ChevronDown,
-    ChevronLeft,
-    ChevronRight,
-    ChevronUp,
-    Clock,
-    Code2,
-    FileText,
-    Loader2,
-    MessageSquare,
-    Mic,
-    MicOff,
-    PenLine,
-    PhoneOff,
-    Plus,
-    Save,
-    Send,
-    SkipBack,
-    SkipForward,
-    Video,
-    Volume2,
-    X,
+  AlertCircle,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Clock,
+  Code2,
+  FileText,
+  Loader2,
+  MessageSquare,
+  Mic,
+  MicOff,
+  PenLine,
+  PhoneOff,
+  Plus,
+  Save,
+  Send,
+  SkipBack,
+  SkipForward,
+  Video,
+  Volume2,
+  X,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -82,11 +84,18 @@ function normalizeTranscript(text: string): string {
   return text.replace(/\s+/g, " ").trim().toLowerCase();
 }
 
-function hasRecentAssistantTranscript(messages: Message[], text: string): boolean {
+function hasRecentAssistantTranscript(
+  messages: Message[],
+  text: string,
+): boolean {
   const normalized = normalizeTranscript(text);
   if (!normalized) return false;
 
-  for (let i = messages.length - 1; i >= Math.max(0, messages.length - 6); i--) {
+  for (
+    let i = messages.length - 1;
+    i >= Math.max(0, messages.length - 6);
+    i--
+  ) {
     const message = messages[i];
     if (message.role !== "assistant") continue;
     if (normalizeTranscript(message.content) === normalized) return true;
@@ -150,11 +159,17 @@ function findRecentVoiceTranscriptMatch(
   const nextIsBriefStandalone = isBriefStandaloneVoiceUtterance(nextText);
   if (!nextNormalized) return null;
 
-  for (let i = messages.length - 1; i >= Math.max(0, messages.length - 8); i--) {
+  for (
+    let i = messages.length - 1;
+    i >= Math.max(0, messages.length - 8);
+    i--
+  ) {
     const message = messages[i];
     if (message.role !== "user" || message.source !== "voice") continue;
     const existingNormalized = normalizeTranscript(message.content);
-    const existingIsBriefStandalone = isBriefStandaloneVoiceUtterance(message.content);
+    const existingIsBriefStandalone = isBriefStandaloneVoiceUtterance(
+      message.content,
+    );
     if (!existingNormalized) continue;
     if (existingNormalized === nextNormalized) {
       return { kind: "duplicate", index: i };
@@ -167,7 +182,10 @@ function findRecentVoiceTranscriptMatch(
       existingNormalized.includes(nextNormalized)
     ) {
       return {
-        kind: nextNormalized.length >= existingNormalized.length ? "expanded" : "duplicate",
+        kind:
+          nextNormalized.length >= existingNormalized.length
+            ? "expanded"
+            : "duplicate",
         index: i,
       };
     }
@@ -205,7 +223,10 @@ function findTrailingVoiceDuplicateCluster(
   return { start, end: messages.length - 1 };
 }
 
-function upsertFinalVoiceTranscript(messages: Message[], text: string): Message[] {
+function upsertFinalVoiceTranscript(
+  messages: Message[],
+  text: string,
+): Message[] {
   const nextMessage = {
     id: crypto.randomUUID(),
     role: "user" as const,
@@ -233,9 +254,7 @@ function upsertFinalVoiceTranscript(messages: Message[], text: string): Message[
   if (recentMatch?.kind === "expanded") {
     const prior = messages[recentMatch.index];
     const replacement =
-      text.length >= prior.content.length
-        ? { ...prior, content: text }
-        : prior;
+      text.length >= prior.content.length ? { ...prior, content: text } : prior;
     return [
       ...messages.slice(0, recentMatch.index),
       replacement,
@@ -282,7 +301,10 @@ function upsertFinalVoiceTranscript(messages: Message[], text: string): Message[
   return [...messages, nextMessage];
 }
 
-function svgToPngDataUrl(svgDataUrl: string, maxWidth = 1024): Promise<string | null> {
+function svgToPngDataUrl(
+  svgDataUrl: string,
+  maxWidth = 1024,
+): Promise<string | null> {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
@@ -291,7 +313,10 @@ function svgToPngDataUrl(svgDataUrl: string, maxWidth = 1024): Promise<string | 
       canvas.width = Math.round(img.width * scale);
       canvas.height = Math.round(img.height * scale);
       const ctx2d = canvas.getContext("2d");
-      if (!ctx2d) { resolve(null); return; }
+      if (!ctx2d) {
+        resolve(null);
+        return;
+      }
       ctx2d.fillStyle = "#fff";
       ctx2d.fillRect(0, 0, canvas.width, canvas.height);
       ctx2d.drawImage(img, 0, 0, canvas.width, canvas.height);
@@ -302,35 +327,51 @@ function svgToPngDataUrl(svgDataUrl: string, maxWidth = 1024): Promise<string | 
   });
 }
 
-function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  label: string,
+): Promise<T> {
   return Promise.race([
     promise,
     new Promise<T>((_, reject) => {
-      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+      setTimeout(
+        () => reject(new Error(`${label} timed out after ${ms}ms`)),
+        ms,
+      );
     }),
   ]);
 }
 
 function DraggablePip({ children }: { children: React.ReactNode }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const dragState = useRef({ dragging: false, startX: 0, startY: 0, origX: 0, origY: 0 });
+  const dragState = useRef({
+    dragging: false,
+    startX: 0,
+    startY: 0,
+    origX: 0,
+    origY: 0,
+  });
   const [pos, setPos] = useState({ right: 16, bottom: 64 });
   const [isDragging, setIsDragging] = useState(false);
 
-  const onPointerDown = useCallback((e: React.PointerEvent) => {
-    e.preventDefault();
-    const container = containerRef.current;
-    if (!container) return;
-    container.setPointerCapture(e.pointerId);
-    dragState.current = {
-      dragging: true,
-      startX: e.clientX,
-      startY: e.clientY,
-      origX: pos.right,
-      origY: pos.bottom,
-    };
-    setIsDragging(true);
-  }, [pos]);
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      const container = containerRef.current;
+      if (!container) return;
+      container.setPointerCapture(e.pointerId);
+      dragState.current = {
+        dragging: true,
+        startX: e.clientX,
+        startY: e.clientY,
+        origX: pos.right,
+        origY: pos.bottom,
+      };
+      setIsDragging(true);
+    },
+    [pos],
+  );
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     if (!dragState.current.dragging) return;
@@ -404,6 +445,7 @@ export function VoiceInterface({
   videoMode = false,
   preview = false,
 }: VoiceInterfaceProps) {
+  const ui = useUiTranslation();
   useChunkLoadRecovery();
   useSessionToolChunkPrefetch(!preview);
 
@@ -415,7 +457,9 @@ export function VoiceInterface({
     () =>
       initialMessages?.map((m) => ({
         id: m.id,
-        role: (m.role === "USER" ? "user" : "assistant") as "user" | "assistant",
+        role: (m.role === "USER" ? "user" : "assistant") as
+          | "user"
+          | "assistant",
         content: m.content,
       })) ?? [],
   );
@@ -427,8 +471,10 @@ export function VoiceInterface({
   >();
   const [chatOpen, setChatOpen] = useState(false);
   const [isStartingInterview, setIsStartingInterview] = useState(false);
-  const [desktopTranscriptCollapsed, setDesktopTranscriptCollapsed] = useState(false);
-  const [mobileTranscriptCollapsed, setMobileTranscriptCollapsed] = useState(false);
+  const [desktopTranscriptCollapsed, setDesktopTranscriptCollapsed] =
+    useState(false);
+  const [mobileTranscriptCollapsed, setMobileTranscriptCollapsed] =
+    useState(false);
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<Message[]>([]);
   const chatInputRef = useRef<HTMLInputElement>(null);
@@ -460,15 +506,20 @@ export function VoiceInterface({
     label: string;
     snapshotData: string | null;
   }
-  const [drawings, setDrawings] = useState<Drawing[]>(
-    () =>
-      initialDrawings?.length
-        ? initialDrawings.map((d) => ({
-            id: d.id,
-            label: d.label,
-            snapshotData: d.snapshotData,
-          }))
-        : [{ id: crypto.randomUUID(), label: "Drawing 1", snapshotData: null }],
+  const [drawings, setDrawings] = useState<Drawing[]>(() =>
+    initialDrawings?.length
+      ? initialDrawings.map((d) => ({
+          id: d.id,
+          label: d.label,
+          snapshotData: d.snapshotData,
+        }))
+      : [
+          {
+            id: crypto.randomUUID(),
+            label: ui("Drawing 1"),
+            snapshotData: null,
+          },
+        ],
   );
   const [activeDrawingIdx, setActiveDrawingIdx] = useState(0);
 
@@ -479,7 +530,7 @@ export function VoiceInterface({
     snapshotData: string | null;
   }
   const [codeSnippets, setCodeSnippets] = useState<CodeSnippet[]>([
-    { id: crypto.randomUUID(), label: "Snippet 1", snapshotData: null },
+    { id: crypto.randomUUID(), label: ui("Snippet 1"), snapshotData: null },
   ]);
   const [activeSnippetIdx, setActiveSnippetIdx] = useState(0);
 
@@ -506,7 +557,7 @@ export function VoiceInterface({
         return () => clearTimeout(timer);
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [whiteboardActive]);
 
   // ── Persist active drawing/code on page close ───────────────────
@@ -542,19 +593,39 @@ export function VoiceInterface({
         const wb = whiteboardRef.current;
         const snapshotData = wb?.getSnapshotData() ?? active.snapshotData;
         if (snapshotData) {
-          const payload = { json: { sessionId, drawingId: active.id, label: active.label, snapshotData } };
-          const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+          const payload = {
+            json: {
+              sessionId,
+              drawingId: active.id,
+              label: active.label,
+              snapshotData,
+            },
+          };
+          const blob = new Blob([JSON.stringify(payload)], {
+            type: "application/json",
+          });
           navigator.sendBeacon("/api/trpc/session.saveWhiteboard", blob);
         }
       }
 
-      const activeSnippet = codeSnippetsRef.current[activeSnippetIdxRef.current];
+      const activeSnippet =
+        codeSnippetsRef.current[activeSnippetIdxRef.current];
       if (activeSnippet) {
         const ce = codeEditorRef.current;
-        const codeSnapshot = ce?.getSnapshotData() ?? activeSnippet.snapshotData;
+        const codeSnapshot =
+          ce?.getSnapshotData() ?? activeSnippet.snapshotData;
         if (codeSnapshot) {
-          const payload = { json: { sessionId, snippetId: activeSnippet.id, label: activeSnippet.label, snapshotData: codeSnapshot } };
-          const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+          const payload = {
+            json: {
+              sessionId,
+              snippetId: activeSnippet.id,
+              label: activeSnippet.label,
+              snapshotData: codeSnapshot,
+            },
+          };
+          const blob = new Blob([JSON.stringify(payload)], {
+            type: "application/json",
+          });
           navigator.sendBeacon("/api/trpc/session.saveCode", blob);
         }
       }
@@ -603,7 +674,12 @@ export function VoiceInterface({
       if (!dragging.current || !containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
       const newRight = rect.right - ev.clientX;
-      setRightWidth(Math.max(MIN_PANEL_WIDTH, Math.min(newRight, rect.width - MIN_PANEL_WIDTH)));
+      setRightWidth(
+        Math.max(
+          MIN_PANEL_WIDTH,
+          Math.min(newRight, rect.width - MIN_PANEL_WIDTH),
+        ),
+      );
     };
 
     const onUp = () => {
@@ -662,19 +738,16 @@ export function VoiceInterface({
   }, [recording.cameraStream]);
 
   // ── Voice hooks ─────────────────────────────────────────────────
-  const handleTranscript = useCallback(
-    (text: string, isFinal: boolean) => {
-      if (isFinal && text.trim()) {
-        const normalized = normalizeTranscript(text);
-        if (normalized === lastFinalTranscriptRef.current) return;
-        lastFinalTranscriptRef.current = normalized;
-        setMessages((prev) => upsertFinalVoiceTranscript(prev, text));
-      } else if (!isFinal && text.trim()) {
-        lastFinalTranscriptRef.current = "";
-      }
-    },
-    [],
-  );
+  const handleTranscript = useCallback((text: string, isFinal: boolean) => {
+    if (isFinal && text.trim()) {
+      const normalized = normalizeTranscript(text);
+      if (normalized === lastFinalTranscriptRef.current) return;
+      lastFinalTranscriptRef.current = normalized;
+      setMessages((prev) => upsertFinalVoiceTranscript(prev, text));
+    } else if (!isFinal && text.trim()) {
+      lastFinalTranscriptRef.current = "";
+    }
+  }, []);
 
   const handleAIResponse = useCallback((text: string) => {
     const trimmed = text.trim();
@@ -685,7 +758,15 @@ export function VoiceInterface({
       }
       const last = prev[prev.length - 1];
       if (last?.role !== "assistant") {
-        return [...prev, { id: crypto.randomUUID(), role: "assistant", content: trimmed, source: "voice" }];
+        return [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            role: "assistant",
+            content: trimmed,
+            source: "voice",
+          },
+        ];
       }
       const lastNorm = last.content.replace(/\s+/g, " ").trim();
       const newNorm = trimmed.replace(/\s+/g, " ").trim();
@@ -694,7 +775,15 @@ export function VoiceInterface({
       if (newNorm.startsWith(lastNorm) && newNorm.length > lastNorm.length) {
         return [...prev.slice(0, -1), { ...last, content: trimmed }];
       }
-      return [...prev, { id: crypto.randomUUID(), role: "assistant", content: trimmed, source: "voice" }];
+      return [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: trimmed,
+          source: "voice",
+        },
+      ];
     });
   }, []);
 
@@ -761,7 +850,8 @@ export function VoiceInterface({
 
   // ── Countdown timer (starts when voice connects) ────────────────
   useEffect(() => {
-    if (!voice.isConnected || timerStartedRef.current || !durationMinutes) return;
+    if (!voice.isConnected || timerStartedRef.current || !durationMinutes)
+      return;
     timerStartedRef.current = true;
     setRemainingSeconds(durationMinutes * 60);
   }, [voice.isConnected, durationMinutes]);
@@ -780,7 +870,11 @@ export function VoiceInterface({
   // ── Whiteboard persistence ──────────────────────────────────────
   /** Persist a single drawing to the backend. */
   const persistDrawing = useCallback(
-    async (drawing: { id: string; label: string }, snapshotData: string, imageDataUrl?: string) => {
+    async (
+      drawing: { id: string; label: string },
+      snapshotData: string,
+      imageDataUrl?: string,
+    ) => {
       try {
         await fetch("/api/trpc/session.saveWhiteboard", {
           method: "POST",
@@ -811,7 +905,9 @@ export function VoiceInterface({
     const currentSnapshot = wb.getSnapshotData();
 
     const updatedDrawings = drawings.map((d, i) =>
-      i === activeDrawingIdx && currentSnapshot ? { ...d, snapshotData: currentSnapshot } : d,
+      i === activeDrawingIdx && currentSnapshot
+        ? { ...d, snapshotData: currentSnapshot }
+        : d,
     );
 
     // Generate images sequentially (shared wb instance) but persist in parallel
@@ -822,7 +918,9 @@ export function VoiceInterface({
         drawing.id === updatedDrawings[activeDrawingIdx]?.id
           ? await wb.getImageDataUrl()
           : await wb.exportImageFromData(drawing.snapshotData);
-      persistOps.push(persistDrawing(drawing, drawing.snapshotData, img ?? undefined));
+      persistOps.push(
+        persistDrawing(drawing, drawing.snapshotData, img ?? undefined),
+      );
     }
     await Promise.all(persistOps);
   }, [drawings, activeDrawingIdx, persistDrawing]);
@@ -839,7 +937,9 @@ export function VoiceInterface({
 
       // Update local snapshot cache
       setDrawings((prev) =>
-        prev.map((d, i) => (i === activeDrawingIdx ? { ...d, snapshotData } : d)),
+        prev.map((d, i) =>
+          i === activeDrawingIdx ? { ...d, snapshotData } : d,
+        ),
       );
 
       await persistDrawing(drawing, snapshotData);
@@ -850,7 +950,13 @@ export function VoiceInterface({
       const pngUrl = await exportWhiteboardPngForRelay();
       if (pngUrl) voice.sendWhiteboardUpdate(pngUrl);
     },
-    [drawings, activeDrawingIdx, persistDrawing, voice, exportWhiteboardPngForRelay],
+    [
+      drawings,
+      activeDrawingIdx,
+      persistDrawing,
+      voice,
+      exportWhiteboardPngForRelay,
+    ],
   );
 
   // ── Drawing management ────────────────────────────────────────
@@ -864,7 +970,9 @@ export function VoiceInterface({
       const currentSnapshot = wb.getSnapshotData();
       const currentDrawing = drawings[activeDrawingIdx];
       setDrawings((prev) =>
-        prev.map((d, i) => (i === activeDrawingIdx ? { ...d, snapshotData: currentSnapshot } : d)),
+        prev.map((d, i) =>
+          i === activeDrawingIdx ? { ...d, snapshotData: currentSnapshot } : d,
+        ),
       );
       if (currentDrawing && currentSnapshot) {
         persistDrawing(currentDrawing, currentSnapshot);
@@ -915,7 +1023,9 @@ export function VoiceInterface({
   const renameDrawing = useCallback((drawingId: string, newLabel: string) => {
     const trimmed = newLabel.trim();
     if (!trimmed) return;
-    setDrawings((prev) => prev.map((d) => (d.id === drawingId ? { ...d, label: trimmed } : d)));
+    setDrawings((prev) =>
+      prev.map((d) => (d.id === drawingId ? { ...d, label: trimmed } : d)),
+    );
     setEditingDrawingId(null);
   }, []);
 
@@ -925,14 +1035,17 @@ export function VoiceInterface({
 
       const drawing = drawings[idx];
 
-      if (!window.confirm(`Delete "${drawing.label}"? This cannot be undone.`)) return;
+      if (!window.confirm(ui("Delete {name}? This cannot be undone.", {name: drawing.label})))
+        return;
 
       // Delete from backend
       fetch("/api/trpc/session.deleteWhiteboard", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ json: { sessionId, drawingId: drawing.id } }),
-      }).catch((err) => console.error("[voice] Failed to delete whiteboard:", err));
+      }).catch((err) =>
+        console.error("[voice] Failed to delete whiteboard:", err),
+      );
 
       setDrawings((prev) => prev.filter((_, i) => i !== idx));
 
@@ -951,11 +1064,13 @@ export function VoiceInterface({
       }
       lastAutoSave.current = null;
     },
-    [drawings, activeDrawingIdx, sessionId],
+    [ui, drawings, activeDrawingIdx, sessionId],
   );
 
   // ── Save status tracking ───────────────────────────────────────
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("saved");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">(
+    "saved",
+  );
 
   const handleWhiteboardDirty = useCallback(() => {
     setSaveStatus("idle");
@@ -973,14 +1088,22 @@ export function VoiceInterface({
     const imageDataUrl = await wb.getImageDataUrl();
     if (snapshotData) {
       setDrawings((prev) =>
-        prev.map((d, i) => (i === activeDrawingIdx ? { ...d, snapshotData } : d)),
+        prev.map((d, i) =>
+          i === activeDrawingIdx ? { ...d, snapshotData } : d,
+        ),
       );
       await persistDrawing(drawing, snapshotData, imageDataUrl ?? undefined);
       const pngUrl = await exportWhiteboardPngForRelay();
       if (pngUrl) voice.sendWhiteboardUpdate(pngUrl);
     }
     setSaveStatus("saved");
-  }, [drawings, activeDrawingIdx, persistDrawing, voice, exportWhiteboardPngForRelay]);
+  }, [
+    drawings,
+    activeDrawingIdx,
+    persistDrawing,
+    voice,
+    exportWhiteboardPngForRelay,
+  ]);
 
   // ── Code snippet persistence ────────────────────────────────────
   const persistCodeSnippet = useCallback(
@@ -990,7 +1113,12 @@ export function VoiceInterface({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            json: { sessionId, snippetId: snippet.id, label: snippet.label, snapshotData },
+            json: {
+              sessionId,
+              snippetId: snippet.id,
+              label: snippet.label,
+              snapshotData,
+            },
           }),
         });
       } catch (err) {
@@ -1005,12 +1133,14 @@ export function VoiceInterface({
     if (!ce) return;
     const currentSnapshot = ce.getSnapshotData();
     const updatedSnippets = codeSnippets.map((s, i) =>
-      i === activeSnippetIdx && currentSnapshot ? { ...s, snapshotData: currentSnapshot } : s,
+      i === activeSnippetIdx && currentSnapshot
+        ? { ...s, snapshotData: currentSnapshot }
+        : s,
     );
     await Promise.all(
       updatedSnippets
         .filter((s) => s.snapshotData)
-        .map((snippet) => persistCodeSnippet(snippet, snippet.snapshotData!))
+        .map((snippet) => persistCodeSnippet(snippet, snippet.snapshotData!)),
     );
   }, [codeSnippets, activeSnippetIdx, persistCodeSnippet]);
 
@@ -1022,7 +1152,9 @@ export function VoiceInterface({
       const snippet = codeSnippets[activeSnippetIdx];
       if (!snippet) return;
       setCodeSnippets((prev) =>
-        prev.map((s, i) => (i === activeSnippetIdx ? { ...s, snapshotData } : s)),
+        prev.map((s, i) =>
+          i === activeSnippetIdx ? { ...s, snapshotData } : s,
+        ),
       );
       await persistCodeSnippet(snippet, snapshotData);
       setCodeSaveStatus("saved");
@@ -1033,7 +1165,9 @@ export function VoiceInterface({
         if (parsed.code) {
           voice.sendCodeUpdate(parsed.code, parsed.language || "plaintext");
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     },
     [codeSnippets, activeSnippetIdx, persistCodeSnippet, voice],
   );
@@ -1046,9 +1180,12 @@ export function VoiceInterface({
       const currentSnapshot = ce.getSnapshotData();
       const currentSnippet = codeSnippets[activeSnippetIdx];
       setCodeSnippets((prev) =>
-        prev.map((s, i) => (i === activeSnippetIdx ? { ...s, snapshotData: currentSnapshot } : s)),
+        prev.map((s, i) =>
+          i === activeSnippetIdx ? { ...s, snapshotData: currentSnapshot } : s,
+        ),
       );
-      if (currentSnippet && currentSnapshot) persistCodeSnippet(currentSnippet, currentSnapshot);
+      if (currentSnippet && currentSnapshot)
+        persistCodeSnippet(currentSnippet, currentSnapshot);
       const target = codeSnippets[targetIdx];
       if (target?.snapshotData) ce.loadScene(target.snapshotData);
       else ce.resetScene();
@@ -1067,9 +1204,17 @@ export function VoiceInterface({
       const updated = prev.map((s, i) =>
         i === activeSnippetIdx ? { ...s, snapshotData: currentSnapshot } : s,
       );
-      return [...updated, { id: crypto.randomUUID(), label: `Snippet ${updated.length + 1}`, snapshotData: null }];
+      return [
+        ...updated,
+        {
+          id: crypto.randomUUID(),
+          label: `Snippet ${updated.length + 1}`,
+          snapshotData: null,
+        },
+      ];
     });
-    if (currentSnippet && currentSnapshot) persistCodeSnippet(currentSnippet, currentSnapshot);
+    if (currentSnippet && currentSnapshot)
+      persistCodeSnippet(currentSnippet, currentSnapshot);
     ce.resetScene();
     setActiveSnippetIdx(codeSnippets.length);
     lastCodeAutoSave.current = null;
@@ -1077,18 +1222,24 @@ export function VoiceInterface({
 
   const [editingSnippetId, setEditingSnippetId] = useState<string | null>(null);
 
-  const renameCodeSnippet = useCallback((snippetId: string, newLabel: string) => {
-    const trimmed = newLabel.trim();
-    if (!trimmed) return;
-    setCodeSnippets((prev) => prev.map((s) => (s.id === snippetId ? { ...s, label: trimmed } : s)));
-    setEditingSnippetId(null);
-  }, []);
+  const renameCodeSnippet = useCallback(
+    (snippetId: string, newLabel: string) => {
+      const trimmed = newLabel.trim();
+      if (!trimmed) return;
+      setCodeSnippets((prev) =>
+        prev.map((s) => (s.id === snippetId ? { ...s, label: trimmed } : s)),
+      );
+      setEditingSnippetId(null);
+    },
+    [],
+  );
 
   const deleteCodeSnippet = useCallback(
     (idx: number) => {
       if (codeSnippets.length <= 1) return;
       const snippet = codeSnippets[idx];
-      if (!window.confirm(`Delete "${snippet.label}"? This cannot be undone.`)) return;
+      if (!window.confirm(ui("Delete {name}? This cannot be undone.", {name: snippet.label})))
+        return;
       fetch("/api/trpc/session.deleteCode", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1100,16 +1251,21 @@ export function VoiceInterface({
         setActiveSnippetIdx(newIdx);
         const target = codeSnippets.filter((_, i) => i !== idx)[newIdx];
         const ce = codeEditorRef.current;
-        if (ce) { if (target?.snapshotData) ce.loadScene(target.snapshotData); else ce.resetScene(); }
+        if (ce) {
+          if (target?.snapshotData) ce.loadScene(target.snapshotData);
+          else ce.resetScene();
+        }
       } else if (idx < activeSnippetIdx) {
         setActiveSnippetIdx((prev) => prev - 1);
       }
       lastCodeAutoSave.current = null;
     },
-    [codeSnippets, activeSnippetIdx, sessionId],
+    [ui, codeSnippets, activeSnippetIdx, sessionId],
   );
 
-  const [codeSaveStatus, setCodeSaveStatus] = useState<"idle" | "saving" | "saved">("saved");
+  const [codeSaveStatus, setCodeSaveStatus] = useState<
+    "idle" | "saving" | "saved"
+  >("saved");
 
   const handleCodeDirty = useCallback(() => {
     setCodeSaveStatus("idle");
@@ -1126,7 +1282,9 @@ export function VoiceInterface({
     const snapshotData = ce.getSnapshotData();
     if (snapshotData) {
       setCodeSnippets((prev) =>
-        prev.map((s, i) => (i === activeSnippetIdx ? { ...s, snapshotData } : s)),
+        prev.map((s, i) =>
+          i === activeSnippetIdx ? { ...s, snapshotData } : s,
+        ),
       );
       await persistCodeSnippet(snippet, snapshotData);
     }
@@ -1141,7 +1299,9 @@ export function VoiceInterface({
       const drawing = drawings[activeDrawingIdx];
       if (drawing && snapshot) {
         setDrawings((prev) =>
-          prev.map((d, i) => (i === activeDrawingIdx ? { ...d, snapshotData: snapshot } : d)),
+          prev.map((d, i) =>
+            i === activeDrawingIdx ? { ...d, snapshotData: snapshot } : d,
+          ),
         );
         await persistDrawing(drawing, snapshot);
       }
@@ -1152,23 +1312,38 @@ export function VoiceInterface({
       const snippet = codeSnippets[activeSnippetIdx];
       if (snippet && snapshot) {
         setCodeSnippets((prev) =>
-          prev.map((s, i) => (i === activeSnippetIdx ? { ...s, snapshotData: snapshot } : s)),
+          prev.map((s, i) =>
+            i === activeSnippetIdx ? { ...s, snapshotData: snapshot } : s,
+          ),
         );
         await persistCodeSnippet(snippet, snapshot);
       }
     }
-  }, [drawings, activeDrawingIdx, persistDrawing, codeSnippets, activeSnippetIdx, persistCodeSnippet]);
+  }, [
+    drawings,
+    activeDrawingIdx,
+    persistDrawing,
+    codeSnippets,
+    activeSnippetIdx,
+    persistCodeSnippet,
+  ]);
 
   const handlePreviousQuestion = useCallback(() => {
     void saveCurrentContent().catch((err) => {
-      console.error("[voice] Failed to save content before previous question:", err);
+      console.error(
+        "[voice] Failed to save content before previous question:",
+        err,
+      );
     });
     voice.previousQuestion();
   }, [saveCurrentContent, voice]);
 
   const handleNextQuestion = useCallback(() => {
     void saveCurrentContent().catch((err) => {
-      console.error("[voice] Failed to save content before next question:", err);
+      console.error(
+        "[voice] Failed to save content before next question:",
+        err,
+      );
     });
     voice.nextQuestion();
   }, [saveCurrentContent, voice]);
@@ -1180,7 +1355,9 @@ export function VoiceInterface({
       const snapshot = ce.getSnapshotData();
       if (snapshot) {
         setCodeSnippets((prev) =>
-          prev.map((s, i) => (i === activeSnippetIdx ? { ...s, snapshotData: snapshot } : s)),
+          prev.map((s, i) =>
+            i === activeSnippetIdx ? { ...s, snapshotData: snapshot } : s,
+          ),
         );
       }
     }
@@ -1192,7 +1369,9 @@ export function VoiceInterface({
       const snapshot = wb.getSnapshotData();
       if (snapshot) {
         setDrawings((prev) =>
-          prev.map((d, i) => (i === activeDrawingIdx ? { ...d, snapshotData: snapshot } : d)),
+          prev.map((d, i) =>
+            i === activeDrawingIdx ? { ...d, snapshotData: snapshot } : d,
+          ),
         );
       }
     }
@@ -1207,7 +1386,12 @@ export function VoiceInterface({
       setCodeEditorActive(true);
       setWhiteboardActive(false);
     }
-  }, [codeEditorActive, whiteboardActive, saveCodeEditorState, saveWhiteboardState]);
+  }, [
+    codeEditorActive,
+    whiteboardActive,
+    saveCodeEditorState,
+    saveWhiteboardState,
+  ]);
 
   const handleToggleWhiteboard = useCallback(() => {
     if (whiteboardActive) {
@@ -1218,7 +1402,12 @@ export function VoiceInterface({
       setWhiteboardActive(true);
       setCodeEditorActive(false);
     }
-  }, [whiteboardActive, codeEditorActive, saveWhiteboardState, saveCodeEditorState]);
+  }, [
+    whiteboardActive,
+    codeEditorActive,
+    saveWhiteboardState,
+    saveCodeEditorState,
+  ]);
 
   // Restore editor/whiteboard content when reactivated after toggle
   useEffect(() => {
@@ -1230,7 +1419,7 @@ export function VoiceInterface({
       }, 400);
       return () => clearTimeout(timer);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [codeEditorActive]);
 
   useEffect(() => {
@@ -1242,58 +1431,73 @@ export function VoiceInterface({
       }, 400);
       return () => clearTimeout(timer);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [whiteboardActive]);
 
   // ── Common save-and-end logic ───────────────────────────────────
   const endingRef = useRef(false);
-  const handleEndInterview = useCallback(async (reason?: SessionEndReasonInput) => {
-    if (endingRef.current) return;
-    const normalizedReason = normalizeSessionEndReason(reason);
-    endingRef.current = true;
-    setLocalCompletionReason(normalizedReason);
-    setLocallyCompleted(true);
-    setIsSaving(true);
+  const handleEndInterview = useCallback(
+    async (reason?: SessionEndReasonInput) => {
+      if (endingRef.current) return;
+      const normalizedReason = normalizeSessionEndReason(reason);
+      endingRef.current = true;
+      setLocalCompletionReason(normalizedReason);
+      setLocallyCompleted(true);
+      setIsSaving(true);
 
-    voice.stopListening();
-
-    try {
-      await Promise.allSettled([
-        withTimeout(saveAllDrawings(), 5000, "save drawings"),
-        withTimeout(saveAllCodeSnippets(), 5000, "save code snippets"),
-      ]);
+      voice.stopListening();
 
       try {
-        if (videoMode && recording.isRecording) {
-          const result = await withTimeout(recording.stop(), 8000, "stop recording");
-          await withTimeout(
-            fetch("/api/trpc/session.saveRecording", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                json: {
-                  sessionId,
-                  audioRecordingUrl: result.audioUrl,
-                  audioDuration: result.audioDuration,
-                  screenshots: result.screenshots,
-                },
-              }),
-            }),
-            8000,
-            "save recording",
-          );
-        }
-      } catch (err) {
-        console.error("[voice] Failed to save recording:", err);
-      }
+        await Promise.allSettled([
+          withTimeout(saveAllDrawings(), 5000, "save drawings"),
+          withTimeout(saveAllCodeSnippets(), 5000, "save code snippets"),
+        ]);
 
-      await withTimeout(voice.disconnect(), 8000, "voice disconnect");
-    } catch (err) {
-      console.error("[voice] Failed to end interview cleanly:", err);
-    } finally {
-      onComplete?.(normalizedReason);
-    }
-  }, [saveAllDrawings, saveAllCodeSnippets, videoMode, recording, sessionId, voice, onComplete]);
+        try {
+          if (videoMode && recording.isRecording) {
+            const result = await withTimeout(
+              recording.stop(),
+              8000,
+              "stop recording",
+            );
+            await withTimeout(
+              fetch("/api/trpc/session.saveRecording", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  json: {
+                    sessionId,
+                    audioRecordingUrl: result.audioUrl,
+                    audioDuration: result.audioDuration,
+                    screenshots: result.screenshots,
+                  },
+                }),
+              }),
+              8000,
+              "save recording",
+            );
+          }
+        } catch (err) {
+          console.error("[voice] Failed to save recording:", err);
+        }
+
+        await withTimeout(voice.disconnect(), 8000, "voice disconnect");
+      } catch (err) {
+        console.error("[voice] Failed to end interview cleanly:", err);
+      } finally {
+        onComplete?.(normalizedReason);
+      }
+    },
+    [
+      saveAllDrawings,
+      saveAllCodeSnippets,
+      videoMode,
+      recording,
+      sessionId,
+      voice,
+      onComplete,
+    ],
+  );
 
   useEffect(() => {
     handleEndInterviewRef.current = handleEndInterview;
@@ -1309,7 +1513,12 @@ export function VoiceInterface({
   // ── Auto-end when server-side time limit is exceeded ────────────
   const timeLimitTriggeredRef = useRef(false);
   useEffect(() => {
-    if (!voice.timeLimitExceeded || locallyCompleted || timeLimitTriggeredRef.current) return;
+    if (
+      !voice.timeLimitExceeded ||
+      locallyCompleted ||
+      timeLimitTriggeredRef.current
+    )
+      return;
     timeLimitTriggeredRef.current = true;
     onComplete?.("ACCOUNT_SESSION_TIME_LIMIT_REACHED");
   }, [voice.timeLimitExceeded, locallyCompleted, onComplete]);
@@ -1325,15 +1534,23 @@ export function VoiceInterface({
   }, [messages, chatMessages]);
 
   // ── Send chat message helper ──────────────────────────────────
-  const handleSendChat = useCallback((text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    voice.interruptPlayback();
-    const msg: Message = { id: crypto.randomUUID(), role: "user", content: trimmed, source: "chat" };
-    setMessages((prev) => [...prev, msg]);
-    setChatMessages((prev) => [...prev, msg]);
-    voice.sendTextMessage(trimmed);
-  }, [voice]);
+  const handleSendChat = useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      voice.interruptPlayback();
+      const msg: Message = {
+        id: crypto.randomUUID(),
+        role: "user",
+        content: trimmed,
+        source: "chat",
+      };
+      setMessages((prev) => [...prev, msg]);
+      setChatMessages((prev) => [...prev, msg]);
+      voice.sendTextMessage(trimmed);
+    },
+    [voice],
+  );
 
   // ── Derived state ───────────────────────────────────────────────
   const progress =
@@ -1341,7 +1558,9 @@ export function VoiceInterface({
       ? ((voice.currentQuestionIndex + 1) / voice.totalQuestions) * 100
       : 0;
   const lastAssistantMessage = useMemo(
-    () => [...messages].reverse().find((message) => message.role === "assistant") ?? null,
+    () =>
+      [...messages].reverse().find((message) => message.role === "assistant") ??
+      null,
     [messages],
   );
   const latestAssistantFarewellCandidate = useMemo(() => {
@@ -1356,9 +1575,7 @@ export function VoiceInterface({
     hasVisibleFarewell &&
     voice.lastAssistantUtteranceEndedAt > 0 &&
     !voice.isSpeaking;
-  const shouldShowCompletionScreen =
-    !preview &&
-    locallyCompleted;
+  const shouldShowCompletionScreen = !preview && locallyCompleted;
 
   const formatTime = (totalSec: number) => {
     const m = Math.floor(totalSec / 60);
@@ -1377,7 +1594,8 @@ export function VoiceInterface({
 
   // Fallback: end after 8s when isInterviewComplete fires without a farewell
   useEffect(() => {
-    if (!voice.isInterviewComplete || locallyCompleted || hasVisibleFarewell) return;
+    if (!voice.isInterviewComplete || locallyCompleted || hasVisibleFarewell)
+      return;
     const timer = setTimeout(() => {
       handleEndInterviewRef.current();
     }, 8000);
@@ -1398,7 +1616,9 @@ export function VoiceInterface({
     <SessionEndedScreen reason={localCompletionReason} />
   );
 
-  const sortedQuestions = interviewContext.questions.slice().sort((a, b) => a.order - b.order);
+  const sortedQuestions = interviewContext.questions
+    .slice()
+    .sort((a, b) => a.order - b.order);
   const currentQVoice = sortedQuestions[voice.currentQuestionIndex];
   const currentQuestionText = currentQVoice?.text || "";
   const isCodingQuestion = currentQVoice?.type === "CODING";
@@ -1426,50 +1646,56 @@ export function VoiceInterface({
   }, [codeSnippets, activeSnippetIdx, currentQVoice]);
 
   // ── Draggable split handlers ──────────────────────────────
-  const handleSplitDividerDown = useCallback((e: React.PointerEvent) => {
-    e.preventDefault();
-    const target = e.currentTarget as HTMLElement;
-    target.setPointerCapture?.(e.pointerId);
-    splitDragging.current = true;
-    const onPointerMove = (ev: PointerEvent) => {
-      if (!splitDragging.current || !splitContainerRef.current) return;
-      const rect = splitContainerRef.current.getBoundingClientRect();
-      const pct = isMobile
-        ? ((ev.clientY - rect.top) / rect.height) * 100
-        : ((ev.clientX - rect.left) / rect.width) * 100;
-      setSplitPercent(Math.min(Math.max(pct, 20), 70));
-    };
-    const onPointerUp = () => {
-      splitDragging.current = false;
-      target.releasePointerCapture?.(e.pointerId);
-      document.removeEventListener("pointermove", onPointerMove);
-      document.removeEventListener("pointerup", onPointerUp);
-    };
-    document.addEventListener("pointermove", onPointerMove);
-    document.addEventListener("pointerup", onPointerUp);
-  }, [isMobile]);
+  const handleSplitDividerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      const target = e.currentTarget as HTMLElement;
+      target.setPointerCapture?.(e.pointerId);
+      splitDragging.current = true;
+      const onPointerMove = (ev: PointerEvent) => {
+        if (!splitDragging.current || !splitContainerRef.current) return;
+        const rect = splitContainerRef.current.getBoundingClientRect();
+        const pct = isMobile
+          ? ((ev.clientY - rect.top) / rect.height) * 100
+          : ((ev.clientX - rect.left) / rect.width) * 100;
+        setSplitPercent(Math.min(Math.max(pct, 20), 70));
+      };
+      const onPointerUp = () => {
+        splitDragging.current = false;
+        target.releasePointerCapture?.(e.pointerId);
+        document.removeEventListener("pointermove", onPointerMove);
+        document.removeEventListener("pointerup", onPointerUp);
+      };
+      document.addEventListener("pointermove", onPointerMove);
+      document.addEventListener("pointerup", onPointerUp);
+    },
+    [isMobile],
+  );
 
   // Voice view: vertical split (voice vs transcript) on mobile
-  const handleVoiceTranscriptSplitDown = useCallback((e: React.PointerEvent) => {
-    e.preventDefault();
-    const target = e.currentTarget as HTMLElement;
-    target.setPointerCapture?.(e.pointerId);
-    splitDragging.current = true;
-    const onPointerMove = (ev: PointerEvent) => {
-      if (!splitDragging.current || !voiceSplitContainerRef.current) return;
-      const rect = voiceSplitContainerRef.current.getBoundingClientRect();
-      const pct = ((ev.clientY - rect.top) / rect.height) * 100;
-      setSplitPercent(Math.min(Math.max(pct, 20), 70));
-    };
-    const onPointerUp = () => {
-      splitDragging.current = false;
-      target.releasePointerCapture?.(e.pointerId);
-      document.removeEventListener("pointermove", onPointerMove);
-      document.removeEventListener("pointerup", onPointerUp);
-    };
-    document.addEventListener("pointermove", onPointerMove);
-    document.addEventListener("pointerup", onPointerUp);
-  }, []);
+  const handleVoiceTranscriptSplitDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      const target = e.currentTarget as HTMLElement;
+      target.setPointerCapture?.(e.pointerId);
+      splitDragging.current = true;
+      const onPointerMove = (ev: PointerEvent) => {
+        if (!splitDragging.current || !voiceSplitContainerRef.current) return;
+        const rect = voiceSplitContainerRef.current.getBoundingClientRect();
+        const pct = ((ev.clientY - rect.top) / rect.height) * 100;
+        setSplitPercent(Math.min(Math.max(pct, 20), 70));
+      };
+      const onPointerUp = () => {
+        splitDragging.current = false;
+        target.releasePointerCapture?.(e.pointerId);
+        document.removeEventListener("pointermove", onPointerMove);
+        document.removeEventListener("pointerup", onPointerUp);
+      };
+      document.addEventListener("pointermove", onPointerMove);
+      document.addEventListener("pointerup", onPointerUp);
+    },
+    [],
+  );
 
   // Auto-activate editor and save/restore per-question content
   const prevQIndexRef = useRef(voice.currentQuestionIndex);
@@ -1491,7 +1717,10 @@ export function VoiceInterface({
       });
       const savedSnippets = codeSnippets.map((s, i) => {
         if (i === activeSnippetIdx) {
-          const snapshot = ce?.getSnapshotData() ?? liveCodeSnapshotRef.current ?? s.snapshotData;
+          const snapshot =
+            ce?.getSnapshotData() ??
+            liveCodeSnapshotRef.current ??
+            s.snapshotData;
           return { ...s, snapshotData: snapshot };
         }
         return s;
@@ -1516,14 +1745,28 @@ export function VoiceInterface({
         setActiveSnippetIdx(saved.activeSnippetIdx);
         setTimeout(() => {
           const activeD = saved.drawings[saved.activeDrawingIdx];
-          if (activeD?.snapshotData) whiteboardRef.current?.loadScene(activeD.snapshotData);
+          if (activeD?.snapshotData)
+            whiteboardRef.current?.loadScene(activeD.snapshotData);
           else whiteboardRef.current?.resetScene();
           const activeS = saved.codeSnippets[saved.activeSnippetIdx];
-          if (activeS?.snapshotData) codeEditorRef.current?.loadScene(activeS.snapshotData);
+          if (activeS?.snapshotData)
+            codeEditorRef.current?.loadScene(activeS.snapshotData);
         }, 400);
       } else {
-        const freshDrawings = [{ id: crypto.randomUUID(), label: "Drawing 1", snapshotData: null as string | null }];
-        const freshSnippets = [{ id: crypto.randomUUID(), label: "Snippet 1", snapshotData: null as string | null }];
+        const freshDrawings = [
+          {
+            id: crypto.randomUUID(),
+            label: ui("Drawing 1"),
+            snapshotData: null as string | null,
+          },
+        ];
+        const freshSnippets = [
+          {
+            id: crypto.randomUUID(),
+            label: ui("Snippet 1"),
+            snapshotData: null as string | null,
+          },
+        ];
         setDrawings(freshDrawings);
         setActiveDrawingIdx(0);
         setCodeSnippets(freshSnippets);
@@ -1565,7 +1808,7 @@ export function VoiceInterface({
     }
 
     prevQIndexRef.current = newIdx;
-  }, [voice.currentQuestionIndex, isCodingQuestion, isWhiteboardQuestion]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ui, voice.currentQuestionIndex, isCodingQuestion, isWhiteboardQuestion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-activate the correct editor when voice first connects
   const initialEditorSetRef = useRef(false);
@@ -1582,15 +1825,19 @@ export function VoiceInterface({
   }, [voice.isConnected, isCodingQuestion, isWhiteboardQuestion]);
 
   // ── Render ──────────────────────────────────────────────────────
-  return shouldShowCompletionScreen ? completionScreen : (
+  return shouldShowCompletionScreen ? (
+    completionScreen
+  ) : (
     <div className="relative flex h-screen flex-col overflow-hidden bg-background">
       {/* Saving overlay */}
       {isSaving && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          <p className="mt-4 text-lg font-medium">Saving interview data...</p>
+          <p className="mt-4 text-lg font-medium">
+            {ui("Saving interview data...")}
+          </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            This will only take a moment.
+            {ui("This will only take a moment.")}
           </p>
         </div>
       )}
@@ -1599,20 +1846,37 @@ export function VoiceInterface({
       <div className="shrink-0 border-b bg-card px-3 py-2 md:px-6 md:py-3">
         <div className="flex items-center justify-between">
           <div className="mr-2 min-w-0 flex-1">
-            <h1 className="truncate text-sm font-semibold md:text-base">{interviewTitle}</h1>
+            <h1 className="truncate text-sm font-semibold md:text-base">
+              {interviewTitle}
+            </h1>
             <p className="hidden text-xs text-muted-foreground md:block">
-              Voice Interview with {aiName}
+              {ui("Voice Interview with")}
+              {aiName}
             </p>
           </div>
           <div className="flex items-center gap-2">
             {videoMode && recording.isRecording && (
               <div className="flex items-center gap-1.5 rounded-full bg-destructive/10 px-2.5 py-0.5">
                 <div className="h-2 w-2 animate-pulse rounded-full bg-destructive" />
-                <span className="text-[10px] font-medium text-destructive">REC</span>
+                <span className="text-[10px] font-medium text-destructive">
+                  {ui("REC")}
+                </span>
               </div>
             )}
-            <Badge variant={preview ? "outline" : voice.isConnected ? "default" : "secondary"}>
-              {preview ? "Preview" : voice.isConnected ? "Connected" : "Disconnected"}
+            <Badge
+              variant={
+                preview
+                  ? "outline"
+                  : voice.isConnected
+                    ? "default"
+                    : "secondary"
+              }
+            >
+              {preview
+                ? ui("Preview")
+                : voice.isConnected
+                  ? ui("Connected")
+                  : ui("Disconnected")}
             </Badge>
             <IntervieweeHelpPopover mode="voice" />
           </div>
@@ -1624,9 +1888,14 @@ export function VoiceInterface({
             Q{voice.currentQuestionIndex + 1} / {voice.totalQuestions}
           </span>
           {remainingSeconds !== null && isMobile && (
-            <div className={`flex shrink-0 items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium tabular-nums ${isTimeLow ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>
+            <div
+              className={`flex shrink-0 items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium tabular-nums ${isTimeLow ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}
+            >
               <Clock className="h-3 w-3" />
-              <span>{formatTime(remainingSeconds)} left</span>
+              <span>
+                {formatTime(remainingSeconds)}
+                {ui("left")}
+              </span>
             </div>
           )}
         </div>
@@ -1649,8 +1918,11 @@ export function VoiceInterface({
       {/* Main content: left (voice / whiteboard) + draggable divider + right (transcript) */}
       <div ref={containerRef} className="flex min-h-0 flex-1 overflow-hidden">
         {/* Left panel — voice visualization or whiteboard */}
-        <div className="flex min-h-0 flex-1 flex-col" style={isMobile ? undefined : { minWidth: MIN_PANEL_WIDTH }}>
-          {(whiteboardActive || codeEditorActive) ? (
+        <div
+          className="flex min-h-0 flex-1 flex-col"
+          style={isMobile ? undefined : { minWidth: MIN_PANEL_WIDTH }}
+        >
+          {whiteboardActive || codeEditorActive ? (
             /* ── Whiteboard or Code Editor main view ────────────── */
             <div className="relative flex min-h-0 flex-1 flex-col">
               {/* Minimized voice status bar */}
@@ -1658,7 +1930,10 @@ export function VoiceInterface({
                 {showVoiceSpeaking && (
                   <div className="flex items-center gap-1.5 text-primary">
                     <Volume2 className="h-4 w-4 animate-pulse" />
-                    <span className="text-xs font-medium">{aiName} speaking</span>
+                    <span className="text-xs font-medium">
+                      {aiName}
+                      {ui("speaking")}
+                    </span>
                   </div>
                 )}
                 {showVoiceListening && (
@@ -1667,214 +1942,252 @@ export function VoiceInterface({
                       <Mic className="absolute inset-0 h-full w-full text-muted-foreground/30" />
                       <div
                         className="absolute inset-0 overflow-hidden transition-[clip-path] duration-150 ease-out"
-                        style={{ clipPath: `inset(${(1 - voice.audioLevel) * 100}% 0 0 0)` }}
+                        style={{
+                          clipPath: `inset(${(1 - voice.audioLevel) * 100}% 0 0 0)`,
+                        }}
                       >
                         <Mic className="h-full w-full text-secondary-400" />
                       </div>
                     </div>
-                    <span className="text-xs font-medium">Listening</span>
+                    <span className="text-xs font-medium">
+                      {ui("Listening")}
+                    </span>
                   </div>
                 )}
                 {showVoiceProcessing && (
                   <div className="flex items-center gap-1.5 text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-xs font-medium">Thinking</span>
+                    <span className="text-xs font-medium">
+                      {ui("Thinking")}
+                    </span>
                   </div>
                 )}
                 {showVoiceTransitioning && (
                   <div className="flex items-center gap-1.5 text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span className="text-xs font-medium">
-                      {voice.transitionDirection === "previous" ? "Previous question..." : "Next question..."}
+                      {voice.transitionDirection === "previous"
+                        ? ui("Previous question...")
+                        : ui("Next question...")}
                     </span>
                   </div>
                 )}
-                {!showVoiceSpeaking && !showVoiceListening && !showVoiceProcessing && !showVoiceTransitioning && (
-                  <span className="text-xs text-muted-foreground">
-                    {voice.isConnected
-                      ? `Voice active — ${whiteboardActive ? "draw" : "code"} freely`
-                      : "Voice disconnected"}
-                  </span>
-                )}
+                {!showVoiceSpeaking &&
+                  !showVoiceListening &&
+                  !showVoiceProcessing &&
+                  !showVoiceTransitioning && (
+                    <span className="text-xs text-muted-foreground">
+                      {voice.isConnected
+                        ? `Voice active — ${whiteboardActive ? "draw" : "code"} freely`
+                        : ui("Voice disconnected")}
+                    </span>
+                  )}
                 {showVoiceListening && voice.userTranscript && (
                   <span className="ml-auto max-w-[50%] truncate text-xs text-muted-foreground italic">
-                    &ldquo;{voice.userTranscript}&rdquo;
+                    {ui("“")}
+                    {voice.userTranscript}
+                    {ui("”")}
                   </span>
                 )}
               </div>
               {/* Tabs — conditional on whiteboard or code editor */}
               {whiteboardActive ? (
-              <div className="flex items-center gap-1 border-b bg-card px-3 py-1.5">
-                {drawings.map((d, i) => (
-                  <div
-                    key={d.id}
-                    className={`group flex items-center gap-0.5 rounded-md text-xs font-medium transition-colors ${
-                      i === activeDrawingIdx
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted/50 text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    {editingDrawingId === d.id ? (
-                      <input
-                        autoFocus
-                        defaultValue={d.label}
-                        className="w-20 rounded bg-transparent px-2 py-1 text-xs outline-none ring-1 ring-primary"
-                        onBlur={(e) => renameDrawing(d.id, e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") renameDrawing(d.id, e.currentTarget.value);
-                          if (e.key === "Escape") setEditingDrawingId(null);
-                        }}
-                      />
-                    ) : (
-                      <button
-                        className="px-2.5 py-1"
-                        onClick={() => switchDrawing(i)}
-                        onDoubleClick={() => setEditingDrawingId(d.id)}
-                        title="Double-click to rename"
-                      >
-                        {d.label}
-                      </button>
-                    )}
-                    {drawings.length > 1 && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); deleteDrawing(i); }}
-                        className={`mr-0.5 rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100 ${
-                          i === activeDrawingIdx
-                            ? "hover:bg-primary-foreground/20"
-                            : "hover:bg-muted-foreground/20"
-                        }`}
-                        title="Delete drawing"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <button
-                  onClick={addNewDrawing}
-                  className="flex items-center gap-0.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
-                  title="New drawing"
-                >
-                  <Plus className="h-3 w-3" />
-                  New
-                </button>
-                <div className="ml-auto">
+                <div className="flex items-center gap-1 border-b bg-card px-3 py-1.5">
+                  {drawings.map((d, i) => (
+                    <div
+                      key={d.id}
+                      className={`group flex items-center gap-0.5 rounded-md text-xs font-medium transition-colors ${
+                        i === activeDrawingIdx
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {editingDrawingId === d.id ? (
+                        <input
+                          autoFocus
+                          defaultValue={d.label}
+                          className="w-20 rounded bg-transparent px-2 py-1 text-xs outline-none ring-1 ring-primary"
+                          onBlur={(e) => renameDrawing(d.id, e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter")
+                              renameDrawing(d.id, e.currentTarget.value);
+                            if (e.key === "Escape") setEditingDrawingId(null);
+                          }}
+                        />
+                      ) : (
+                        <button
+                          className="px-2.5 py-1"
+                          onClick={() => switchDrawing(i)}
+                          onDoubleClick={() => setEditingDrawingId(d.id)}
+                          title={ui("Double-click to rename")}
+                        >
+                          {d.label}
+                        </button>
+                      )}
+                      {drawings.length > 1 && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteDrawing(i);
+                          }}
+                          className={`mr-0.5 rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100 ${
+                            i === activeDrawingIdx
+                              ? "hover:bg-primary-foreground/20"
+                              : "hover:bg-muted-foreground/20"
+                          }`}
+                          title={ui("Delete drawing")}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
                   <button
-                    onClick={handleManualSave}
-                    disabled={saveStatus === "saving"}
-                    className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                      saveStatus === "saved"
-                        ? "text-secondary-600 dark:text-secondary-400"
-                        : "text-muted-foreground hover:bg-muted"
-                    }`}
-                    title="Save drawing"
+                    onClick={addNewDrawing}
+                    className="flex items-center gap-0.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
+                    title={ui("New drawing")}
                   >
-                    {saveStatus === "saving" ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : saveStatus === "saved" ? (
-                      <Check className="h-3 w-3" />
-                    ) : (
-                      <Save className="h-3 w-3" />
-                    )}
-                    {saveStatus === "saved" ? "Saved" : "Save"}
+                    <Plus className="h-3 w-3" />
+                    {ui("New")}
                   </button>
+                  <div className="ml-auto">
+                    <button
+                      onClick={handleManualSave}
+                      disabled={saveStatus === "saving"}
+                      className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                        saveStatus === "saved"
+                          ? "text-secondary-600 dark:text-secondary-400"
+                          : "text-muted-foreground hover:bg-muted"
+                      }`}
+                      title={ui("Save drawing")}
+                    >
+                      {saveStatus === "saving" ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : saveStatus === "saved" ? (
+                        <Check className="h-3 w-3" />
+                      ) : (
+                        <Save className="h-3 w-3" />
+                      )}
+                      {saveStatus === "saved" ? ui("Saved") : ui("Save")}
+                    </button>
+                  </div>
                 </div>
-              </div>
               ) : (
-              <div className="flex items-center gap-1 border-b bg-card px-3 py-1.5">
-                {codeSnippets.map((s, i) => (
-                  <div
-                    key={s.id}
-                    className={`group flex items-center gap-0.5 rounded-md text-xs font-medium transition-colors ${
-                      i === activeSnippetIdx
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted/50 text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    {editingSnippetId === s.id ? (
-                      <input
-                        autoFocus
-                        defaultValue={s.label}
-                        className="w-20 rounded bg-transparent px-2 py-1 text-xs outline-none ring-1 ring-primary"
-                        onBlur={(e) => renameCodeSnippet(s.id, e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") renameCodeSnippet(s.id, e.currentTarget.value);
-                          if (e.key === "Escape") setEditingSnippetId(null);
-                        }}
-                      />
-                    ) : (
-                      <button
-                        className="px-2.5 py-1"
-                        onClick={() => switchCodeSnippet(i)}
-                        onDoubleClick={() => setEditingSnippetId(s.id)}
-                        title="Double-click to rename"
-                      >
-                        {s.label}
-                      </button>
-                    )}
-                    {codeSnippets.length > 1 && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); deleteCodeSnippet(i); }}
-                        className={`mr-0.5 rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100 ${
-                          i === activeSnippetIdx
-                            ? "hover:bg-primary-foreground/20"
-                            : "hover:bg-muted-foreground/20"
-                        }`}
-                        title="Delete snippet"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <button
-                  onClick={addNewCodeSnippet}
-                  className="flex items-center gap-0.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
-                  title="New snippet"
-                >
-                  <Plus className="h-3 w-3" />
-                  New
-                </button>
-                <div className="ml-auto">
+                <div className="flex items-center gap-1 border-b bg-card px-3 py-1.5">
+                  {codeSnippets.map((s, i) => (
+                    <div
+                      key={s.id}
+                      className={`group flex items-center gap-0.5 rounded-md text-xs font-medium transition-colors ${
+                        i === activeSnippetIdx
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {editingSnippetId === s.id ? (
+                        <input
+                          autoFocus
+                          defaultValue={s.label}
+                          className="w-20 rounded bg-transparent px-2 py-1 text-xs outline-none ring-1 ring-primary"
+                          onBlur={(e) =>
+                            renameCodeSnippet(s.id, e.target.value)
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter")
+                              renameCodeSnippet(s.id, e.currentTarget.value);
+                            if (e.key === "Escape") setEditingSnippetId(null);
+                          }}
+                        />
+                      ) : (
+                        <button
+                          className="px-2.5 py-1"
+                          onClick={() => switchCodeSnippet(i)}
+                          onDoubleClick={() => setEditingSnippetId(s.id)}
+                          title={ui("Double-click to rename")}
+                        >
+                          {s.label}
+                        </button>
+                      )}
+                      {codeSnippets.length > 1 && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteCodeSnippet(i);
+                          }}
+                          className={`mr-0.5 rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100 ${
+                            i === activeSnippetIdx
+                              ? "hover:bg-primary-foreground/20"
+                              : "hover:bg-muted-foreground/20"
+                          }`}
+                          title={ui("Delete snippet")}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
                   <button
-                    onClick={handleCodeManualSave}
-                    disabled={codeSaveStatus === "saving"}
-                    className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                      codeSaveStatus === "saved"
-                        ? "text-secondary-600 dark:text-secondary-400"
-                        : "text-muted-foreground hover:bg-muted"
-                    }`}
-                    title="Save snippet"
+                    onClick={addNewCodeSnippet}
+                    className="flex items-center gap-0.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
+                    title={ui("New snippet")}
                   >
-                    {codeSaveStatus === "saving" ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : codeSaveStatus === "saved" ? (
-                      <Check className="h-3 w-3" />
-                    ) : (
-                      <Save className="h-3 w-3" />
-                    )}
-                    {codeSaveStatus === "saved" ? "Saved" : "Save"}
+                    <Plus className="h-3 w-3" />
+                    {ui("New")}
                   </button>
+                  <div className="ml-auto">
+                    <button
+                      onClick={handleCodeManualSave}
+                      disabled={codeSaveStatus === "saving"}
+                      className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                        codeSaveStatus === "saved"
+                          ? "text-secondary-600 dark:text-secondary-400"
+                          : "text-muted-foreground hover:bg-muted"
+                      }`}
+                      title={ui("Save snippet")}
+                    >
+                      {codeSaveStatus === "saving" ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : codeSaveStatus === "saved" ? (
+                        <Check className="h-3 w-3" />
+                      ) : (
+                        <Save className="h-3 w-3" />
+                      )}
+                      {codeSaveStatus === "saved" ? ui("Saved") : ui("Save")}
+                    </button>
+                  </div>
                 </div>
-              </div>
               )}
               {/* Canvas — fills remaining space */}
               <div className="flex-1 min-h-0">
                 {whiteboardActive && isWhiteboardQuestion && currentQVoice ? (
                   /* Side-by-side on desktop, stacked on mobile */
-                  <div ref={splitContainerRef} className={isMobile ? "flex h-full flex-col" : "flex h-full"}>
+                  <div
+                    ref={splitContainerRef}
+                    className={
+                      isMobile ? "flex h-full flex-col" : "flex h-full"
+                    }
+                  >
                     {/* Problem panel */}
                     <div
                       className={`min-w-0 shrink-0 overflow-y-auto overflow-x-hidden p-4 code-scrollbar ${isMobile ? "border-b" : ""}`}
-                      style={isMobile ? { height: `${splitPercent}%`, minHeight: 80 } : { width: `${splitPercent}%`, minWidth: 180 }}
+                      style={
+                        isMobile
+                          ? { height: `${splitPercent}%`, minHeight: 80 }
+                          : { width: `${splitPercent}%`, minWidth: 180 }
+                      }
                     >
                       <div className="mb-3 flex items-center gap-2">
                         <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Problem</span>
+                        <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                          {ui("Problem")}
+                        </span>
                       </div>
-                      <p className="mb-3 text-sm font-medium leading-snug">{currentQVoice.text}</p>
+                      <p className="mb-3 text-sm font-medium leading-snug">
+                        {currentQVoice.text}
+                      </p>
                       {currentQVoice.description && (
-                        <p className="mb-3 text-xs text-muted-foreground whitespace-pre-wrap">{currentQVoice.description}</p>
+                        <p className="mb-3 text-xs text-muted-foreground whitespace-pre-wrap">
+                          {currentQVoice.description}
+                        </p>
                       )}
                     </div>
                     {/* Draggable divider */}
@@ -1905,29 +2218,48 @@ export function VoiceInterface({
                   />
                 ) : codeEditorActive && isCodingQuestion && currentQVoice ? (
                   /* Side-by-side on desktop, stacked on mobile */
-                  <div ref={splitContainerRef} className={isMobile ? "flex h-full flex-col" : "flex h-full"}>
+                  <div
+                    ref={splitContainerRef}
+                    className={
+                      isMobile ? "flex h-full flex-col" : "flex h-full"
+                    }
+                  >
                     {/* Problem panel */}
                     <div
                       className={`min-w-0 shrink-0 overflow-y-auto overflow-x-hidden p-4 code-scrollbar ${isMobile ? "border-b" : ""}`}
-                      style={isMobile ? { height: `${splitPercent}%`, minHeight: 80 } : { width: `${splitPercent}%`, minWidth: 180 }}
+                      style={
+                        isMobile
+                          ? { height: `${splitPercent}%`, minHeight: 80 }
+                          : { width: `${splitPercent}%`, minWidth: 180 }
+                      }
                     >
                       <div className="mb-3 flex items-center gap-2">
                         <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Problem</span>
+                        <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                          {ui("Problem")}
+                        </span>
                       </div>
-                      <p className="mb-3 text-sm font-medium leading-snug">{currentQVoice.text}</p>
+                      <p className="mb-3 text-sm font-medium leading-snug">
+                        {currentQVoice.text}
+                      </p>
                       {currentQVoice.description && (
-                        <p className="mb-3 text-xs text-muted-foreground">{currentQVoice.description}</p>
+                        <p className="mb-3 text-xs text-muted-foreground">
+                          {currentQVoice.description}
+                        </p>
                       )}
                       {currentQVoice.starterCode?.code && (
                         <div className="overflow-hidden rounded-md border bg-zinc-950">
                           <div className="flex items-center gap-1.5 border-b border-zinc-800 bg-zinc-900 px-3 py-1.5">
                             <Code2 className="h-3 w-3 text-zinc-400" />
                             <span className="text-[10px] font-medium uppercase tracking-wide text-zinc-400">
-                              Starter Code — {currentQVoice.starterCode.language}
+                              {ui("Starter Code —")}
+                              {currentQVoice.starterCode.language}
                             </span>
                           </div>
-                          <CodeBlock code={currentQVoice.starterCode.code} language={currentQVoice.starterCode.language} />
+                          <CodeBlock
+                            code={currentQVoice.starterCode.code}
+                            language={currentQVoice.starterCode.language}
+                          />
                         </div>
                       )}
                     </div>
@@ -1988,138 +2320,163 @@ export function VoiceInterface({
                     : undefined
                 }
               >
-              {/* Status indicator */}
-              <div className="flex flex-col items-center gap-4">
-                {showVoiceTransitioning && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span className="text-sm font-medium">
-                      {voice.transitionDirection === "previous" ? "Preparing previous question..." : "Preparing next question..."}
-                    </span>
-                  </div>
-                )}
-                {showVoiceProcessing && (
-                  <div className="flex flex-col items-center gap-3">
+                {/* Status indicator */}
+                <div className="flex flex-col items-center gap-4">
+                  {showVoiceTransitioning && (
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Loader2 className="h-5 w-5 animate-spin" />
-                      <span className="text-sm font-medium">Thinking...</span>
+                      <span className="text-sm font-medium">
+                        {voice.transitionDirection === "previous"
+                          ? ui("Preparing previous question...")
+                          : ui("Preparing next question...")}
+                      </span>
                     </div>
-                    {(() => {
-                      const lastUserMsg = messages.filter(m => m.role === "user").pop();
-                      const displayText = lastUserMsg?.content || voice.userTranscript;
-                      return displayText ? (
-                        <p className="max-w-md text-center text-sm text-muted-foreground">
-                          &ldquo;{displayText}&rdquo;
-                        </p>
-                      ) : null;
-                    })()}
-                  </div>
-                )}
-                {showVoiceSpeaking && (
-                  <div className="flex items-center gap-2 text-primary">
-                    <Volume2 className="h-5 w-5 animate-pulse" />
-                    <span className="text-sm font-medium">{aiName} is speaking...</span>
-                  </div>
-                )}
-                {showVoiceListening && (
-                  <div className="flex flex-col items-center gap-3">
-                    {/* Mic icon with fill level */}
-                    <div className="relative h-10 w-10">
-                      <Mic className="absolute inset-0 h-full w-full text-muted-foreground/30" />
-                      <div
-                        className="absolute inset-0 overflow-hidden transition-[clip-path] duration-150 ease-out"
-                        style={{ clipPath: `inset(${(1 - voice.audioLevel) * 100}% 0 0 0)` }}
-                      >
-                        <Mic className="h-full w-full text-secondary-400" />
-                      </div>
-                    </div>
-                    <span className="text-sm font-medium text-secondary-500">Listening...</span>
-                  </div>
-                )}
-
-                {/* Live transcript while listening */}
-                {showVoiceListening && voice.userTranscript && (
-                  <p className="max-w-md text-center text-sm text-muted-foreground">
-                    &ldquo;{voice.userTranscript}&rdquo;
-                  </p>
-                )}
-
-                {/* Audio waveform — driven by real audio level */}
-                {(showVoiceSpeaking || showVoiceListening) && (
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: 20 }).map((_, i) => {
-                      const level = showVoiceSpeaking ? 0.5 : voice.audioLevel;
-                      const barVariance = Math.sin((i + Date.now() / 200) * 0.7) * 0.3 + 0.7;
-                      return (
-                        <div
-                          key={i}
-                          className={`w-1 rounded-full transition-all duration-150 ${
-                            level > 0.02 ? "bg-primary" : "bg-muted"
-                          }`}
-                          style={{
-                            height: `${8 + level * barVariance * 32}px`,
-                          }}
-                        />
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* AI response text */}
-                {voice.aiTranscript && !showVoiceListening && (
-                  <p className="max-w-md text-center text-sm text-muted-foreground italic">
-                    {voice.aiTranscript.length > 200
-                      ? voice.aiTranscript.slice(0, 200) + "..."
-                      : voice.aiTranscript}
-                  </p>
-                )}
-              </div>
-
-              {!voice.isConnected && !preview && (
-                <Button
-                  size="lg"
-                  disabled={isStartingInterview}
-                  onClick={async () => {
-                    setError("");
-                    setIsStartingInterview(true);
-                    try {
-                      await voice.connect();
-                    } catch {
-                      setIsStartingInterview(false);
-                    }
-                  }}
-                  className="gap-2 rounded-full px-8"
-                >
-                  {isStartingInterview ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <Mic className="h-5 w-5" />
                   )}
-                  {isStartingInterview ? "Connecting..." : "Start Voice Interview"}
-                </Button>
-              )}
+                  {showVoiceProcessing && (
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <span className="text-sm font-medium">
+                          {ui("Thinking...")}
+                        </span>
+                      </div>
+                      {(() => {
+                        const lastUserMsg = messages
+                          .filter((m) => m.role === "user")
+                          .pop();
+                        const displayText =
+                          lastUserMsg?.content || voice.userTranscript;
+                        return displayText ? (
+                          <p className="max-w-md text-center text-sm text-muted-foreground">
+                            {ui("“")}
+                            {displayText}
+                            {ui("”")}
+                          </p>
+                        ) : null;
+                      })()}
+                    </div>
+                  )}
+                  {showVoiceSpeaking && (
+                    <div className="flex items-center gap-2 text-primary">
+                      <Volume2 className="h-5 w-5 animate-pulse" />
+                      <span className="text-sm font-medium">
+                        {aiName}
+                        {ui("is speaking...")}
+                      </span>
+                    </div>
+                  )}
+                  {showVoiceListening && (
+                    <div className="flex flex-col items-center gap-3">
+                      {/* Mic icon with fill level */}
+                      <div className="relative h-10 w-10">
+                        <Mic className="absolute inset-0 h-full w-full text-muted-foreground/30" />
+                        <div
+                          className="absolute inset-0 overflow-hidden transition-[clip-path] duration-150 ease-out"
+                          style={{
+                            clipPath: `inset(${(1 - voice.audioLevel) * 100}% 0 0 0)`,
+                          }}
+                        >
+                          <Mic className="h-full w-full text-secondary-400" />
+                        </div>
+                      </div>
+                      <span className="text-sm font-medium text-secondary-500">
+                        {ui("Listening...")}
+                      </span>
+                    </div>
+                  )}
 
-              {!voice.isConnected && !preview && isStartingInterview && (
-                <p className="text-sm text-muted-foreground">
-                  Connecting to the interview. This can take a few seconds.
-                </p>
-              )}
+                  {/* Live transcript while listening */}
+                  {showVoiceListening && voice.userTranscript && (
+                    <p className="max-w-md text-center text-sm text-muted-foreground">
+                      {ui("“")}
+                      {voice.userTranscript}
+                      {ui("”")}
+                    </p>
+                  )}
 
-              {preview && (
-                <p className="text-sm text-muted-foreground">
-                  This is where the voice conversation happens
-                </p>
-              )}
-              {voice.isConnected && !voice.isListening && (
-                <p className="text-sm text-muted-foreground">
-                  Click the mic to start speaking
-                </p>
-              )}
-              {voice.isConnected && showVoiceListening && (
-                <p className="text-sm text-muted-foreground">
-                  Speak naturally — AI will respond automatically
-                </p>
-              )}
+                  {/* Audio waveform — driven by real audio level */}
+                  {(showVoiceSpeaking || showVoiceListening) && (
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: 20 }).map((_, i) => {
+                        const level = showVoiceSpeaking
+                          ? 0.5
+                          : voice.audioLevel;
+                        const barVariance =
+                          Math.sin((i + Date.now() / 200) * 0.7) * 0.3 + 0.7;
+                        return (
+                          <div
+                            key={i}
+                            className={`w-1 rounded-full transition-all duration-150 ${
+                              level > 0.02 ? "bg-primary" : "bg-muted"
+                            }`}
+                            style={{
+                              height: `${8 + level * barVariance * 32}px`,
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* AI response text */}
+                  {voice.aiTranscript && !showVoiceListening && (
+                    <p className="max-w-md text-center text-sm text-muted-foreground italic">
+                      {voice.aiTranscript.length > 200
+                        ? voice.aiTranscript.slice(0, 200) + "..."
+                        : voice.aiTranscript}
+                    </p>
+                  )}
+                </div>
+
+                {!voice.isConnected && !preview && (
+                  <Button
+                    size="lg"
+                    disabled={isStartingInterview}
+                    onClick={async () => {
+                      setError("");
+                      setIsStartingInterview(true);
+                      try {
+                        await voice.connect();
+                      } catch {
+                        setIsStartingInterview(false);
+                      }
+                    }}
+                    className="gap-2 rounded-full px-8"
+                  >
+                    {isStartingInterview ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <Mic className="h-5 w-5" />
+                    )}
+                    {isStartingInterview
+                      ? "Connecting..."
+                      : ui("Start Voice Interview")}
+                  </Button>
+                )}
+
+                {!voice.isConnected && !preview && isStartingInterview && (
+                  <p className="text-sm text-muted-foreground">
+                    {ui(
+                      "Connecting to the interview. This can take a few seconds.",
+                    )}
+                  </p>
+                )}
+
+                {preview && (
+                  <p className="text-sm text-muted-foreground">
+                    {ui("This is where the voice conversation happens")}
+                  </p>
+                )}
+                {voice.isConnected && !voice.isListening && (
+                  <p className="text-sm text-muted-foreground">
+                    {ui("Click the mic to start speaking")}
+                  </p>
+                )}
+                {voice.isConnected && showVoiceListening && (
+                  <p className="text-sm text-muted-foreground">
+                    {ui("Speak naturally — AI will respond automatically")}
+                  </p>
+                )}
               </div>
 
               {/* Mobile: draggable divider between voice and transcript */}
@@ -2142,9 +2499,13 @@ export function VoiceInterface({
                   <button
                     type="button"
                     className="flex shrink-0 items-center justify-between border-b px-4 py-2 text-left"
-                    onClick={() => setMobileTranscriptCollapsed((prev) => !prev)}
+                    onClick={() =>
+                      setMobileTranscriptCollapsed((prev) => !prev)
+                    }
                   >
-                    <p className="text-xs font-medium text-muted-foreground">Transcript</p>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      {ui("Transcript")}
+                    </p>
                     {mobileTranscriptCollapsed ? (
                       <ChevronDown className="h-4 w-4 text-muted-foreground" />
                     ) : (
@@ -2159,31 +2520,50 @@ export function VoiceInterface({
                             <div className="flex items-start gap-1.5 text-sm">
                               <Volume2 className="mt-0.5 h-3 w-3 shrink-0 text-primary/60" />
                               <div>
-                                <span className="font-medium text-primary">{aiName}:</span>{" "}
-                                Welcome! Let&apos;s begin the interview. Could you start by telling me about yourself?
+                                <span className="font-medium text-primary">
+                                  {aiName}:
+                                </span>{" "}
+                                {ui(
+                                  "Welcome! Let's begin the interview. Could you start by telling me about yourself?",
+                                )}
                               </div>
                             </div>
                             <div className="flex items-start gap-1.5 text-sm">
                               <Mic className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
                               <div>
-                                <span className="font-medium text-secondary-600 dark:text-secondary-400">You:</span>{" "}
-                                Sure, I have been working as a software engineer for...
+                                <span className="font-medium text-secondary-600 dark:text-secondary-400">
+                                  {ui("You:")}
+                                </span>{" "}
+                                {ui(
+                                  "Sure, I have been working as a software engineer for...",
+                                )}
                               </div>
                             </div>
-                            <p className="text-center text-xs text-muted-foreground italic">(sample transcript)</p>
+                            <p className="text-center text-xs text-muted-foreground italic">
+                              {ui("(sample transcript)")}
+                            </p>
                           </>
-                        ) : messages.length === 0 && !voice.aiTranscript && !voice.userTranscript ? (
+                        ) : messages.length === 0 &&
+                          !voice.aiTranscript &&
+                          !voice.userTranscript ? (
                           <p className="py-8 text-center text-sm text-muted-foreground">
-                            Transcript will appear here once the conversation starts.
+                            {ui(
+                              "Transcript will appear here once the conversation starts.",
+                            )}
                           </p>
                         ) : (
                           <>
                             {messages.map((msg) => (
-                              <div key={msg.id} className="flex items-start gap-1.5 text-sm">
+                              <div
+                                key={msg.id}
+                                className="flex items-start gap-1.5 text-sm"
+                              >
                                 {msg.role === "user" ? (
-                                  msg.source === "chat"
-                                    ? <MessageSquare className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
-                                    : <Mic className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
+                                  msg.source === "chat" ? (
+                                    <MessageSquare className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
+                                  ) : (
+                                    <Mic className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
+                                  )
                                 ) : (
                                   <Volume2 className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
                                 )}
@@ -2195,40 +2575,61 @@ export function VoiceInterface({
                                         : "text-primary"
                                     }`}
                                   >
-                                    {msg.role === "user" ? "You" : aiName}:
+                                    {msg.role === "user" ? ui("You") : aiName}:
                                   </span>{" "}
                                   {msg.content}
                                 </div>
                               </div>
                             ))}
-                            {(showVoiceListening || (showVoiceProcessing && messages[messages.length - 1]?.role !== "user")) && voice.userTranscript && (
-                              <div className={`flex items-start gap-1.5 text-sm${showVoiceListening ? " animate-pulse" : ""}`}>
-                                <Mic className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
-                                <div>
-                                  <span className="font-medium text-secondary-600 dark:text-secondary-400">You:</span>{" "}
-                                  <span className="text-muted-foreground">{voice.userTranscript}</span>
+                            {(showVoiceListening ||
+                              (showVoiceProcessing &&
+                                messages[messages.length - 1]?.role !==
+                                  "user")) &&
+                              voice.userTranscript && (
+                                <div
+                                  className={`flex items-start gap-1.5 text-sm${showVoiceListening ? " animate-pulse" : ""}`}
+                                >
+                                  <Mic className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
+                                  <div>
+                                    <span className="font-medium text-secondary-600 dark:text-secondary-400">
+                                      {ui("You:")}
+                                    </span>{" "}
+                                    <span className="text-muted-foreground">
+                                      {voice.userTranscript}
+                                    </span>
+                                  </div>
                                 </div>
-                              </div>
-                            )}
+                              )}
                             {voice.isProcessing && !voice.aiTranscript && (
                               <div className="flex items-start gap-1.5 text-sm text-muted-foreground">
                                 <Loader2 className="mt-0.5 h-3 w-3 shrink-0 animate-spin text-primary/60" />
-                                <span className="text-xs italic">Thinking...</span>
+                                <span className="text-xs italic">
+                                  {ui("Thinking...")}
+                                </span>
                               </div>
                             )}
-                            {voice.aiTranscript && (() => {
-                              const alreadyInMessages = hasRecentAssistantTranscript(messages, voice.aiTranscript);
-                              if (alreadyInMessages) return null;
-                              return (
-                                <div className="flex items-start gap-1.5 text-sm">
-                                  <Volume2 className="mt-0.5 h-3 w-3 shrink-0 text-primary/60" />
-                                  <div>
-                                    <span className="font-medium text-primary">{aiName}:</span>{" "}
-                                    <span className="text-muted-foreground">{voice.aiTranscript}</span>
+                            {voice.aiTranscript &&
+                              (() => {
+                                const alreadyInMessages =
+                                  hasRecentAssistantTranscript(
+                                    messages,
+                                    voice.aiTranscript,
+                                  );
+                                if (alreadyInMessages) return null;
+                                return (
+                                  <div className="flex items-start gap-1.5 text-sm">
+                                    <Volume2 className="mt-0.5 h-3 w-3 shrink-0 text-primary/60" />
+                                    <div>
+                                      <span className="font-medium text-primary">
+                                        {aiName}:
+                                      </span>{" "}
+                                      <span className="text-muted-foreground">
+                                        {voice.aiTranscript}
+                                      </span>
+                                    </div>
                                   </div>
-                                </div>
-                              );
-                            })()}
+                                );
+                              })()}
                           </>
                         )}
                         <div ref={transcriptEndRef} />
@@ -2251,212 +2652,280 @@ export function VoiceInterface({
 
         {/* ── Right panel — Transcript + optional Chat (desktop only) ── */}
         {!isMobile && (
-        <div
-          ref={rightPanelRef}
-          className="flex min-h-0 shrink-0 flex-col border-l bg-card"
-          style={{ width: desktopTranscriptCollapsed ? COLLAPSED_RIGHT_DOCK_WIDTH : rightWidth }}
-        >
-          {desktopTranscriptCollapsed ? (
-            <button
-              type="button"
-              className="flex h-full w-full flex-col items-center justify-start gap-3 px-2 py-4 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-              onClick={() => setDesktopTranscriptCollapsed(false)}
-            >
-              <ChevronLeft className="h-4 w-4 shrink-0" />
-              <span
-                className="text-[11px] font-medium uppercase tracking-[0.2em]"
-                style={{ writingMode: "vertical-rl", textOrientation: "mixed" }}
+          <div
+            ref={rightPanelRef}
+            className="flex min-h-0 shrink-0 flex-col border-l bg-card"
+            style={{
+              width: desktopTranscriptCollapsed
+                ? COLLAPSED_RIGHT_DOCK_WIDTH
+                : rightWidth,
+            }}
+          >
+            {desktopTranscriptCollapsed ? (
+              <button
+                type="button"
+                className="flex h-full w-full flex-col items-center justify-start gap-3 px-2 py-4 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+                onClick={() => setDesktopTranscriptCollapsed(false)}
               >
-                Transcript
-              </span>
-            </button>
-          ) : (
-            <>
-              {/* Transcript section */}
-              <div
-                data-tour="voice-transcript"
-                className="flex min-h-0 flex-col overflow-hidden"
-                style={
-                  chatOpen && chatEnabled
-                    ? { height: `${chatSplitPercent}%` }
-                    : { flex: 1 }
-                }
-              >
-                <button
-                  type="button"
-                  className="flex items-center justify-between border-b px-4 py-2 text-left"
-                  onClick={() => setDesktopTranscriptCollapsed(true)}
+                <ChevronLeft className="h-4 w-4 shrink-0" />
+                <span
+                  className="text-[11px] font-medium uppercase tracking-[0.2em]"
+                  style={{
+                    writingMode: "vertical-rl",
+                    textOrientation: "mixed",
+                  }}
                 >
-                  <p className="text-xs font-medium text-muted-foreground">Transcript</p>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                </button>
-                <ScrollArea className="min-h-0 flex-1">
-                  <div className="space-y-3 p-4">
-                    {preview ? (
-                      <>
-                        <div className="flex items-start gap-1.5 text-sm">
-                          <Volume2 className="mt-0.5 h-3 w-3 shrink-0 text-primary/60" />
-                          <div>
-                            <span className="font-medium text-primary">{aiName}:</span>{" "}
-                            Welcome! Let&apos;s begin the interview. Could you start by telling me about yourself?
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-1.5 text-sm">
-                          <Mic className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
-                          <div>
-                            <span className="font-medium text-secondary-600 dark:text-secondary-400">You:</span>{" "}
-                            Sure, I have been working as a software engineer for...
-                          </div>
-                        </div>
-                        <p className="text-center text-xs text-muted-foreground italic">(sample transcript)</p>
-                      </>
-                    ) : messages.length === 0 && !voice.aiTranscript && !voice.userTranscript ? (
-                      <p className="py-8 text-center text-sm text-muted-foreground">
-                        Transcript will appear here once the conversation starts.
-                      </p>
-                    ) : (
-                      <>
-                        {messages.map((msg) => (
-                          <div key={msg.id} className="flex items-start gap-1.5 text-sm">
-                            {msg.role === "user" ? (
-                              msg.source === "chat"
-                                ? <MessageSquare className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
-                                : <Mic className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
-                            ) : (
-                              <Volume2 className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
-                            )}
-                            <div>
-                              <span
-                                className={`font-medium ${
-                                  msg.role === "user"
-                                    ? "text-secondary-600 dark:text-secondary-400"
-                                    : "text-primary"
-                                }`}
-                              >
-                                {msg.role === "user" ? "You" : aiName}:
-                              </span>{" "}
-                              {msg.content}
-                            </div>
-                          </div>
-                        ))}
-                        {(showVoiceListening || (showVoiceProcessing && messages[messages.length - 1]?.role !== "user")) && voice.userTranscript && (
-                          <div className={`flex items-start gap-1.5 text-sm${showVoiceListening ? " animate-pulse" : ""}`}>
-                            <Mic className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
-                            <div>
-                              <span className="font-medium text-secondary-600 dark:text-secondary-400">You:</span>{" "}
-                              <span className="text-muted-foreground">{voice.userTranscript}</span>
-                            </div>
-                          </div>
-                        )}
-                        {voice.isProcessing && !voice.aiTranscript && (
-                          <div className="flex items-start gap-1.5 text-sm text-muted-foreground">
-                            <Loader2 className="mt-0.5 h-3 w-3 shrink-0 animate-spin text-primary/60" />
-                            <span className="text-xs italic">Thinking...</span>
-                          </div>
-                        )}
-                        {voice.aiTranscript && (() => {
-                          const alreadyInMessages = hasRecentAssistantTranscript(messages, voice.aiTranscript);
-                          if (alreadyInMessages) return null;
-                          return (
-                            <div className="flex items-start gap-1.5 text-sm">
-                              <Volume2 className="mt-0.5 h-3 w-3 shrink-0 text-primary/60" />
-                              <div>
-                                <span className="font-medium text-primary">{aiName}:</span>{" "}
-                                <span className="text-muted-foreground">{voice.aiTranscript}</span>
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </>
-                    )}
-                    <div ref={transcriptEndRef} />
-                  </div>
-                </ScrollArea>
-              </div>
-
-              {/* Draggable horizontal divider */}
-              {chatOpen && chatEnabled && (
+                  {ui("Transcript")}
+                </span>
+              </button>
+            ) : (
+              <>
+                {/* Transcript section */}
                 <div
-                  className="group flex h-1 cursor-row-resize touch-none items-center justify-center border-t border-b border-border bg-muted/30 transition-colors hover:bg-primary/10 active:bg-primary/20"
-                  onPointerDown={onChatDragStart}
-                />
-              )}
-
-              {/* Chat section (toggled via control bar) */}
-              {chatOpen && chatEnabled && (
-                <div
+                  data-tour="voice-transcript"
                   className="flex min-h-0 flex-col overflow-hidden"
-                  style={{ height: `${100 - chatSplitPercent}%` }}
+                  style={
+                    chatOpen && chatEnabled
+                      ? { height: `${chatSplitPercent}%` }
+                      : { flex: 1 }
+                  }
                 >
-                  <div className="flex items-center border-b px-4 py-2">
-                    <p className="text-xs font-medium text-muted-foreground">Chat</p>
-                  </div>
+                  <button
+                    type="button"
+                    className="flex items-center justify-between border-b px-4 py-2 text-left"
+                    onClick={() => setDesktopTranscriptCollapsed(true)}
+                  >
+                    <p className="text-xs font-medium text-muted-foreground">
+                      {ui("Transcript")}
+                    </p>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  </button>
                   <ScrollArea className="min-h-0 flex-1">
                     <div className="space-y-3 p-4">
-                      {chatMessages.length === 0 ? (
-                        <p className="py-4 text-center text-xs text-muted-foreground">
-                          Send a message to start chatting.
+                      {preview ? (
+                        <>
+                          <div className="flex items-start gap-1.5 text-sm">
+                            <Volume2 className="mt-0.5 h-3 w-3 shrink-0 text-primary/60" />
+                            <div>
+                              <span className="font-medium text-primary">
+                                {aiName}:
+                              </span>{" "}
+                              {ui(
+                                "Welcome! Let's begin the interview. Could you start by telling me about yourself?",
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-1.5 text-sm">
+                            <Mic className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
+                            <div>
+                              <span className="font-medium text-secondary-600 dark:text-secondary-400">
+                                {ui("You:")}
+                              </span>{" "}
+                              {ui(
+                                "Sure, I have been working as a software engineer for...",
+                              )}
+                            </div>
+                          </div>
+                          <p className="text-center text-xs text-muted-foreground italic">
+                            {ui("(sample transcript)")}
+                          </p>
+                        </>
+                      ) : messages.length === 0 &&
+                        !voice.aiTranscript &&
+                        !voice.userTranscript ? (
+                        <p className="py-8 text-center text-sm text-muted-foreground">
+                          {ui(
+                            "Transcript will appear here once the conversation starts.",
+                          )}
                         </p>
                       ) : (
-                        chatMessages.map((msg) => (
-                          <div key={msg.id} className="flex items-start gap-1.5 text-sm">
-                            <MessageSquare className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
-                            <p className="text-foreground">{msg.content}</p>
-                          </div>
-                        ))
+                        <>
+                          {messages.map((msg) => (
+                            <div
+                              key={msg.id}
+                              className="flex items-start gap-1.5 text-sm"
+                            >
+                              {msg.role === "user" ? (
+                                msg.source === "chat" ? (
+                                  <MessageSquare className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
+                                ) : (
+                                  <Mic className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
+                                )
+                              ) : (
+                                <Volume2 className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
+                              )}
+                              <div>
+                                <span
+                                  className={`font-medium ${
+                                    msg.role === "user"
+                                      ? "text-secondary-600 dark:text-secondary-400"
+                                      : "text-primary"
+                                  }`}
+                                >
+                                  {msg.role === "user" ? ui("You") : aiName}:
+                                </span>{" "}
+                                {msg.content}
+                              </div>
+                            </div>
+                          ))}
+                          {(showVoiceListening ||
+                            (showVoiceProcessing &&
+                              messages[messages.length - 1]?.role !==
+                                "user")) &&
+                            voice.userTranscript && (
+                              <div
+                                className={`flex items-start gap-1.5 text-sm${showVoiceListening ? " animate-pulse" : ""}`}
+                              >
+                                <Mic className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
+                                <div>
+                                  <span className="font-medium text-secondary-600 dark:text-secondary-400">
+                                    {ui("You:")}
+                                  </span>{" "}
+                                  <span className="text-muted-foreground">
+                                    {voice.userTranscript}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          {voice.isProcessing && !voice.aiTranscript && (
+                            <div className="flex items-start gap-1.5 text-sm text-muted-foreground">
+                              <Loader2 className="mt-0.5 h-3 w-3 shrink-0 animate-spin text-primary/60" />
+                              <span className="text-xs italic">
+                                {ui("Thinking...")}
+                              </span>
+                            </div>
+                          )}
+                          {voice.aiTranscript &&
+                            (() => {
+                              const alreadyInMessages =
+                                hasRecentAssistantTranscript(
+                                  messages,
+                                  voice.aiTranscript,
+                                );
+                              if (alreadyInMessages) return null;
+                              return (
+                                <div className="flex items-start gap-1.5 text-sm">
+                                  <Volume2 className="mt-0.5 h-3 w-3 shrink-0 text-primary/60" />
+                                  <div>
+                                    <span className="font-medium text-primary">
+                                      {aiName}:
+                                    </span>{" "}
+                                    <span className="text-muted-foreground">
+                                      {voice.aiTranscript}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                        </>
                       )}
-                      <div ref={chatEndRef} />
+                      <div ref={transcriptEndRef} />
                     </div>
                   </ScrollArea>
-                  <div className="flex items-center gap-2 border-t px-3 py-2">
-                    <Input
-                      ref={chatInputRef}
-                      value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      placeholder="Type a message..."
-                      className="h-8 flex-1 text-sm"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey && chatInput.trim()) {
-                          e.preventDefault();
+                </div>
+
+                {/* Draggable horizontal divider */}
+                {chatOpen && chatEnabled && (
+                  <div
+                    className="group flex h-1 cursor-row-resize touch-none items-center justify-center border-t border-b border-border bg-muted/30 transition-colors hover:bg-primary/10 active:bg-primary/20"
+                    onPointerDown={onChatDragStart}
+                  />
+                )}
+
+                {/* Chat section (toggled via control bar) */}
+                {chatOpen && chatEnabled && (
+                  <div
+                    className="flex min-h-0 flex-col overflow-hidden"
+                    style={{ height: `${100 - chatSplitPercent}%` }}
+                  >
+                    <div className="flex items-center border-b px-4 py-2">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        {ui("Chat")}
+                      </p>
+                    </div>
+                    <ScrollArea className="min-h-0 flex-1">
+                      <div className="space-y-3 p-4">
+                        {chatMessages.length === 0 ? (
+                          <p className="py-4 text-center text-xs text-muted-foreground">
+                            {ui("Send a message to start chatting.")}
+                          </p>
+                        ) : (
+                          chatMessages.map((msg) => (
+                            <div
+                              key={msg.id}
+                              className="flex items-start gap-1.5 text-sm"
+                            >
+                              <MessageSquare className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
+                              <p className="text-foreground">{msg.content}</p>
+                            </div>
+                          ))
+                        )}
+                        <div ref={chatEndRef} />
+                      </div>
+                    </ScrollArea>
+                    <div className="flex items-center gap-2 border-t px-3 py-2">
+                      <Input
+                        ref={chatInputRef}
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        placeholder={ui("Type a message...")}
+                        className="h-8 flex-1 text-sm"
+                        onKeyDown={(e) => {
+                          if (
+                            e.key === "Enter" &&
+                            !e.shiftKey &&
+                            chatInput.trim()
+                          ) {
+                            e.preventDefault();
+                            handleSendChat(chatInput);
+                            setChatInput("");
+                          }
+                        }}
+                      />
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 shrink-0"
+                        disabled={!chatInput.trim()}
+                        onClick={() => {
                           handleSendChat(chatInput);
                           setChatInput("");
-                        }
-                      }}
-                    />
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7 shrink-0"
-                      disabled={!chatInput.trim()}
-                      onClick={() => {
-                        handleSendChat(chatInput);
-                        setChatInput("");
-                        chatInputRef.current?.focus();
-                      }}
-                    >
-                      <Send className="h-3.5 w-3.5" />
-                    </Button>
+                          chatInputRef.current?.focus();
+                        }}
+                      >
+                        <Send className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+                )}
+              </>
+            )}
+          </div>
         )}
       </div>
 
       {/* ── Bottom control bar (Zoom-like) ──────────────────── */}
       {(voice.isConnected || preview) && (
-        <div className={`relative flex shrink-0 items-center justify-center gap-2 border-t bg-card px-3 py-2 md:gap-6 md:px-6${preview ? " pointer-events-none" : ""}`}>
+        <div
+          className={`relative flex shrink-0 items-center justify-center gap-2 border-t bg-card px-3 py-2 md:gap-6 md:px-6${preview ? " pointer-events-none" : ""}`}
+        >
           {/* Timer — right-aligned on desktop only (mobile shows it in header) */}
           {remainingSeconds !== null && !isMobile && (
-            <div className={`absolute right-3 flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium tabular-nums md:right-6 md:px-2.5 ${isTimeLow ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>
+            <div
+              className={`absolute right-3 flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium tabular-nums md:right-6 md:px-2.5 ${isTimeLow ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}
+            >
               <Clock className="h-3.5 w-3.5" />
-              <span>{formatTime(remainingSeconds)} left</span>
+              <span>
+                {formatTime(remainingSeconds)}
+                {ui("left")}
+              </span>
             </div>
           )}
           {/* Mic toggle */}
-          <div data-tour="voice-mic" className="flex flex-col items-center gap-0.5">
+          <div
+            data-tour="voice-mic"
+            className="flex flex-col items-center gap-0.5"
+          >
             <Button
               size="icon"
               variant={voice.isListening ? "default" : "secondary"}
@@ -2480,13 +2949,16 @@ export function VoiceInterface({
               )}
             </Button>
             <span className="hidden text-[10px] text-muted-foreground md:block">
-              {voice.isListening ? "Mute" : "Unmute"}
+              {voice.isListening ? ui("Mute") : ui("Unmute")}
             </span>
           </div>
 
           {/* Chat toggle (mobile: opens transcript+chat sheet; same layout as other icon buttons) */}
           {chatEnabled && (
-            <div data-tour="voice-chat" className="flex flex-col items-center gap-0.5">
+            <div
+              data-tour="voice-chat"
+              className="flex flex-col items-center gap-0.5"
+            >
               <Button
                 size="icon"
                 variant={chatOpen ? "default" : "secondary"}
@@ -2495,12 +2967,17 @@ export function VoiceInterface({
               >
                 <MessageSquare className="h-4 w-4" />
               </Button>
-              <span className="hidden text-[10px] text-muted-foreground md:block">Chat</span>
+              <span className="hidden text-[10px] text-muted-foreground md:block">
+                {ui("Chat")}
+              </span>
             </div>
           )}
 
           {/* Whiteboard + Code Editor toggles */}
-          <div data-tour="voice-tools" className="flex items-center gap-2 md:gap-6">
+          <div
+            data-tour="voice-tools"
+            className="flex items-center gap-2 md:gap-6"
+          >
             <div className="flex flex-col items-center gap-0.5">
               <Button
                 size="icon"
@@ -2510,7 +2987,9 @@ export function VoiceInterface({
               >
                 <PenLine className="h-4 w-4" />
               </Button>
-              <span className="hidden text-[10px] text-muted-foreground md:block">Whiteboard</span>
+              <span className="hidden text-[10px] text-muted-foreground md:block">
+                {ui("Whiteboard")}
+              </span>
             </div>
 
             <div className="flex flex-col items-center gap-0.5">
@@ -2522,30 +3001,35 @@ export function VoiceInterface({
               >
                 <Code2 className="h-4 w-4" />
               </Button>
-              <span className="hidden text-[10px] text-muted-foreground md:block">Code</span>
+              <span className="hidden text-[10px] text-muted-foreground md:block">
+                {ui("Code")}
+              </span>
             </div>
           </div>
 
           {/* Previous / Next / End */}
-          <div data-tour="voice-progress" className="flex items-center gap-2 md:gap-6">
+          <div
+            data-tour="voice-progress"
+            className="flex items-center gap-2 md:gap-6"
+          >
             <div className="flex flex-col items-center gap-0.5">
               <Button
                 size="icon"
                 variant="secondary"
                 className="h-9 w-9 rounded-full"
                 onClick={handlePreviousQuestion}
-                disabled={
-                  !voice.isConnected ||
-                  voice.currentQuestionIndex <= 0
-                }
+                disabled={!voice.isConnected || voice.currentQuestionIndex <= 0}
               >
-                {voice.isTransitioning && voice.transitionDirection === "previous" ? (
+                {voice.isTransitioning &&
+                voice.transitionDirection === "previous" ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <SkipBack className="h-4 w-4" />
                 )}
               </Button>
-              <span className="hidden text-[10px] text-muted-foreground md:block">Previous</span>
+              <span className="hidden text-[10px] text-muted-foreground md:block">
+                {ui("Previous")}
+              </span>
             </div>
 
             <div className="flex flex-col items-center gap-0.5">
@@ -2559,13 +3043,16 @@ export function VoiceInterface({
                   voice.currentQuestionIndex >= voice.totalQuestions - 1
                 }
               >
-                {voice.isTransitioning && voice.transitionDirection !== "previous" ? (
+                {voice.isTransitioning &&
+                voice.transitionDirection !== "previous" ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <SkipForward className="h-4 w-4" />
                 )}
               </Button>
-              <span className="hidden text-[10px] text-muted-foreground md:block">Next</span>
+              <span className="hidden text-[10px] text-muted-foreground md:block">
+                {ui("Next")}
+              </span>
             </div>
 
             <div className="flex flex-col items-center gap-0.5">
@@ -2577,7 +3064,9 @@ export function VoiceInterface({
               >
                 <PhoneOff className="h-4 w-4" />
               </Button>
-              <span className="hidden text-[10px] text-muted-foreground md:block">End</span>
+              <span className="hidden text-[10px] text-muted-foreground md:block">
+                {ui("End")}
+              </span>
             </div>
           </div>
         </div>
@@ -2596,7 +3085,7 @@ export function VoiceInterface({
           />
           <div className="absolute bottom-1 left-1 flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5">
             <Video className="h-2.5 w-2.5 text-white" />
-            <span className="text-[9px] text-white">Camera</span>
+            <span className="text-[9px] text-white">{ui("Camera")}</span>
           </div>
         </DraggablePip>
       )}
@@ -2605,18 +3094,20 @@ export function VoiceInterface({
       <AlertDialog open={showEndDialog} onOpenChange={setShowEndDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>End interview?</AlertDialogTitle>
+            <AlertDialogTitle>{ui("End interview?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will save your progress and end the current interview session. You won&apos;t be able to continue after this.
+              {ui(
+                "This will save your progress and end the current interview session. You won't be able to continue after this.",
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{ui("Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => handleEndInterview()}
             >
-              End Interview
+              {ui("End Interview")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -2631,22 +3122,31 @@ export function VoiceInterface({
             onOpenAutoFocus={(e) => e.preventDefault()}
           >
             <SheetHeader className="shrink-0 border-b px-4 py-3">
-              <SheetTitle className="text-sm">Chat</SheetTitle>
+              <SheetTitle className="text-sm">{ui("Chat")}</SheetTitle>
             </SheetHeader>
             <ScrollArea className="min-h-0 flex-1">
               <div className="space-y-3 p-4">
-                {messages.length === 0 && !voice.aiTranscript && !voice.userTranscript ? (
+                {messages.length === 0 &&
+                !voice.aiTranscript &&
+                !voice.userTranscript ? (
                   <p className="py-8 text-center text-sm text-muted-foreground">
-                    Transcript will appear here once the conversation starts.
+                    {ui(
+                      "Transcript will appear here once the conversation starts.",
+                    )}
                   </p>
                 ) : (
                   <>
                     {messages.map((msg) => (
-                      <div key={msg.id} className="flex items-start gap-1.5 text-sm">
+                      <div
+                        key={msg.id}
+                        className="flex items-start gap-1.5 text-sm"
+                      >
                         {msg.role === "user" ? (
-                          msg.source === "chat"
-                            ? <MessageSquare className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
-                            : <Mic className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
+                          msg.source === "chat" ? (
+                            <MessageSquare className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
+                          ) : (
+                            <Mic className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
+                          )
                         ) : (
                           <Volume2 className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
                         )}
@@ -2658,34 +3158,51 @@ export function VoiceInterface({
                                 : "text-primary"
                             }`}
                           >
-                            {msg.role === "user" ? "You" : aiName}:
+                            {msg.role === "user" ? ui("You") : aiName}:
                           </span>{" "}
                           {msg.content}
                         </div>
                       </div>
                     ))}
-                    {(showVoiceListening || (showVoiceProcessing && messages[messages.length - 1]?.role !== "user")) && voice.userTranscript && (
-                      <div className={`flex items-start gap-1.5 text-sm${showVoiceListening ? " animate-pulse" : ""}`}>
-                        <Mic className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
-                        <div>
-                          <span className="font-medium text-secondary-600 dark:text-secondary-400">You:</span>{" "}
-                          <span className="text-muted-foreground">{voice.userTranscript}</span>
-                        </div>
-                      </div>
-                    )}
-                    {voice.aiTranscript && (() => {
-                      const alreadyInMessages = hasRecentAssistantTranscript(messages, voice.aiTranscript);
-                      if (alreadyInMessages) return null;
-                      return (
-                        <div className="flex items-start gap-1.5 text-sm">
-                          <Volume2 className="mt-0.5 h-3 w-3 shrink-0 text-primary/60" />
+                    {(showVoiceListening ||
+                      (showVoiceProcessing &&
+                        messages[messages.length - 1]?.role !== "user")) &&
+                      voice.userTranscript && (
+                        <div
+                          className={`flex items-start gap-1.5 text-sm${showVoiceListening ? " animate-pulse" : ""}`}
+                        >
+                          <Mic className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
                           <div>
-                            <span className="font-medium text-primary">{aiName}:</span>{" "}
-                            <span className="text-muted-foreground">{voice.aiTranscript}</span>
+                            <span className="font-medium text-secondary-600 dark:text-secondary-400">
+                              {ui("You:")}
+                            </span>{" "}
+                            <span className="text-muted-foreground">
+                              {voice.userTranscript}
+                            </span>
                           </div>
                         </div>
-                      );
-                    })()}
+                      )}
+                    {voice.aiTranscript &&
+                      (() => {
+                        const alreadyInMessages = hasRecentAssistantTranscript(
+                          messages,
+                          voice.aiTranscript,
+                        );
+                        if (alreadyInMessages) return null;
+                        return (
+                          <div className="flex items-start gap-1.5 text-sm">
+                            <Volume2 className="mt-0.5 h-3 w-3 shrink-0 text-primary/60" />
+                            <div>
+                              <span className="font-medium text-primary">
+                                {aiName}:
+                              </span>{" "}
+                              <span className="text-muted-foreground">
+                                {voice.aiTranscript}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })()}
                   </>
                 )}
                 <div ref={chatEndRef} />
@@ -2696,7 +3213,7 @@ export function VoiceInterface({
                 ref={chatInputRef}
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Type a message..."
+                placeholder={ui("Type a message...")}
                 className="h-8 flex-1 text-base md:text-sm"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey && chatInput.trim()) {

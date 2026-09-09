@@ -1,5 +1,6 @@
+import { questionsForCandidate } from "@/lib/session-question-scope";
 import { nanoid } from "@/lib/id";
-import { INTERVIEW_TEMPLATES } from "@/lib/interview-templates";
+import { getInterviewTemplates } from "@/lib/interview-templates";
 import { getSessionOverallScore } from "@/lib/session-score";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -123,10 +124,43 @@ async function resolveDefaultProject(
 }
 
 export const interviewRouter = router({
+  positions: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { data: project } = await ctx.supabase
+        .from("projects")
+        .select("organizationId")
+        .eq("id", input.projectId)
+        .single();
+      if (
+        !project ||
+        !(await getOrgMembership(
+          ctx.supabase,
+          project.organizationId,
+          ctx.user.id,
+        )) ||
+        !(await hasProjectAccess(ctx.supabase, input.projectId, ctx.user.id))
+      )
+        throw new TRPCError({ code: "FORBIDDEN" });
+      const { data, error } = await ctx.supabase
+        .from("interviews")
+        .select("roleTitle")
+        .eq("projectId", input.projectId)
+        .not("roleTitle", "is", null)
+        .order("roleTitle");
+      if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      return [
+        ...new Set(
+          (data || []).map((i) => i.roleTitle as string).filter(Boolean),
+        ),
+      ];
+    }),
+
   list: protectedProcedure
     .input(
       z
         .object({
+          roleTitle: z.string().trim().min(1, "请填写岗位").max(100).optional(),
           organizationId: z.string().optional(),
           projectId: z.string().optional(),
           limit: z.number().min(1).max(100).default(20),
@@ -160,6 +194,7 @@ export const interviewRouter = router({
         .order("updatedAt", { ascending: false })
         .limit(limit + 1);
 
+      if (input?.roleTitle) query = query.eq("roleTitle", input.roleTitle);
       if (input?.projectId) {
         const projAccess = await hasProjectAccess(
           ctx.supabase,
@@ -300,6 +335,20 @@ export const interviewRouter = router({
         });
       }
 
+      const phone = ctx.user?.app_metadata?.phone;
+      const candidate = phone
+        ? await ctx.supabase
+            .from("candidates")
+            .select("id")
+            .eq("interviewId", interview.id)
+            .eq("phone", phone)
+            .limit(1)
+            .maybeSingle()
+        : null;
+      interview.questions = questionsForCandidate(
+        interview.questions || [],
+        candidate?.data?.id,
+      );
       return interview;
     }),
 
@@ -308,6 +357,7 @@ export const interviewRouter = router({
       z.object({
         projectId: z.string().optional(),
         title: z.string().min(1),
+        roleTitle: z.string().trim().min(1, "请填写岗位").max(100).default("通用岗位"),
         description: z.string().optional(),
         objective: z.string().optional(),
         assessmentCriteria: z
@@ -323,7 +373,7 @@ export const interviewRouter = router({
         followUpDepth: z
           .enum(["LIGHT", "MODERATE", "DEEP"])
           .default("MODERATE"),
-        language: z.string().default("en"),
+        language: z.string().default("zh"),
         timeLimitMinutes: z.number().int().min(1).optional(),
         llmProvider: z.string().optional(),
         llmModel: z.string().optional(),
@@ -412,7 +462,6 @@ export const interviewRouter = router({
       );
       assertMinRole(effectiveRole, "MEMBER");
 
-
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { projectId: _pid, ...rest } = input;
       const { data: interview, error } = await ctx.supabase
@@ -440,11 +489,15 @@ export const interviewRouter = router({
     .input(
       z.object({
         templateId: z.string(),
+        language: z.enum(["zh", "en"]).default("zh"),
+        roleTitle: z.string().trim().min(1, "请填写岗位").max(100).optional(),
         projectId: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const template = INTERVIEW_TEMPLATES.find((t) => t.id === input.templateId);
+      const template = getInterviewTemplates(input.language).find(
+        (t) => t.id === input.templateId,
+      );
       if (!template) {
         throw new TRPCError({
           code: "NOT_FOUND",
@@ -453,9 +506,13 @@ export const interviewRouter = router({
       }
 
       const projectId =
-        input.projectId ?? (await resolveDefaultProject(ctx.supabase, ctx.user.id));
+        input.projectId ??
+        (await resolveDefaultProject(ctx.supabase, ctx.user.id));
       if (!projectId) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "No project found" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "No project found",
+        });
       }
 
       const { data: project } = await ctx.supabase
@@ -465,7 +522,10 @@ export const interviewRouter = router({
         .single();
 
       if (!project) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Project not found",
+        });
       }
 
       const membership = await getOrgMembership(
@@ -480,9 +540,16 @@ export const interviewRouter = router({
         });
       }
 
-      const hasAccess = await hasProjectAccess(ctx.supabase, projectId, ctx.user.id);
+      const hasAccess = await hasProjectAccess(
+        ctx.supabase,
+        projectId,
+        ctx.user.id,
+      );
       if (!hasAccess) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "No access to project" });
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "No access to project",
+        });
       }
 
       const effectiveRole = await getEffectiveProjectRole(
@@ -497,6 +564,8 @@ export const interviewRouter = router({
         .from("interviews")
         .insert({
           title: template.title,
+          roleTitle: input.roleTitle ?? template.roleTitle,
+          language: input.language,
           description: template.description,
           objective: template.objective,
           aiTone: template.aiTone,
@@ -543,6 +612,7 @@ export const interviewRouter = router({
       z.object({
         id: z.string(),
         title: z.string().min(1).optional(),
+        roleTitle: z.string().trim().min(1, "请填写岗位").max(100).optional(),
         description: z.string().optional(),
         objective: z.string().optional(),
         assessmentCriteria: z
@@ -741,6 +811,7 @@ export const interviewRouter = router({
           .from("questions")
           .select("*")
           .eq("interviewId", source.id)
+          .is("candidateId", null)
           .order("order", { ascending: true })
       ).data ?? []) as Array<{
         order: number;
@@ -783,6 +854,7 @@ export const interviewRouter = router({
           isActive: false,
           timeLimitMinutes: source.timeLimitMinutes,
           customBranding: source.customBranding,
+          roleTitle: source.roleTitle || "通用岗位",
           publicSlug: null,
           requireInvite: source.requireInvite,
           invitedEmails: source.invitedEmails,

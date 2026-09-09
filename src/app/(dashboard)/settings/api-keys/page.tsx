@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { useAppLocale } from "@/components/app-locale-provider";
 import {
   AlertDialog,
@@ -14,7 +16,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -54,6 +62,7 @@ function formatDate(value: string | null, locale: string, neverLabel: string) {
 }
 
 export default function ApiKeysSettingsPage() {
+  const ui = useUiTranslation();
   const { toast } = useToast();
   const { locale } = useAppLocale();
   const isZh = locale === "zh";
@@ -129,18 +138,21 @@ export default function ApiKeysSettingsPage() {
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
-        <h2 className="text-xl font-semibold">{isZh ? "API 密钥" : "API Keys"}</h2>
+        <h2 className="text-xl font-semibold">
+          {isZh ? "API 密钥" : ui("API Keys")}
+        </h2>
         <p className="text-sm text-muted-foreground">
           {isZh
             ? "管理用于以编程方式访问 Aural API 的 API 密钥。"
-            : "Manage API keys for programmatic access to the Aural API."}
-          {" "}
+            : ui(
+                "Manage API keys for programmatic access to the Aural API.",
+              )}{" "}
           <Link
             href="/docs/developer-api"
             target="_blank"
             className="inline-flex items-center gap-1 text-primary font-medium underline-offset-4 hover:underline"
           >
-            {isZh ? "查看 API 文档" : "View API docs"}
+            {isZh ? "查看 API 文档" : ui("View API docs")}
             <ExternalLink className="h-3 w-3" />
           </Link>
         </p>
@@ -148,17 +160,19 @@ export default function ApiKeysSettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{isZh ? "创建新密钥" : "Create a new key"}</CardTitle>
+          <CardTitle>{isZh ? "创建新密钥" : ui("Create a new key")}</CardTitle>
           <CardDescription>
             {isZh
               ? "为每个集成使用不同的名称，便于识别。"
-              : "Use a distinct name per integration so you can tell them apart."}
+              : ui(
+                  "Use a distinct name per integration so you can tell them apart.",
+                )}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
             <div className="space-y-2 flex-1">
-              <Label htmlFor="keyName">{isZh ? "名称" : "Name"}</Label>
+              <Label htmlFor="keyName">{isZh ? "名称" : ui("Name")}</Label>
               <Input
                 id="keyName"
                 value={name}
@@ -167,7 +181,9 @@ export default function ApiKeysSettingsPage() {
               />
             </div>
             <div className="space-y-2 flex-1">
-              <Label htmlFor="keyExpires">{isZh ? "过期时间（可选）" : "Expires (optional)"}</Label>
+              <Label htmlFor="keyExpires">
+                {isZh ? "过期时间（可选）" : ui("Expires (optional)")}
+              </Label>
               <Input
                 id="keyExpires"
                 type="datetime-local"
@@ -189,8 +205,10 @@ export default function ApiKeysSettingsPage() {
                 });
               }}
             >
-              {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isZh ? "创建密钥" : "Create Key"}
+              {createMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {isZh ? "创建密钥" : ui("Create Key")}
             </Button>
           </div>
         </CardContent>
@@ -204,23 +222,31 @@ export default function ApiKeysSettingsPage() {
       >
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{isZh ? "保存你的 API 密钥" : "Save your API key"}</DialogTitle>
+            <DialogTitle>
+              {isZh ? "保存你的 API 密钥" : ui("Save your API key")}
+            </DialogTitle>
             <DialogDescription>
               {isZh
                 ? "这是你唯一一次查看完整密钥的机会。请立即复制并保存在安全位置；关闭此对话框后将无法再次显示完整密钥。"
-                : "This is the only time the full secret is shown. Copy it now and store it somewhere safe — you will not see it in full again after you close this dialog."}
+                : ui(
+                    "This is the only time the full secret is shown. Copy it now and store it somewhere safe — you will not see it in full again after you close this dialog.",
+                  )}
             </DialogDescription>
           </DialogHeader>
           <div className="rounded-md border bg-muted/50 p-3 font-mono text-sm break-all">
             {revealedKey}
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button type="button" variant="outline" onClick={() => revealedKey && copyKey(revealedKey)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => revealedKey && copyKey(revealedKey)}
+            >
               <Copy className="mr-2 h-4 w-4" />
-              {isZh ? "复制" : "Copy"}
+              {isZh ? "复制" : ui("Copy")}
             </Button>
             <Button type="button" onClick={() => setRevealedKey(null)}>
-              {isZh ? "完成" : "Done"}
+              {isZh ? "完成" : ui("Done")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -228,9 +254,13 @@ export default function ApiKeysSettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{isZh ? "你的密钥" : "Your keys"}</CardTitle>
+          <CardTitle>{isZh ? "你的密钥" : ui("Your keys")}</CardTitle>
           <CardDescription>
-            {isZh ? "撤销的密钥无法用于请求，但仍会显示在列表中直到删除。" : "Revoked keys cannot be used for requests but remain listed until deleted."}
+            {isZh
+              ? "撤销的密钥无法用于请求，但仍会显示在列表中直到删除。"
+              : ui(
+                  "Revoked keys cannot be used for requests but remain listed until deleted.",
+                )}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
@@ -243,25 +273,31 @@ export default function ApiKeysSettingsPage() {
               <p className="mb-3">
                 {isZh
                   ? "还没有 API 密钥。创建一个即可开始通过 API 集成。"
-                  : "No API keys yet. Create one to start integrating with the API."}
+                  : ui(
+                      "No API keys yet. Create one to start integrating with the API.",
+                    )}
               </p>
               <Link
                 href="/docs/developer-api"
                 className="text-primary font-medium underline-offset-4 hover:underline"
               >
-                {isZh ? "阅读开发者 API 文档" : "Read the Developer API docs"}
+                {isZh
+                  ? "阅读开发者 API 文档"
+                  : ui("Read the Developer API docs")}
               </Link>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{isZh ? "名称" : "Name"}</TableHead>
-                  <TableHead>{isZh ? "密钥" : "Key"}</TableHead>
-                  <TableHead>{isZh ? "状态" : "Status"}</TableHead>
-                  <TableHead>{isZh ? "最后使用" : "Last used"}</TableHead>
-                  <TableHead>{isZh ? "创建时间" : "Created"}</TableHead>
-                  <TableHead className="w-[1%] text-right">{isZh ? "操作" : "Actions"}</TableHead>
+                  <TableHead>{isZh ? "名称" : ui("Name")}</TableHead>
+                  <TableHead>{isZh ? "密钥" : ui("Key")}</TableHead>
+                  <TableHead>{isZh ? "状态" : ui("Status")}</TableHead>
+                  <TableHead>{isZh ? "最后使用" : ui("Last used")}</TableHead>
+                  <TableHead>{isZh ? "创建时间" : ui("Created")}</TableHead>
+                  <TableHead className="w-[1%] text-right">
+                    {isZh ? "操作" : ui("Actions")}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -273,13 +309,21 @@ export default function ApiKeysSettingsPage() {
                     </TableCell>
                     <TableCell>
                       {row.isActive ? (
-                        <Badge variant="default">{isZh ? "有效" : "Active"}</Badge>
+                        <Badge variant="default">
+                          {isZh ? "有效" : ui("Active")}
+                        </Badge>
                       ) : (
-                        <Badge variant="secondary">{isZh ? "已撤销" : "Revoked"}</Badge>
+                        <Badge variant="secondary">
+                          {isZh ? "已撤销" : ui("Revoked")}
+                        </Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
-                      {formatDate(row.lastUsedAt, locale, isZh ? "从未" : "Never")}
+                      {formatDate(
+                        row.lastUsedAt,
+                        locale,
+                        isZh ? "从未" : ui("Never"),
+                      )}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
                       {formatDate(row.createdAt, locale, "—")}
@@ -290,7 +334,7 @@ export default function ApiKeysSettingsPage() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
-                          title={isZh ? "复制完整密钥" : "Copy full key"}
+                          title={isZh ? "复制完整密钥" : ui("Copy full key")}
                           onClick={() => copyKey(row.key)}
                         >
                           <Copy className="h-4 w-4" />
@@ -302,7 +346,7 @@ export default function ApiKeysSettingsPage() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                title={isZh ? "撤销" : "Revoke"}
+                                title={isZh ? "撤销" : ui("Revoke")}
                               >
                                 <Ban className="h-4 w-4" />
                               </Button>
@@ -310,21 +354,29 @@ export default function ApiKeysSettingsPage() {
                             <AlertDialogContent>
                               <AlertDialogHeader>
                                 <AlertDialogTitle>
-                                  {isZh ? "撤销此 API 密钥？" : "Revoke this API key?"}
+                                  {isZh
+                                    ? "撤销此 API 密钥？"
+                                    : ui("Revoke this API key?")}
                                 </AlertDialogTitle>
                                 <AlertDialogDescription>
                                   {isZh
                                     ? "撤销后，使用此密钥的请求将立即失败。你可以稍后再删除记录。"
-                                    : "Requests using this key will fail immediately. You can delete the record later."}
+                                    : ui(
+                                        "Requests using this key will fail immediately. You can delete the record later.",
+                                      )}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel>{isZh ? "取消" : "Cancel"}</AlertDialogCancel>
+                                <AlertDialogCancel>
+                                  {isZh ? "取消" : ui("Cancel")}
+                                </AlertDialogCancel>
                                 <AlertDialogAction
-                                  onClick={() => revokeMutation.mutate({ id: row.id })}
+                                  onClick={() =>
+                                    revokeMutation.mutate({ id: row.id })
+                                  }
                                   disabled={revokeMutation.isPending}
                                 >
-                                  {isZh ? "撤销" : "Revoke"}
+                                  {isZh ? "撤销" : ui("Revoke")}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -336,7 +388,7 @@ export default function ApiKeysSettingsPage() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                              title={isZh ? "删除" : "Delete"}
+                              title={isZh ? "删除" : ui("Delete")}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -344,22 +396,30 @@ export default function ApiKeysSettingsPage() {
                           <AlertDialogContent>
                             <AlertDialogHeader>
                               <AlertDialogTitle>
-                                {isZh ? "删除此 API 密钥？" : "Delete this API key?"}
+                                {isZh
+                                  ? "删除此 API 密钥？"
+                                  : ui("Delete this API key?")}
                               </AlertDialogTitle>
                               <AlertDialogDescription>
                                 {isZh
                                   ? "此操作无法撤销。任何仍持有该密钥的人都将无法再使用它。"
-                                  : "This cannot be undone. Anyone with the secret will no longer be able to use it."}
+                                  : ui(
+                                      "This cannot be undone. Anyone with the secret will no longer be able to use it.",
+                                    )}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>{isZh ? "取消" : "Cancel"}</AlertDialogCancel>
+                              <AlertDialogCancel>
+                                {isZh ? "取消" : ui("Cancel")}
+                              </AlertDialogCancel>
                               <AlertDialogAction
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                onClick={() => deleteMutation.mutate({ id: row.id })}
+                                onClick={() =>
+                                  deleteMutation.mutate({ id: row.id })
+                                }
                                 disabled={deleteMutation.isPending}
                               >
-                                {isZh ? "删除" : "Delete"}
+                                {isZh ? "删除" : ui("Delete")}
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>

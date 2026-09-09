@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,6 +36,7 @@ export function CandidateImportDialog({
   onOpenChange,
   onImported,
 }: CandidateImportDialogProps) {
+  const ui = useUiTranslation();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<Step>("upload");
@@ -49,7 +52,7 @@ export function CandidateImportDialog({
     },
     onError: (err) => {
       toast({
-        title: "Import failed",
+        title: ui("Import failed"),
         description: err.message,
         variant: "destructive",
       });
@@ -63,8 +66,8 @@ export function CandidateImportDialog({
 
       if (file.size > MAX_CANDIDATE_IMPORT_FILE_BYTES) {
         toast({
-          title: "Workbook is too large",
-          description: "Upload a workbook smaller than 10 MB.",
+          title: ui("Workbook is too large"),
+          description: ui("Upload a workbook smaller than 10 MB."),
           variant: "destructive",
         });
         e.target.value = "";
@@ -79,9 +82,10 @@ export function CandidateImportDialog({
           const parsed = parseCandidateWorkbook(data);
           if (parsed.length === 0) {
             toast({
-              title: "No valid sessions found",
-              description:
+              title: ui("No valid sessions found"),
+              description: ui(
                 'Make sure your file has a "Name" column header in the first row.',
+              ),
               variant: "destructive",
             });
             return;
@@ -90,7 +94,7 @@ export function CandidateImportDialog({
           setStep("preview");
         } catch (error) {
           toast({
-            title: "Could not read workbook",
+            title: ui("Could not read workbook"),
             description:
               error instanceof Error
                 ? error.message
@@ -101,7 +105,7 @@ export function CandidateImportDialog({
       };
       reader.readAsArrayBuffer(file);
     },
-    [toast],
+    [ui, toast],
   );
 
   const handleImport = useCallback(() => {
@@ -130,15 +134,17 @@ export function CandidateImportDialog({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Import Sessions</DialogTitle>
+          <DialogTitle>{ui("Import Sessions")}</DialogTitle>
           <DialogDescription>
-            Download the template, fill in session details, and upload to import.
+            {ui(
+              "Download the template, fill in session details, and upload to import.",
+            )}
           </DialogDescription>
         </DialogHeader>
 
         {/* Stepper */}
         <div className="flex items-center justify-between px-4 py-3">
-          {["Upload", "Import", "Complete"].map((label, i) => (
+          {[ui("Upload"), ui("Import"), ui("Complete")].map((label, i) => (
             <div key={label} className="flex items-center gap-2">
               <div
                 className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium ${
@@ -147,11 +153,7 @@ export function CandidateImportDialog({
                     : "bg-muted text-muted-foreground"
                 }`}
               >
-                {i < stepIndex ? (
-                  <CheckCircle2 className="h-4 w-4" />
-                ) : (
-                  i + 1
-                )}
+                {i < stepIndex ? <CheckCircle2 className="h-4 w-4" /> : i + 1}
               </div>
               <span
                 className={`text-sm ${
@@ -177,18 +179,20 @@ export function CandidateImportDialog({
             <>
               <div className="space-y-3 rounded-lg border p-4">
                 <p className="text-sm text-muted-foreground">
-                  1. Download the{" "}
+                  {ui("1. Download the")}{" "}
                   <button
                     type="button"
                     className="font-medium text-primary hover:underline"
-            onClick={downloadCandidateImportTemplate}
+                    onClick={downloadCandidateImportTemplate}
                   >
-                    Candidate_Import_Template.xlsx
+                    {ui("Candidate_Import_Template.xlsx")}
                   </button>{" "}
-                  to import sessions and make sure all cells are in text format.
+                  {ui(
+                    "to import sessions and make sure all cells are in text format.",
+                  )}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  2. Name is required for each session.
+                  {ui("2. Name is required for each session.")}
                 </p>
               </div>
 
@@ -215,7 +219,7 @@ export function CandidateImportDialog({
                       if (fileInputRef.current) fileInputRef.current.value = "";
                     }}
                   >
-                    Change
+                    {ui("Change")}
                   </Button>
                 </div>
               ) : (
@@ -225,13 +229,13 @@ export function CandidateImportDialog({
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <Upload className="mr-2 h-4 w-4" />
-                  Upload
+                  {ui("Upload")}
                 </Button>
               )}
 
               <div className="flex justify-between pt-2">
                 <Button variant="outline" onClick={handleClose}>
-                  Cancel
+                  {ui("Cancel")}
                 </Button>
                 <Button
                   onClick={() => {
@@ -239,7 +243,7 @@ export function CandidateImportDialog({
                   }}
                   disabled={candidates.length === 0}
                 >
-                  Next
+                  {ui("Next")}
                 </Button>
               </div>
             </>
@@ -253,18 +257,30 @@ export function CandidateImportDialog({
                     <thead className="sticky top-0 bg-muted/80 backdrop-blur">
                       <tr>
                         <th className="px-3 py-2 text-left font-medium">#</th>
-                        <th className="px-3 py-2 text-left font-medium">Name</th>
-                        <th className="px-3 py-2 text-left font-medium">Email</th>
-                        <th className="px-3 py-2 text-left font-medium">Phone</th>
+                        <th className="px-3 py-2 text-left font-medium">
+                          {ui("Name")}
+                        </th>
+                        <th className="px-3 py-2 text-left font-medium">
+                          {ui("Email")}
+                        </th>
+                        <th className="px-3 py-2 text-left font-medium">
+                          {ui("Phone")}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {candidates.map((c, i) => (
                         <tr key={i} className="border-t">
-                          <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
+                          <td className="px-3 py-2 text-muted-foreground">
+                            {i + 1}
+                          </td>
                           <td className="px-3 py-2">{c.name}</td>
-                          <td className="px-3 py-2 text-muted-foreground">{c.email || "-"}</td>
-                          <td className="px-3 py-2 text-muted-foreground">{c.phone || "-"}</td>
+                          <td className="px-3 py-2 text-muted-foreground">
+                            {c.email || "-"}
+                          </td>
+                          <td className="px-3 py-2 text-muted-foreground">
+                            {c.phone || "-"}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -272,21 +288,22 @@ export function CandidateImportDialog({
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">
-                {candidates.length} session{candidates.length !== 1 ? "s" : ""} ready to import.
+                {candidates.length}
+                {ui("session")}
+                {candidates.length !== 1 ? "s" : ""}
+                {ui("ready to import.")}
               </p>
 
               <div className="flex justify-between pt-2">
                 <Button variant="outline" onClick={() => setStep("upload")}>
-                  Back
+                  {ui("Back")}
                 </Button>
-                <Button
-                  onClick={handleImport}
-                  disabled={bulkCreate.isLoading}
-                >
+                <Button onClick={handleImport} disabled={bulkCreate.isLoading}>
                   {bulkCreate.isLoading && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  Import ({candidates.length})
+                  {ui("Import (")}
+                  {candidates.length})
                 </Button>
               </div>
             </>
@@ -295,13 +312,17 @@ export function CandidateImportDialog({
           {step === "complete" && (
             <div className="flex flex-col items-center py-8">
               <CheckCircle2 className="h-12 w-12 text-secondary-500" />
-              <h3 className="mt-4 text-lg font-semibold">Import Complete</h3>
+              <h3 className="mt-4 text-lg font-semibold">
+                {ui("Import Complete")}
+              </h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Successfully imported {importedCount} session
+                {ui("Successfully imported")}
+                {importedCount}
+                {ui("session")}
                 {importedCount !== 1 ? "s" : ""}.
               </p>
               <Button className="mt-6" onClick={handleClose}>
-                Done
+                {ui("Done")}
               </Button>
             </div>
           )}

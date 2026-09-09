@@ -1,7 +1,14 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure, router } from "../trpc";
-import { getOrgMembership, assertMinRole, hasProjectAccess, filterAccessibleProjectIds, getEffectiveProjectRole, type MemberRole } from "../trpc";
+import {
+  getOrgMembership,
+  assertMinRole,
+  hasProjectAccess,
+  filterAccessibleProjectIds,
+  getEffectiveProjectRole,
+  type MemberRole,
+} from "../trpc";
 
 const questionInput = z.object({
   text: z.string().min(1),
@@ -56,12 +63,22 @@ async function verifyInterviewAccess(
     userId,
   );
   if (!membership) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "You are not a member of this organization" });
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You are not a member of this organization",
+    });
   }
 
-  const projAccess = await hasProjectAccess(supabase, interview.projectId, userId);
+  const projAccess = await hasProjectAccess(
+    supabase,
+    interview.projectId,
+    userId,
+  );
   if (!projAccess) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "You do not have access to this project" });
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You do not have access to this project",
+    });
   }
 
   const effectiveRole = await getEffectiveProjectRole(
@@ -76,7 +93,13 @@ async function verifyInterviewAccess(
 
 export const questionRouter = router({
   create: protectedProcedure
-    .input(z.object({ interviewId: z.string(), order: z.number().optional(), ...questionInput.shape }))
+    .input(
+      z.object({
+        interviewId: z.string(),
+        order: z.number().optional(),
+        ...questionInput.shape,
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const { role, interviewUserId } = await verifyInterviewAccess(
         ctx.supabase,
@@ -84,7 +107,10 @@ export const questionRouter = router({
         ctx.user.id,
       );
       if (role === "MEMBER" && interviewUserId !== ctx.user.id) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only modify questions on interviews you created" });
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only modify questions on interviews you created",
+        });
       }
       assertMinRole(role, "MEMBER");
 
@@ -145,7 +171,10 @@ export const questionRouter = router({
         ctx.user.id,
       );
       if (role === "MEMBER" && interviewUserId !== ctx.user.id) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only modify questions on interviews you created" });
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only modify questions on interviews you created",
+        });
       }
       assertMinRole(role, "MEMBER");
 
@@ -183,7 +212,10 @@ export const questionRouter = router({
         ctx.user.id,
       );
       if (role === "MEMBER" && interviewUserId !== ctx.user.id) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only delete questions on interviews you created" });
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only delete questions on interviews you created",
+        });
       }
       assertMinRole(role, "MEMBER");
 
@@ -223,16 +255,16 @@ export const questionRouter = router({
         ctx.user.id,
       );
       if (role === "MEMBER" && interviewUserId !== ctx.user.id) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only reorder questions on interviews you created" });
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only reorder questions on interviews you created",
+        });
       }
       assertMinRole(role, "MEMBER");
 
       await Promise.all(
         input.questionIds.map((id, index) =>
-          ctx.supabase
-            .from("questions")
-            .update({ order: index })
-            .eq("id", id),
+          ctx.supabase.from("questions").update({ order: index }).eq("id", id),
         ),
       );
 
@@ -270,7 +302,10 @@ export const questionRouter = router({
 
       if (input.organizationId) {
         if (!orgIds.includes(input.organizationId)) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You are not a member of this organization" });
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "You are not a member of this organization",
+          });
         }
         orgIds = [input.organizationId];
       }
@@ -279,7 +314,11 @@ export const questionRouter = router({
 
       let projectIds: string[];
       if (input.projectId) {
-        const projAccess = await hasProjectAccess(ctx.supabase, input.projectId, ctx.user.id);
+        const projAccess = await hasProjectAccess(
+          ctx.supabase,
+          input.projectId,
+          ctx.user.id,
+        );
         projectIds = projAccess ? [input.projectId] : [];
       } else {
         const { data: projects } = await ctx.supabase
@@ -287,7 +326,11 @@ export const questionRouter = router({
           .select("id")
           .in("organizationId", orgIds);
         const allProjIds = (projects ?? []).map((p: { id: string }) => p.id);
-        projectIds = await filterAccessibleProjectIds(ctx.supabase, allProjIds, ctx.user.id);
+        projectIds = await filterAccessibleProjectIds(
+          ctx.supabase,
+          allProjIds,
+          ctx.user.id,
+        );
       }
       if (projectIds.length === 0) return { questions: [] };
 
@@ -296,14 +339,13 @@ export const questionRouter = router({
         .select("id")
         .in("projectId", projectIds);
 
-      const interviewIds = (interviews ?? []).map(
-        (i: { id: string }) => i.id,
-      );
+      const interviewIds = (interviews ?? []).map((i: { id: string }) => i.id);
       if (interviewIds.length === 0) return { questions: [] };
 
       let query = ctx.supabase
         .from("questions")
         .select("*, interview:interviews!inner(id, title)")
+        .is("candidateId", null)
         .in("interviewId", interviewIds)
         .order("createdAt", { ascending: false })
         .limit(input.limit);

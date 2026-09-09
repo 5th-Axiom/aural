@@ -1,8 +1,10 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import {
-    PracticeSessionsDashboard,
-    type PracticeSessionSummary,
+  PracticeSessionsDashboard,
+  type PracticeSessionSummary,
 } from "@/components/prep/practice-sessions-dashboard";
 import { PrepContextDrawer } from "@/components/prep/prep-context-drawer";
 import { prepContextFromInterview } from "@/components/prep/prep-context-types";
@@ -25,6 +27,7 @@ type EditCtxInterview = {
 };
 
 export default function PracticesTab() {
+  const ui = useUiTranslation();
   const { interviewId, interview } = useEditInterview();
   const ctxInterview = interview as unknown as EditCtxInterview;
   const practices = trpc.prep.listSessions.useQuery({ interviewId });
@@ -50,7 +53,7 @@ export default function PracticesTab() {
               onClick={() => setContextOpen(true)}
             >
               <SlidersHorizontal className="h-4 w-4" />
-              Context
+              {ui("Context")}
             </Button>
             <Button asChild className="gap-2">
               <Link
@@ -59,7 +62,7 @@ export default function PracticesTab() {
                 rel="noopener noreferrer"
               >
                 <Play className="h-4 w-4" />
-                Practice interview
+                {ui("Practice interview")}
               </Link>
             </Button>
           </div>

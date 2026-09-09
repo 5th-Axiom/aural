@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Loader2, Square, Volume2 } from "lucide-react";
@@ -23,6 +25,7 @@ export function CoachSpeakingIndicator({
   playingLabel = "AI coach is speaking",
   onStop,
 }: Props) {
+  const ui = useUiTranslation();
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -68,7 +71,9 @@ export function CoachSpeakingIndicator({
         )}
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="text-xs font-semibold text-primary">AI coach</span>
+        <span className="text-xs font-semibold text-primary">
+          {ui("AI coach")}
+        </span>
         <span className="text-xs text-muted-foreground">
           {phase === "loading" ? loadingLabel : playingLabel}
         </span>
@@ -83,7 +88,7 @@ export function CoachSpeakingIndicator({
           size="icon"
           className="h-8 w-8 shrink-0 rounded-full"
           onClick={onStop}
-          aria-label="Stop coach voice"
+          aria-label={ui("Stop coach voice")}
         >
           <Square className="h-3.5 w-3.5 fill-current" />
         </Button>

@@ -1,3 +1,5 @@
+import { questionsForCandidate } from "@/lib/session-question-scope";
+import { getAuthUser } from "@/lib/auth";
 import { buildInterviewerPrompt } from "@/lib/ai/prompts/interviewer";
 import { getProvider } from "@/lib/ai/registry";
 import type { LLMMessage } from "@/lib/ai/types";
@@ -11,10 +13,30 @@ const MOVE_ON_PATTERN =
   /\b(next\s*question|move\s*on|skip\s*(this|it)?|next\s*one|let'?s\s*(move|continue)\s*(on|forward)?)\b/i;
 
 export async function POST(req: Request) {
-  const { sessionId, interviewId, messages, currentQuestionIndex, manualNavigation } =
-    await req.json();
+  const {
+    sessionId,
+    interviewId,
+    messages,
+    currentQuestionIndex,
+    manualNavigation,
+  } = await req.json();
 
   try {
+    const user = await getAuthUser();
+    const { data: session } = await supabaseAdmin
+      .from("sessions")
+      .select("*")
+      .eq("id", sessionId)
+      .eq("interviewId", interviewId)
+      .single();
+    if (
+      !session ||
+      (session.participantUserId && session.participantUserId !== user?.id)
+    )
+      return NextResponse.json(
+        { error: "请使用面试手机号登录" },
+        { status: 403 },
+      );
     const { data: interview } = await supabaseAdmin
       .from("interviews")
       .select("*, questions(*)")
@@ -29,6 +51,10 @@ export async function POST(req: Request) {
       );
     }
 
+    interview.questions = questionsForCandidate(
+      interview.questions ?? [],
+      session.candidateId,
+    );
     const provider = getProvider(interview.llmProvider);
 
     const conversationHistory: LLMMessage[] = (messages ?? [])
@@ -89,25 +115,39 @@ export async function POST(req: Request) {
         const userText =
           typeof lastUserMsg.content === "string"
             ? lastUserMsg.content
-            : lastUserMsg.content.map((p) => ("text" in p ? p.text : "")).join(" ");
+            : lastUserMsg.content
+                .map((p) => ("text" in p ? p.text : ""))
+                .join(" ");
         const userAskedToMoveOn = MOVE_ON_PATTERN.test(userText);
         if (userAskedToMoveOn) {
-          const questions = (interview.questions ?? []) as { id: string; text: string }[];
+          const questions = (interview.questions ?? []) as {
+            id: string;
+            text: string;
+          }[];
           const nextQ = questions[(currentQuestionIndex ?? 0) + 1];
           if (nextQ) {
             // Check if the AI's response references the next question's content
-            const nextQWords = nextQ.text.toLowerCase().split(/\s+/).filter((w) => w.length > 4);
+            const nextQWords = nextQ.text
+              .toLowerCase()
+              .split(/\s+/)
+              .filter((w) => w.length > 4);
             const responseLower = cleanContent.toLowerCase();
-            const matchCount = nextQWords.filter((w) => responseLower.includes(w)).length;
-            const matchRatio = nextQWords.length > 0 ? matchCount / nextQWords.length : 0;
+            const matchCount = nextQWords.filter((w) =>
+              responseLower.includes(w),
+            ).length;
+            const matchRatio =
+              nextQWords.length > 0 ? matchCount / nextQWords.length : 0;
 
             if (matchRatio >= 0.4) {
               questionAdvanced = true;
-              log.info("Fallback: detected question advancement without marker", {
-                sessionId,
-                nextQuestionText: nextQ.text,
-                matchRatio,
-              });
+              log.info(
+                "Fallback: detected question advancement without marker",
+                {
+                  sessionId,
+                  nextQuestionText: nextQ.text,
+                  matchRatio,
+                },
+              );
             }
           }
         }

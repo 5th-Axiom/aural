@@ -1,4 +1,5 @@
 "use client";
+import { useUiTranslation } from "@/hooks/use-ui-translation";
 
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
@@ -16,6 +17,7 @@ type Props = {
 
 /** Fixed-height waveform so the question card does not resize while speaking. */
 export function CoachSpeakingWave({ phase, className }: Props) {
+  const ui = useUiTranslation();
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -32,7 +34,9 @@ export function CoachSpeakingWave({ phase, className }: Props) {
         className,
       )}
       role="status"
-      aria-label={phase === "loading" ? "Coach preparing" : "Coach speaking"}
+      aria-label={
+        phase === "loading" ? ui("Coach preparing") : ui("Coach speaking")
+      }
     >
       {phase === "loading" ? (
         <Loader2 className="h-4 w-4 animate-spin text-primary" aria-hidden />

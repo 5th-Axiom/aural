@@ -1,14 +1,22 @@
+import { questionsForCandidate } from "@/lib/session-question-scope";
 import { nanoid } from "@/lib/id";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {
-    assertMinRole, filterAccessibleProjectIds,
-    getEffectiveProjectRole, getOrgMembership, hasProjectAccess, protectedProcedure, publicProcedure, router, type MemberRole
+  assertMinRole,
+  filterAccessibleProjectIds,
+  getEffectiveProjectRole,
+  getOrgMembership,
+  hasProjectAccess,
+  protectedProcedure,
+  publicProcedure,
+  router,
+  type MemberRole,
 } from "../trpc";
 const candidateFields = z.object({
   name: z.string().min(1),
   email: z.string().email().optional().or(z.literal("")),
-  phone: z.string().optional(),
+  phone: z.string().trim().max(64).optional(),
   gender: z.string().optional(),
   birthday: z.string().optional(),
   notes: z.string().optional(),
@@ -23,11 +31,15 @@ const candidateFields = z.object({
 /*  Helper: verify interview access via org membership                 */
 /* ------------------------------------------------------------------ */
 
-async function verifyInterviewAccess(
+export async function verifyInterviewAccess(
   supabase: Parameters<typeof getOrgMembership>[0],
   interviewId: string,
   userId: string,
-): Promise<{ role: MemberRole; interviewUserId: string; organizationId: string }> {
+): Promise<{
+  role: MemberRole;
+  interviewUserId: string;
+  organizationId: string;
+}> {
   const { data: interview } = await supabase
     .from("interviews")
     .select("userId, projectId, project:projects!inner(organizationId)")
@@ -48,12 +60,22 @@ async function verifyInterviewAccess(
     userId,
   );
   if (!membership) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "You are not a member of this organization" });
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You are not a member of this organization",
+    });
   }
 
-  const projAccess = await hasProjectAccess(supabase, interview.projectId, userId);
+  const projAccess = await hasProjectAccess(
+    supabase,
+    interview.projectId,
+    userId,
+  );
   if (!projAccess) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "You do not have access to this project" });
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You do not have access to this project",
+    });
   }
 
   const effectiveRole = await getEffectiveProjectRole(
@@ -63,14 +85,16 @@ async function verifyInterviewAccess(
     membership.role,
   );
 
-  return { role: effectiveRole, interviewUserId: interview.userId, organizationId: project.organizationId };
+  return {
+    role: effectiveRole,
+    interviewUserId: interview.userId,
+    organizationId: project.organizationId,
+  };
 }
 
 export const candidateRouter = router({
   create: protectedProcedure
-    .input(
-      z.object({ interviewId: z.string() }).merge(candidateFields),
-    )
+    .input(z.object({ interviewId: z.string() }).merge(candidateFields))
     .mutation(async ({ ctx, input }) => {
       const { interviewId, ...fields } = input;
 
@@ -96,7 +120,10 @@ export const candidateRouter = router({
         .single();
 
       if (error) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error.message,
+        });
       }
 
       return candidate;
@@ -145,7 +172,10 @@ export const candidateRouter = router({
         .select("*");
 
       if (error) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error.message,
+        });
       }
 
       return { created: data?.length ?? 0, total: deduped.length };
@@ -158,7 +188,7 @@ export const candidateRouter = router({
 
       const { data: candidates } = await ctx.supabase
         .from("candidates")
-        .select("*, session:sessions(*)")
+        .select("*, session:sessions!candidates_sessionId_fkey(*)")
         .eq("interviewId", input.interviewId)
         .order("createdAt", { ascending: false });
 
@@ -198,7 +228,7 @@ export const candidateRouter = router({
         id: z.string(),
         name: z.string().optional(),
         email: z.string().email().optional(),
-        phone: z.string().optional(),
+        phone: z.string().trim().max(64).optional(),
         gender: z.string().optional(),
         birthday: z.string().optional(),
         notes: z.string().optional(),
@@ -234,11 +264,14 @@ export const candidateRouter = router({
         .from("candidates")
         .update({ ...fields, updatedAt: new Date().toISOString() })
         .eq("id", id)
-        .select("*, session:sessions(*)")
+        .select("*, session:sessions!candidates_sessionId_fkey(*)")
         .single();
 
       if (error) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Candidate not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Candidate not found",
+        });
       }
 
       return updated;
@@ -322,7 +355,7 @@ export const candidateRouter = router({
               });
             }
           }
-        })
+        }),
       );
 
       await ctx.supabase.from("candidates").delete().in("id", input.ids);
@@ -334,6 +367,7 @@ export const candidateRouter = router({
       z.object({
         organizationId: z.string().optional(),
         projectId: z.string().optional(),
+        roleTitle: z.string().trim().max(100).optional(),
         limit: z.number().min(1).max(500).default(200),
       }),
     )
@@ -350,17 +384,23 @@ export const candidateRouter = router({
 
       if (input.organizationId) {
         if (!orgIds.includes(input.organizationId)) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You are not a member of this organization" });
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "You are not a member of this organization",
+          });
         }
         orgIds = [input.organizationId];
       }
 
-      if (orgIds.length === 0)
-        return { candidates: [], walkInSessions: [] };
+      if (orgIds.length === 0) return { candidates: [], walkInSessions: [] };
 
       let projectIds: string[];
       if (input.projectId) {
-        const projAccess = await hasProjectAccess(ctx.supabase, input.projectId, ctx.user.id);
+        const projAccess = await hasProjectAccess(
+          ctx.supabase,
+          input.projectId,
+          ctx.user.id,
+        );
         projectIds = projAccess ? [input.projectId] : [];
       } else {
         const { data: projects } = await ctx.supabase
@@ -368,7 +408,11 @@ export const candidateRouter = router({
           .select("id")
           .in("organizationId", orgIds);
         const allProjIds = (projects ?? []).map((p: { id: string }) => p.id);
-        projectIds = await filterAccessibleProjectIds(ctx.supabase, allProjIds, ctx.user.id);
+        projectIds = await filterAccessibleProjectIds(
+          ctx.supabase,
+          allProjIds,
+          ctx.user.id,
+        );
       }
 
       if (projectIds.length === 0)
@@ -376,12 +420,12 @@ export const candidateRouter = router({
 
       const { data: userInterviews } = await ctx.supabase
         .from("interviews")
-        .select("id, title")
+        .select("id, title, roleTitle")
         .in("projectId", projectIds);
 
-      const interviewIds = (userInterviews ?? []).map(
-        (i: { id: string }) => i.id,
-      );
+      const interviewIds = (userInterviews ?? [])
+        .filter((i) => !input.roleTitle || i.roleTitle === input.roleTitle)
+        .map((i: { id: string }) => i.id);
       if (interviewIds.length === 0)
         return { candidates: [], walkInSessions: [] };
 
@@ -392,7 +436,7 @@ export const candidateRouter = router({
       const { data: candidates } = await ctx.supabase
         .from("candidates")
         .select(
-          "*, session:sessions(*), interview:interviews!inner(id, title)",
+          "*, session:sessions!candidates_sessionId_fkey(*), interview:interviews!inner(id, title, roleTitle)",
         )
         .in("interviewId", interviewIds)
         .order("createdAt", { ascending: false })
@@ -405,12 +449,13 @@ export const candidateRouter = router({
       let walkInQuery = ctx.supabase
         .from("sessions")
         .select(
-          "*, messages(id), interview:interviews!inner(id, title)",
+          "*, messages(id), interview:interviews!inner(id, title, roleTitle)",
         )
         .in("interviewId", interviewIds)
         .order("createdAt", { ascending: false })
         .limit(input.limit);
 
+      walkInQuery = walkInQuery.is("candidateId", null);
       if (linkedSessionIds.length > 0) {
         walkInQuery = walkInQuery.not(
           "id",
@@ -441,7 +486,7 @@ export const candidateRouter = router({
       const { data: candidate } = await ctx.supabase
         .from("candidates")
         .select(
-          "*, session:sessions(*, messages(*)), interview:interviews(*, questions(*))",
+          "*, session:sessions!candidates_sessionId_fkey(*, messages(*)), interview:interviews(*, questions(*))",
         )
         .eq("inviteToken", input.token)
         .single();
@@ -462,6 +507,18 @@ export const candidateRouter = router({
         });
       }
 
+      interview.questions = questionsForCandidate(
+        interview.questions || [],
+        ctx.user?.app_metadata?.phone === candidate.phone ? candidate.id : null,
+      );
+      if (
+        !ctx.user?.app_metadata?.phone ||
+        ctx.user.app_metadata.phone !== candidate.phone
+      ) {
+        candidate.session = null;
+        candidate.sessionId = null;
+      }
+      delete candidate.resumeText;
       return candidate;
     }),
 });

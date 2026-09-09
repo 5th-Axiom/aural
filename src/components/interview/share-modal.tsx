@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,14 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { trpc } from "@/lib/trpc/client";
-import {
-  Check,
-  Copy,
-  ExternalLink,
-  Globe,
-  Loader2,
-  Lock,
-} from "lucide-react";
+import { Check, Copy, ExternalLink, Globe, Loader2, Lock } from "lucide-react";
 import { useCallback, useState } from "react";
 
 interface ShareModalProps {
@@ -36,6 +31,7 @@ export function ShareModal({
   publicSlug,
   isPublic,
 }: ShareModalProps) {
+  const ui = useUiTranslation();
   const { toast } = useToast();
   const utils = trpc.useUtils();
   const [copied, setCopied] = useState(false);
@@ -54,29 +50,32 @@ export function ShareModal({
     setPublishing(true);
     try {
       const result = await publishMutation.mutateAsync({ id: interviewId });
-      await updateMutation.mutateAsync({ id: interviewId, requireInvite: false });
+      await updateMutation.mutateAsync({
+        id: interviewId,
+        requireInvite: false,
+      });
       utils.interview.getById.invalidate({ id: interviewId });
       setJustPublished(true);
 
       const url = `${window.location.origin}/i/${result.slug}`;
       await navigator.clipboard.writeText(url);
       setCopied(true);
-      toast({ title: "Shareable link created and copied" });
+      toast({ title: ui("Shareable link created and copied") });
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast({ title: "Failed to create link", variant: "destructive" });
+      toast({ title: ui("Failed to create link"), variant: "destructive" });
     } finally {
       setPublishing(false);
     }
-  }, [interviewId, publishMutation, updateMutation, utils, toast]);
+  }, [ui, interviewId, publishMutation, updateMutation, utils, toast]);
 
   const handleCopy = useCallback(async () => {
     if (!shareUrl) return;
     await navigator.clipboard.writeText(shareUrl);
     setCopied(true);
-    toast({ title: "Link copied to clipboard" });
+    toast({ title: ui("Link copied to clipboard") });
     setTimeout(() => setCopied(false), 2000);
-  }, [shareUrl, toast]);
+  }, [ui, shareUrl, toast]);
 
   const handlePreview = useCallback(() => {
     if (publicSlug) {
@@ -94,9 +93,11 @@ export function ShareModal({
     >
       <DialogContent className="sm:max-w-md gap-0">
         <DialogHeader className="pb-4">
-          <DialogTitle className="text-base">Share interview</DialogTitle>
+          <DialogTitle className="text-base">
+            {ui("Share interview")}
+          </DialogTitle>
           <DialogDescription className="sr-only">
-            Share the link or preview the interview.
+            {ui("Share the link or preview the interview.")}
           </DialogDescription>
         </DialogHeader>
 
@@ -107,9 +108,13 @@ export function ShareModal({
                 <Lock className="h-4 w-4 text-muted-foreground" />
               </div>
               <div>
-                <p className="text-sm font-medium">This interview is invite-only</p>
+                <p className="text-sm font-medium">
+                  {ui("This interview is invite-only")}
+                </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Create a shareable link so anyone with the link can start the interview.
+                  {ui(
+                    "Create a shareable link so anyone with the link can start the interview.",
+                  )}
                 </p>
               </div>
               <Button
@@ -122,7 +127,7 @@ export function ShareModal({
                 ) : (
                   <Globe className="h-4 w-4" />
                 )}
-                Create shareable link
+                {ui("Create shareable link")}
               </Button>
             </div>
           </div>
@@ -146,7 +151,7 @@ export function ShareModal({
                 ) : (
                   <Copy className="h-3.5 w-3.5" />
                 )}
-                {copied ? "Copied" : "Copy link"}
+                {copied ? ui("Copied") : ui("Copy link")}
               </Button>
             </div>
 
@@ -157,7 +162,7 @@ export function ShareModal({
                   className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                 >
                   <ExternalLink className="h-3 w-3" />
-                  Preview as candidate
+                  {ui("Preview as candidate")}
                 </button>
               </div>
             )}

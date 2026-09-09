@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +53,7 @@ export function SupportDrawer({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const ui = useUiTranslation();
   const { user } = useAuth();
   const [view, setView] = useState<View>("home");
   const [messageType, setMessageType] = useState<MessageType>("Question");
@@ -90,19 +93,29 @@ export function SupportDrawer({
       const formData = new FormData();
       formData.append("type", messageType);
       formData.append("severity", severity);
-      formData.append("topic", topic === "Other" ? customTopic || "Other" : topic);
+      formData.append(
+        "topic",
+        topic === "Other" ? customTopic || "Other" : topic,
+      );
       formData.append("message", message);
       formData.append("email", user?.email ?? "");
       files.forEach((f) => formData.append("attachments", f));
 
-      const res = await fetch("/api/support", { method: "POST", body: formData });
+      const res = await fetch("/api/support", {
+        method: "POST",
+        body: formData,
+      });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         throw new Error(body?.error ?? `Request failed (${res.status})`);
       }
       setSubmitted(true);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to send message. Please try again.");
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Failed to send message. Please try again.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -115,22 +128,29 @@ export function SupportDrawer({
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto code-scrollbar">
+      <SheetContent
+        side="right"
+        className="w-full sm:max-w-md overflow-y-auto code-scrollbar"
+      >
         {view === "home" ? (
           <>
             <SheetHeader className="pb-4">
-              <SheetTitle>Support</SheetTitle>
-              <SheetDescription className="sr-only">Get help from docs or contact support</SheetDescription>
+              <SheetTitle>{ui("Support")}</SheetTitle>
+              <SheetDescription className="sr-only">
+                {ui("Get help from docs or contact support")}
+              </SheetDescription>
             </SheetHeader>
 
             {/* Docs section */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <BookOpen className="h-4 w-4" />
-                <h3 className="text-sm font-semibold">Docs</h3>
+                <h3 className="text-sm font-semibold">{ui("Docs")}</h3>
               </div>
               <p className="text-sm text-muted-foreground">
-                Guides, examples, and reference — find quick answers here.
+                {ui(
+                  "Guides, examples, and reference — find quick answers here.",
+                )}
               </p>
               <a
                 href="/docs"
@@ -138,7 +158,7 @@ export function SupportDrawer({
                 rel="noopener noreferrer"
                 className="flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors hover:bg-muted"
               >
-                View documentation
+                {ui("View documentation")}
                 <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
               </a>
             </div>
@@ -149,17 +169,21 @@ export function SupportDrawer({
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <LifeBuoy className="h-4 w-4" />
-                <h3 className="text-sm font-semibold">Contact Support</h3>
+                <h3 className="text-sm font-semibold">
+                  {ui("Contact Support")}
+                </h3>
               </div>
               <p className="text-sm text-muted-foreground">
-                Can&apos;t find what you need? One of our support engineers will help you out.
+                {ui(
+                  "Can't find what you need? One of our support engineers will help you out.",
+                )}
               </p>
               <button
                 type="button"
                 onClick={() => setView("contact")}
                 className="flex w-full items-center justify-center rounded-lg border px-4 py-2 text-sm font-medium transition-colors hover:bg-muted"
               >
-                Email a Support Engineer
+                {ui("Email a Support Engineer")}
               </button>
             </div>
           </>
@@ -169,21 +193,30 @@ export function SupportDrawer({
               <SheetTitle className="flex items-center gap-2 text-sm">
                 <button
                   type="button"
-                  onClick={() => { setView("home"); setSubmitted(false); }}
+                  onClick={() => {
+                    setView("home");
+                    setSubmitted(false);
+                  }}
                   className="font-semibold text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Support
+                  {ui("Support")}
                 </button>
                 <span className="text-muted-foreground/50">/</span>
-                <span className="font-semibold">Email Engineer</span>
+                <span className="font-semibold">{ui("Email Engineer")}</span>
               </SheetTitle>
-              <SheetDescription className="sr-only">Send a message to support</SheetDescription>
+              <SheetDescription className="sr-only">
+                {ui("Send a message to support")}
+              </SheetDescription>
             </SheetHeader>
 
             <div className="mb-4">
-              <h3 className="text-base font-semibold">Email a Support Engineer</h3>
+              <h3 className="text-base font-semibold">
+                {ui("Email a Support Engineer")}
+              </h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Details speed things up. The clearer your request, the quicker you get the answer you need.
+                {ui(
+                  "Details speed things up. The clearer your request, the quicker you get the answer you need.",
+                )}
               </p>
             </div>
 
@@ -197,25 +230,35 @@ export function SupportDrawer({
                     stroke="currentColor"
                     strokeWidth={2}
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                 </div>
                 <div>
-                  <p className="font-medium">Message sent!</p>
+                  <p className="font-medium">{ui("Message sent!")}</p>
                   <p className="text-sm text-muted-foreground">
-                    We&apos;ll get back to you at your account email. Replies may
-                    take up to one business day.
+                    {ui(
+                      "We'll get back to you at your account email. Replies may take up to one business day.",
+                    )}
                   </p>
                 </div>
-                <Button variant="outline" onClick={() => handleOpenChange(false)}>
-                  Close
+                <Button
+                  variant="outline"
+                  onClick={() => handleOpenChange(false)}
+                >
+                  {ui("Close")}
                 </Button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* Message Type */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Message Type</Label>
+                  <Label className="text-sm font-medium">
+                    {ui("Message Type")}
+                  </Label>
                   <div className="flex gap-2">
                     {MESSAGE_TYPES.map((t) => (
                       <button
@@ -226,7 +269,7 @@ export function SupportDrawer({
                           "rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
                           messageType === t
                             ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border bg-background text-foreground hover:bg-muted"
+                            : "border-border bg-background text-foreground hover:bg-muted",
                         )}
                       >
                         {t}
@@ -237,10 +280,14 @@ export function SupportDrawer({
 
                 {/* Severity */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Severity</Label>
+                  <Label className="text-sm font-medium">
+                    {ui("Severity")}
+                  </Label>
                   <Select value={severity} onValueChange={setSeverity}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Question or feature request" />
+                      <SelectValue
+                        placeholder={ui("Question or feature request")}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {SEVERITY_OPTIONS.map((s) => (
@@ -254,10 +301,16 @@ export function SupportDrawer({
 
                 {/* Topic */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Topic</Label>
-                  <Select value={topic} onValueChange={(v) => { setTopic(v); if (v !== "Other") setCustomTopic(""); }}>
+                  <Label className="text-sm font-medium">{ui("Topic")}</Label>
+                  <Select
+                    value={topic}
+                    onValueChange={(v) => {
+                      setTopic(v);
+                      if (v !== "Other") setCustomTopic("");
+                    }}
+                  >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a topic" />
+                      <SelectValue placeholder={ui("Select a topic")} />
                     </SelectTrigger>
                     <SelectContent>
                       {TOPIC_OPTIONS.map((t) => (
@@ -271,7 +324,7 @@ export function SupportDrawer({
                     <Input
                       value={customTopic}
                       onChange={(e) => setCustomTopic(e.target.value)}
-                      placeholder="Please specify the topic"
+                      placeholder={ui("Please specify the topic")}
                       className="mt-2"
                     />
                   )}
@@ -279,15 +332,18 @@ export function SupportDrawer({
 
                 {/* Message */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Message</Label>
+                  <Label className="text-sm font-medium">{ui("Message")}</Label>
                   <p className="text-xs text-muted-foreground">
-                    We will email you at your account address. Replies may take up to
-                    one business day.
+                    {ui(
+                      "We will email you at your account address. Replies may take up to one business day.",
+                    )}
                   </p>
                   <Textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Please explain as fully as possible what you're aiming to do, and what you'd like help with."
+                    placeholder={ui(
+                      "Please explain as fully as possible what you're aiming to do, and what you'd like help with.",
+                    )}
                     rows={6}
                     required
                   />
@@ -300,7 +356,7 @@ export function SupportDrawer({
                     className="inline-flex cursor-pointer items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <Paperclip className="h-4 w-4" />
-                    Attach files
+                    {ui("Attach files")}
                   </Label>
                   <Input
                     id="support-files"
@@ -322,7 +378,7 @@ export function SupportDrawer({
                             onClick={() => removeFile(i)}
                             className="ml-2 text-muted-foreground hover:text-foreground"
                           >
-                            &times;
+                            {ui("×")}
                           </button>
                         </li>
                       ))}
@@ -338,7 +394,7 @@ export function SupportDrawer({
                     className="flex-1"
                     onClick={() => setView("home")}
                   >
-                    Cancel
+                    {ui("Cancel")}
                   </Button>
                   <Button
                     type="submit"
@@ -350,7 +406,7 @@ export function SupportDrawer({
                       (topic === "Other" && !customTopic.trim())
                     }
                   >
-                    {submitting ? "Sending..." : "Submit"}
+                    {submitting ? "Sending..." : ui("Submit")}
                   </Button>
                 </div>
               </form>

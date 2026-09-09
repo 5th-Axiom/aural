@@ -48,6 +48,10 @@ def validate(source: str) -> dict[str, str]:
     for key in ('NEXT_PUBLIC_VOICE_RELAY_URL', 'NEXT_PUBLIC_OPENAI_VOICE_RELAY_URL'):
         if values.get(key):
             raise ValueError(f'Leave {key} empty to use the deployment gateway')
+    if values.get('MOCK_PHONE_AUTH_ENABLED') != 'true':
+        raise ValueError('Enable MOCK_PHONE_AUTH_ENABLED=true for this test release')
+    if len(values.get('MOCK_PHONE_AUTH_SECRET', '')) < 32:
+        raise ValueError('MOCK_PHONE_AUTH_SECRET must contain at least 32 characters')
     values['NEXT_PUBLIC_VOICE_RELAY_PRIMARY'] = 'voice'
     values['NEXT_PUBLIC_VOICE_RELAY_URL'] = ''
     values['NEXT_PUBLIC_OPENAI_VOICE_RELAY_URL'] = ''

@@ -14,7 +14,10 @@ try {
  }
  await page.goto(origin,{waitUntil:'domcontentloaded'});
  await page.getByLabel('访问密码').fill(env.TEST_ACCESS_PASSWORD);
- await Promise.all([page.waitForURL('**/dashboard'),page.getByRole('button',{name:'进入项目'}).click()]);
+ await Promise.all([page.waitForURL('**/login'),page.getByRole('button',{name:'进入项目'}).click()]);
+ await page.locator('#phone').fill(process.env.AURAL_SMOKE_PHONE || '13800138000');
+ await page.locator('#code').fill('123456');
+ await Promise.all([page.waitForURL('**/dashboard'),page.getByRole('button',{name:'登录 / 注册',exact:true}).click()]);
  await page.waitForLoadState('networkidle');
  assert.equal(await page.evaluate(()=>isSecureContext),true);
  const mic=await page.evaluate(async()=>{const s=await navigator.mediaDevices.getUserMedia({audio:true});s.getTracks().forEach(t=>t.stop());return true;});

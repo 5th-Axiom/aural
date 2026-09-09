@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { useAppLocale } from "@/components/app-locale-provider";
 import { AIGenerator } from "@/components/interview/ai-generator";
 import { useProject } from "@/components/project-provider";
@@ -39,6 +41,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 export default function NewInterviewPage() {
+  const ui = useUiTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { locale } = useAppLocale();
@@ -47,6 +50,7 @@ export default function NewInterviewPage() {
     searchParams.get("projectId") ?? currentProject?.id ?? undefined;
   const { toast } = useToast();
   const isZh = locale === "zh";
+  const [roleTitle, setRoleTitle] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [objective, setObjective] = useState("");
@@ -59,7 +63,7 @@ export default function NewInterviewPage() {
   const [followUpDepth, setFollowUpDepth] = useState<
     "LIGHT" | "MODERATE" | "DEEP"
   >("MODERATE");
-  const [language, setLanguage] = useState("en");
+  const [language, setLanguage] = useState("zh");
   const [duration, setDuration] = useState<number | undefined>(undefined);
   const [antiCheatingEnabled, setAntiCheatingEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -85,6 +89,7 @@ export default function NewInterviewPage() {
       await createMutation.mutateAsync({
         projectId,
         title,
+        roleTitle,
         description,
         objective,
         chatEnabled,
@@ -105,12 +110,12 @@ export default function NewInterviewPage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <h1 className="text-3xl font-bold">
-          {isZh ? "创建面试" : "Create Interview"}
+          {isZh ? "创建面试" : ui("Create Interview")}
         </h1>
         <p className="text-muted-foreground">
           {isZh
             ? "手动创建，或使用 AI 为你生成一场面试。"
-            : "Build manually or let AI generate an interview for you."}
+            : ui("Build manually or let AI generate an interview for you.")}
         </p>
       </div>
 
@@ -118,11 +123,11 @@ export default function NewInterviewPage() {
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="ai" className="gap-2">
             <Sparkles className="h-4 w-4" />
-            {isZh ? "AI 生成器" : "AI Generator"}
+            {isZh ? "AI 生成器" : ui("AI Generator")}
           </TabsTrigger>
           <TabsTrigger value="manual" className="gap-2">
             <PenLine className="h-4 w-4" />
-            {isZh ? "手动创建" : "Manual"}
+            {isZh ? "手动创建" : ui("Manual")}
           </TabsTrigger>
         </TabsList>
 
@@ -133,17 +138,32 @@ export default function NewInterviewPage() {
         <TabsContent value="manual">
           <Card>
             <CardHeader>
-              <CardTitle>{isZh ? "手动创建" : "Create Manually"}</CardTitle>
+              <CardTitle>{isZh ? "手动创建" : ui("Create Manually")}</CardTitle>
               <CardDescription>
                 {isZh
                   ? "先完成基础设置，然后在编辑器中添加题目。"
-                  : "Set up the basics, then add questions in the editor."}
+                  : ui("Set up the basics, then add questions in the editor.")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleManualCreate} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="title">{isZh ? "标题" : "Title"}</Label>
+                  <Label htmlFor="roleTitle">
+                    {isZh ? "岗位" : ui("Position")}
+                  </Label>
+                  <Input
+                    id="roleTitle"
+                    required
+                    value={roleTitle}
+                    maxLength={100}
+                    onChange={(e) => setRoleTitle(e.target.value)}
+                    placeholder={
+                      isZh ? "例如：前端工程师" : "e.g. Frontend Engineer"
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="title">{isZh ? "标题" : ui("Title")}</Label>
                   <Input
                     id="title"
                     placeholder={
@@ -158,14 +178,14 @@ export default function NewInterviewPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="description">
-                    {isZh ? "描述" : "Description"}
+                    {isZh ? "描述" : ui("Description")}
                   </Label>
                   <Textarea
                     id="description"
                     placeholder={
                       isZh
                         ? "简要描述这场面试..."
-                        : "Brief description of this interview..."
+                        : ui("Brief description of this interview...")
                     }
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
@@ -173,14 +193,14 @@ export default function NewInterviewPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="objective">
-                    {isZh ? "目标" : "Objective"}
+                    {isZh ? "目标" : ui("Objective")}
                   </Label>
                   <Textarea
                     id="objective"
                     placeholder={
                       isZh
                         ? "你希望通过这场面试了解什么？"
-                        : "What do you want to learn from this interview?"
+                        : ui("What do you want to learn from this interview?")
                     }
                     value={objective}
                     onChange={(e) => setObjective(e.target.value)}
@@ -188,7 +208,7 @@ export default function NewInterviewPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="duration">
-                    {isZh ? "时长（分钟）" : "Duration (minutes)"}
+                    {isZh ? "时长（分钟）" : ui("Duration (minutes)")}
                   </Label>
                   <Input
                     id="duration"
@@ -206,25 +226,31 @@ export default function NewInterviewPage() {
                   <p className="text-xs text-muted-foreground">
                     {isZh
                       ? "可选。建议的面试时长限制。"
-                      : "Optional. Recommended time limit for the interview."}
+                      : ui(
+                          "Optional. Recommended time limit for the interview.",
+                        )}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>{isZh ? "沟通渠道" : "Communication Channels"}</Label>
+                  <Label>
+                    {isZh ? "沟通渠道" : ui("Communication Channels")}
+                  </Label>
                   <p className="text-xs text-muted-foreground">
                     {isZh
                       ? "选择候选人在面试中的参与方式。至少启用一个渠道。"
-                      : "Choose how participants interact during the interview. At least one channel must be enabled."}
+                      : ui(
+                          "Choose how participants interact during the interview. At least one channel must be enabled.",
+                        )}
                   </p>
                   <div className="space-y-2 rounded-lg border p-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <MessageSquare className="h-4 w-4 text-muted-foreground" />
                         <div>
-                          <Label>{isZh ? "聊天" : "Chat"}</Label>
+                          <Label>{isZh ? "聊天" : ui("Chat")}</Label>
                           <p className="text-xs text-muted-foreground">
-                            {isZh ? "文字消息" : "Text messaging"}
+                            {isZh ? "文字消息" : ui("Text messaging")}
                           </p>
                         </div>
                       </div>
@@ -241,11 +267,11 @@ export default function NewInterviewPage() {
                       <div className="flex items-center gap-2">
                         <Mic className="h-4 w-4 text-muted-foreground" />
                         <div>
-                          <Label>{isZh ? "语音" : "Voice"}</Label>
+                          <Label>{isZh ? "语音" : ui("Voice")}</Label>
                           <p className="text-xs text-muted-foreground">
                             {isZh
                               ? "语音对话（Chrome 或 Edge）"
-                              : "Speech conversation (Chrome or Edge)"}
+                              : ui("Speech conversation (Chrome or Edge)")}
                           </p>
                         </div>
                       </div>
@@ -263,11 +289,11 @@ export default function NewInterviewPage() {
                       <div className="flex items-center gap-2">
                         <Video className="h-4 w-4 text-muted-foreground" />
                         <div>
-                          <Label>{isZh ? "视频" : "Video"}</Label>
+                          <Label>{isZh ? "视频" : ui("Video")}</Label>
                           <p className="text-xs text-muted-foreground">
                             {isZh
                               ? "摄像头与屏幕录制"
-                              : "Camera & screen recording"}
+                              : ui("Camera & screen recording")}
                           </p>
                         </div>
                       </div>
@@ -281,19 +307,23 @@ export default function NewInterviewPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>{isZh ? "防作弊模式" : "Anti-Cheating Mode"}</Label>
+                  <Label>
+                    {isZh ? "防作弊模式" : ui("Anti-Cheating Mode")}
+                  </Label>
                   <div className="rounded-lg border p-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <ShieldCheck className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <Label>
-                            {isZh ? "启用防作弊" : "Enable Anti-Cheating"}
+                            {isZh ? "启用防作弊" : ui("Enable Anti-Cheating")}
                           </Label>
                           <p className="text-xs text-muted-foreground">
                             {isZh
                               ? "需要摄像头、麦克风和屏幕共享。可监控切换标签页、阻止外部粘贴，并检测多屏。"
-                              : "Requires camera, mic & screen sharing. Monitors tab switches, blocks external paste, and detects multiple screens"}
+                              : ui(
+                                  "Requires camera, mic & screen sharing. Monitors tab switches, blocks external paste, and detects multiple screens",
+                                )}
                           </p>
                         </div>
                       </div>
@@ -307,34 +337,44 @@ export default function NewInterviewPage() {
                         <p className="font-medium">
                           {isZh
                             ? "启用后，候选人将遇到以下限制："
-                            : "When enabled, interviewees will experience:"}
+                            : ui("When enabled, interviewees will experience:")}
                         </p>
                         <ul className="mt-1 list-inside list-disc space-y-0.5">
                           <li>
                             {isZh
                               ? "必须开启摄像头、麦克风和屏幕共享（不可跳过）"
-                              : "Camera, microphone, and screen sharing will be mandatory (cannot be skipped)"}
+                              : ui(
+                                  "Camera, microphone, and screen sharing will be mandatory (cannot be skipped)",
+                                )}
                           </li>
                           <li>
                             {isZh
                               ? "切换标签页和窗口失焦会被记录并标记"
-                              : "Tab switching and window focus loss will be tracked and flagged"}
+                              : ui(
+                                  "Tab switching and window focus loss will be tracked and flagged",
+                                )}
                           </li>
                           <li>
                             {isZh
                               ? "将阻止从面试页面外部粘贴内容"
-                              : "Pasting content from outside the interview page will be blocked"}
+                              : ui(
+                                  "Pasting content from outside the interview page will be blocked",
+                                )}
                           </li>
                           <li>
                             {isZh
                               ? "会检测并警告多显示器环境"
-                              : "Multiple monitor setups will be detected and warned against"}
+                              : ui(
+                                  "Multiple monitor setups will be detected and warned against",
+                                )}
                           </li>
                         </ul>
                         <p className="mt-1.5 text-amber-700 dark:text-amber-300">
                           {isZh
                             ? "候选人在开始前会被明确告知这些限制。"
-                            : "Candidates will be informed of these restrictions before starting."}
+                            : ui(
+                                "Candidates will be informed of these restrictions before starting.",
+                              )}
                         </p>
                       </div>
                     )}
@@ -344,11 +384,11 @@ export default function NewInterviewPage() {
                 {/* AI Configuration */}
                 <div className="mt-4 space-y-3">
                   <Label className="block text-sm font-medium">
-                    {isZh ? "AI 配置" : "AI Configuration"}
+                    {isZh ? "AI 配置" : ui("AI Configuration")}
                   </Label>
                   <div className="grid gap-4 rounded-lg border p-3 sm:grid-cols-3">
                     <div className="space-y-2">
-                      <Label>{isZh ? "语气" : "Tone"}</Label>
+                      <Label>{isZh ? "语气" : ui("Tone")}</Label>
                       <Select
                         value={aiTone}
                         onValueChange={(v) => setAiTone(v as typeof aiTone)}
@@ -359,14 +399,14 @@ export default function NewInterviewPage() {
                         <SelectContent>
                           {AI_TONES.map((t) => (
                             <SelectItem key={t.value} value={t.value}>
-                              {t.label}
+                              {ui(t.label)}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>{isZh ? "追问深度" : "Follow-up Depth"}</Label>
+                      <Label>{isZh ? "追问深度" : ui("Follow-up Depth")}</Label>
                       <Select
                         value={followUpDepth}
                         onValueChange={(v) =>
@@ -379,14 +419,14 @@ export default function NewInterviewPage() {
                         <SelectContent>
                           {FOLLOW_UP_DEPTHS.map((d) => (
                             <SelectItem key={d.value} value={d.value}>
-                              {d.label} ({d.description})
+                              {ui(d.label)} ({ui(d.description)})
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>{isZh ? "语言" : "Language"}</Label>
+                      <Label>{isZh ? "语言" : ui("Language")}</Label>
                       <Select value={language} onValueChange={setLanguage}>
                         <SelectTrigger>
                           <SelectValue />
@@ -394,7 +434,7 @@ export default function NewInterviewPage() {
                         <SelectContent>
                           {LANGUAGES.map((l) => (
                             <SelectItem key={l.value} value={l.value}>
-                              {l.label}
+                              {ui(l.label)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -405,7 +445,7 @@ export default function NewInterviewPage() {
 
                 <Button type="submit" disabled={loading || !title}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {isZh ? "创建面试" : "Create Interview"}
+                  {isZh ? "创建面试" : ui("Create Interview")}
                 </Button>
               </form>
             </CardContent>

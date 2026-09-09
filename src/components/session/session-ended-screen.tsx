@@ -1,4 +1,5 @@
 "use client";
+import { useUiTranslation } from "@/hooks/use-ui-translation";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle2, Clock3 } from "lucide-react";
@@ -66,6 +67,7 @@ export function SessionEndedScreen({
 }: {
   reason?: SessionEndReasonInput;
 }) {
+  const ui = useUiTranslation();
   const normalizedReason = normalizeSessionEndReason(reason);
   const copy = endReasonCopy[normalizedReason];
   const Icon = copy.icon;
@@ -75,8 +77,8 @@ export function SessionEndedScreen({
       <Card className="w-full max-w-md">
         <CardContent className="py-12 text-center">
           <Icon className={`mx-auto h-16 w-16 ${copy.iconClassName}`} />
-          <h2 className="mt-4 text-2xl font-bold">{copy.title}</h2>
-          <p className="mt-2 text-muted-foreground">{copy.description}</p>
+          <h2 className="mt-4 text-2xl font-bold">{ui(copy.title)}</h2>
+          <p className="mt-2 text-muted-foreground">{ui(copy.description)}</p>
         </CardContent>
       </Card>
     </div>

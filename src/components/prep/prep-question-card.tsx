@@ -1,11 +1,17 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChatComposer } from "@/components/ui/chat-composer";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, RotateCcw, Timer } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -14,12 +20,12 @@ import { PrepFollowUp } from "./prep-follow-up";
 import { PrepHintButton } from "./prep-hint-button";
 import { readPrepStream } from "./prep-stream";
 import {
-    EMPTY_FEEDBACK,
-    FOLLOW_UP_DEPTH_TURNS,
-    type PrepAttempt,
-    type PrepFeedback,
-    type PrepFollowUpTurn,
-    type PrepQuestion,
+  EMPTY_FEEDBACK,
+  FOLLOW_UP_DEPTH_TURNS,
+  type PrepAttempt,
+  type PrepFeedback,
+  type PrepFollowUpTurn,
+  type PrepQuestion,
 } from "./prep-types";
 
 type FeedbackFinal = {
@@ -34,8 +40,12 @@ function safeArray<T>(value: unknown): T[] {
 }
 
 function formatMinutes(seconds: number): string {
-  const min = Math.floor(seconds / 60).toString().padStart(2, "0");
-  const sec = Math.max(0, seconds % 60).toString().padStart(2, "0");
+  const min = Math.floor(seconds / 60)
+    .toString()
+    .padStart(2, "0");
+  const sec = Math.max(0, seconds % 60)
+    .toString()
+    .padStart(2, "0");
   return `${min}:${sec}`;
 }
 
@@ -72,6 +82,7 @@ export function PrepQuestionCard({
   onNext,
   onFinish,
 }: Props) {
+  const ui = useUiTranslation();
   const { toast } = useToast();
 
   const [answer, setAnswer] = useState("");
@@ -157,7 +168,7 @@ export function PrepQuestionCard({
     } catch (err) {
       const message = err instanceof Error ? err.message : "Feedback failed";
       toast({
-        title: "Feedback failed",
+        title: ui("Feedback failed"),
         description: message,
         variant: "destructive",
       });
@@ -192,7 +203,10 @@ export function PrepQuestionCard({
         </div>
         <Progress value={progress} className="h-2" />
         <p className="text-sm text-muted-foreground">
-          Question {questionIndex + 1} of {totalQuestions}
+          {ui("Question")}
+          {questionIndex + 1}
+          {ui("of")}
+          {totalQuestions}
           {bestScoreForQuestion !== null
             ? ` · best score so far ${bestScoreForQuestion.toFixed(1)}`
             : null}
@@ -216,7 +230,7 @@ export function PrepQuestionCard({
       />
 
       <div className="space-y-2">
-        <Label htmlFor="prep-answer">Your answer</Label>
+        <Label htmlFor="prep-answer">{ui("Your answer")}</Label>
         <ChatComposer
           value={answer}
           onChange={setAnswer}
@@ -227,10 +241,12 @@ export function PrepQuestionCard({
           minLength={8}
           placeholder={
             mode === "VOICE"
-              ? "Your transcript will appear here..."
-              : "Type your answer..."
+              ? ui("Your transcript will appear here...")
+              : ui("Type your answer...")
           }
-          voice={mode === "VOICE" ? { language, disabled: submitting } : undefined}
+          voice={
+            mode === "VOICE" ? { language, disabled: submitting } : undefined
+          }
         />
       </div>
 
@@ -239,17 +255,17 @@ export function PrepQuestionCard({
           <TooltipTrigger asChild>
             <Button variant="outline" className="gap-2" onClick={retry}>
               <RotateCcw className="h-4 w-4" />
-              Retry
+              {ui("Retry")}
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Clear and answer again</TooltipContent>
+          <TooltipContent>{ui("Clear and answer again")}</TooltipContent>
         </Tooltip>
         <Button variant="outline" onClick={onFinish}>
-          Finish session
+          {ui("Finish session")}
         </Button>
         {feedback && questionIndex < totalQuestions - 1 ? (
           <Button className="ml-auto gap-2" onClick={onNext}>
-            Next
+            {ui("Next")}
             <ArrowRight className="h-4 w-4" />
           </Button>
         ) : null}

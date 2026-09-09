@@ -1,6 +1,11 @@
 "use client";
 
-import { QuestionCard, type QuestionCardData } from "@/components/interview/question-card";
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
+import {
+  QuestionCard,
+  type QuestionCardData,
+} from "@/components/interview/question-card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -71,6 +76,7 @@ export function QuestionBuilder({
   questions: Question[];
   assessmentCriteria?: AssessmentCriterion[] | null;
 }) {
+  const ui = useUiTranslation();
   const { toast } = useToast();
   const utils = trpc.useUtils();
 
@@ -80,10 +86,12 @@ export function QuestionBuilder({
   const [importOpen, setImportOpen] = useState(false);
 
   // Assessment criteria state
-  const [editableCriteria, setEditableCriteria] = useState<AssessmentCriterion[]>(
-    (assessmentCriteria as AssessmentCriterion[]) ?? [],
-  );
-  const [editingCriterionIndex, setEditingCriterionIndex] = useState<number | null>(null);
+  const [editableCriteria, setEditableCriteria] = useState<
+    AssessmentCriterion[]
+  >((assessmentCriteria as AssessmentCriterion[]) ?? []);
+  const [editingCriterionIndex, setEditingCriterionIndex] = useState<
+    number | null
+  >(null);
   const criterionSnapshotRef = useRef<AssessmentCriterion | null>(null);
   const [criteriaChanged, setCriteriaChanged] = useState(false);
   const [savingCriteria, setSavingCriteria] = useState(false);
@@ -91,13 +99,15 @@ export function QuestionBuilder({
   // Drag-and-drop state
   const dragIndexRef = useRef<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-  const [optimisticOrder, setOptimisticOrder] = useState<Question[] | null>(null);
+  const [optimisticOrder, setOptimisticOrder] = useState<Question[] | null>(
+    null,
+  );
 
   const createMutation = trpc.question.create.useMutation({
     onSuccess: () => {
       utils.interview.getById.invalidate({ id: interviewId });
       setAddingNew(false);
-      toast({ title: "Question added" });
+      toast({ title: ui("Question added") });
     },
   });
 
@@ -105,7 +115,7 @@ export function QuestionBuilder({
     onSuccess: () => {
       utils.interview.getById.invalidate({ id: interviewId });
       setEditingId(null);
-      toast({ title: "Question updated" });
+      toast({ title: ui("Question updated") });
     },
   });
 
@@ -113,7 +123,7 @@ export function QuestionBuilder({
     onSuccess: () => {
       utils.interview.getById.invalidate({ id: interviewId });
       setEditingId(null);
-      toast({ title: "Question deleted" });
+      toast({ title: ui("Question deleted") });
     },
   });
 
@@ -125,7 +135,7 @@ export function QuestionBuilder({
     },
     onError: () => {
       setOptimisticOrder(null);
-      toast({ title: "Failed to reorder", variant: "destructive" });
+      toast({ title: ui("Failed to reorder"), variant: "destructive" });
     },
   });
 
@@ -134,7 +144,7 @@ export function QuestionBuilder({
       utils.interview.getById.invalidate({ id: interviewId });
       setCriteriaChanged(false);
       setSavingCriteria(false);
-      toast({ title: "Assessment criteria saved" });
+      toast({ title: ui("Assessment criteria saved") });
     },
     onError: () => {
       setSavingCriteria(false);
@@ -214,7 +224,8 @@ export function QuestionBuilder({
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <ListOrdered className="h-4 w-4" />
-            Questions ({questions.length})
+            {ui("Questions (")}
+            {questions.length})
             {reordering && (
               <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
             )}
@@ -224,15 +235,23 @@ export function QuestionBuilder({
           {displayQuestions.length === 0 && !addingNew && (
             <div className="py-8 text-center">
               <MessageSquare className="mx-auto h-10 w-10 text-muted-foreground/50" />
-              <h3 className="mt-3 text-sm font-semibold">No questions yet</h3>
+              <h3 className="mt-3 text-sm font-semibold">
+                {ui("No questions yet")}
+              </h3>
               <p className="text-xs text-muted-foreground">
-                Add your first question to get started.
+                {ui("Add your first question to get started.")}
               </p>
             </div>
           )}
 
           {displayQuestions.length > 0 && (
-            <div className={cn("space-y-2", reordering && "pointer-events-none opacity-70 transition-opacity")}>
+            <div
+              className={cn(
+                "space-y-2",
+                reordering &&
+                  "pointer-events-none opacity-70 transition-opacity",
+              )}
+            >
               {displayQuestions.map((q, index) => (
                 <QuestionCard
                   key={q.id}
@@ -246,11 +265,20 @@ export function QuestionBuilder({
                     updateMutation.mutate({
                       id: q.id,
                       text: updated.text,
-                      type: updated.type as "OPEN_ENDED" | "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "CODING" | "WHITEBOARD" | "RESEARCH",
+                      type: updated.type as
+                        | "OPEN_ENDED"
+                        | "SINGLE_CHOICE"
+                        | "MULTIPLE_CHOICE"
+                        | "CODING"
+                        | "WHITEBOARD"
+                        | "RESEARCH",
                       description: updated.description as string | undefined,
                       isRequired: updated.isRequired,
                       options: updated.options,
-                      starterCode: updated.starterCode as { language: string; code: string } | null | undefined,
+                      starterCode: updated.starterCode as
+                        | { language: string; code: string }
+                        | null
+                        | undefined,
                     });
                   }}
                   onCancel={() => setEditingId(null)}
@@ -287,11 +315,20 @@ export function QuestionBuilder({
                 createMutation.mutate({
                   interviewId,
                   text: data.text,
-                  type: data.type as "OPEN_ENDED" | "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "CODING" | "WHITEBOARD" | "RESEARCH",
+                  type: data.type as
+                    | "OPEN_ENDED"
+                    | "SINGLE_CHOICE"
+                    | "MULTIPLE_CHOICE"
+                    | "CODING"
+                    | "WHITEBOARD"
+                    | "RESEARCH",
                   description: data.description as string | undefined,
                   isRequired: data.isRequired,
                   options: data.options,
-                  starterCode: data.starterCode as { language: string; code: string } | null | undefined,
+                  starterCode: data.starterCode as
+                    | { language: string; code: string }
+                    | null
+                    | undefined,
                 });
               }}
               onCancel={() => setAddingNew(false)}
@@ -308,7 +345,7 @@ export function QuestionBuilder({
                 onClick={() => setAddingNew(true)}
               >
                 <Plus className="mr-1 h-3.5 w-3.5" />
-                Add New
+                {ui("Add New")}
               </Button>
               <Button
                 variant="outline"
@@ -317,7 +354,7 @@ export function QuestionBuilder({
                 onClick={() => setImportOpen(true)}
               >
                 <Copy className="mr-1 h-3.5 w-3.5" />
-                Import Existing
+                {ui("Import Existing")}
               </Button>
             </div>
           )}
@@ -332,7 +369,7 @@ export function QuestionBuilder({
         existingQuestionTexts={questions.map((q) => q.text)}
         onImported={() => {
           utils.interview.getById.invalidate({ id: interviewId });
-          toast({ title: "Questions imported" });
+          toast({ title: ui("Questions imported") });
         }}
       />
 
@@ -342,7 +379,7 @@ export function QuestionBuilder({
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-base">
               <Target className="h-4 w-4" />
-              Assessment Criteria
+              {ui("Assessment Criteria")}
             </CardTitle>
             {criteriaChanged && (
               <Button
@@ -355,7 +392,7 @@ export function QuestionBuilder({
                 ) : (
                   <Check className="mr-1 h-3 w-3" />
                 )}
-                Save Criteria
+                {ui("Save Criteria")}
               </Button>
             )}
           </div>
@@ -363,7 +400,9 @@ export function QuestionBuilder({
         <CardContent className="space-y-3">
           {editableCriteria.length === 0 && editingCriterionIndex === null && (
             <p className="py-4 text-center text-sm text-muted-foreground">
-              No assessment criteria defined. Add criteria to evaluate participants.
+              {ui(
+                "No assessment criteria defined. Add criteria to evaluate participants.",
+              )}
             </p>
           )}
           {editableCriteria.map((c, i) => (
@@ -383,7 +422,7 @@ export function QuestionBuilder({
                       );
                       setCriteriaChanged(true);
                     }}
-                    placeholder="Criterion name..."
+                    placeholder={ui("Criterion name...")}
                     className="h-8 text-sm font-medium"
                     autoFocus
                   />
@@ -392,12 +431,14 @@ export function QuestionBuilder({
                     onChange={(e) => {
                       setEditableCriteria((prev) =>
                         prev.map((cr, idx) =>
-                          idx === i ? { ...cr, description: e.target.value } : cr,
+                          idx === i
+                            ? { ...cr, description: e.target.value }
+                            : cr,
                         ),
                       );
                       setCriteriaChanged(true);
                     }}
-                    placeholder="What this criterion measures..."
+                    placeholder={ui("What this criterion measures...")}
                     rows={2}
                     className="resize-y text-sm"
                   />
@@ -410,18 +451,22 @@ export function QuestionBuilder({
                           className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
                         >
                           <Trash2 className="mr-1 h-3 w-3" />
-                          Delete
+                          {ui("Delete")}
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Delete criterion?</AlertDialogTitle>
+                          <AlertDialogTitle>
+                            {ui("Delete criterion?")}
+                          </AlertDialogTitle>
                           <AlertDialogDescription>
-                            This will permanently remove this assessment criterion. This action cannot be undone.
+                            {ui(
+                              "This will permanently remove this assessment criterion. This action cannot be undone.",
+                            )}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogCancel>{ui("Cancel")}</AlertDialogCancel>
                           <AlertDialogAction
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             onClick={() => {
@@ -433,7 +478,7 @@ export function QuestionBuilder({
                               setCriteriaChanged(true);
                             }}
                           >
-                            Delete
+                            {ui("Delete")}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -447,9 +492,7 @@ export function QuestionBuilder({
                         criterionSnapshotRef.current = null;
                         if (snapshot) {
                           setEditableCriteria((prev) =>
-                            prev.map((cr, idx) =>
-                              idx === i ? snapshot : cr,
-                            ),
+                            prev.map((cr, idx) => (idx === i ? snapshot : cr)),
                           );
                         } else {
                           setEditableCriteria((prev) =>
@@ -460,7 +503,7 @@ export function QuestionBuilder({
                       }}
                     >
                       <X className="mr-1 h-3 w-3" />
-                      Cancel
+                      {ui("Cancel")}
                     </Button>
                     <Button
                       size="sm"
@@ -470,7 +513,7 @@ export function QuestionBuilder({
                       }}
                     >
                       <Check className="mr-1 h-3 w-3" />
-                      Done
+                      {ui("Done")}
                     </Button>
                   </div>
                 </div>
@@ -479,14 +522,16 @@ export function QuestionBuilder({
                   <div
                     className="flex-1 cursor-pointer"
                     onClick={() => {
-                      criterionSnapshotRef.current = structuredClone(editableCriteria[i]);
+                      criterionSnapshotRef.current = structuredClone(
+                        editableCriteria[i],
+                      );
                       setEditingCriterionIndex(i);
                     }}
                   >
                     <p className="text-sm font-medium">
                       {c.name || (
                         <span className="italic text-muted-foreground">
-                          Untitled criterion
+                          {ui("Untitled criterion")}
                         </span>
                       )}
                     </p>
@@ -500,7 +545,9 @@ export function QuestionBuilder({
                       className="p-0.5 text-muted-foreground/80 hover:text-foreground transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
-                        criterionSnapshotRef.current = structuredClone(editableCriteria[i]);
+                        criterionSnapshotRef.current = structuredClone(
+                          editableCriteria[i],
+                        );
                         setEditingCriterionIndex(i);
                       }}
                     >
@@ -518,13 +565,17 @@ export function QuestionBuilder({
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Delete criterion?</AlertDialogTitle>
+                          <AlertDialogTitle>
+                            {ui("Delete criterion?")}
+                          </AlertDialogTitle>
                           <AlertDialogDescription>
-                            This will permanently remove this assessment criterion. This action cannot be undone.
+                            {ui(
+                              "This will permanently remove this assessment criterion. This action cannot be undone.",
+                            )}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogCancel>{ui("Cancel")}</AlertDialogCancel>
                           <AlertDialogAction
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             onClick={() => {
@@ -536,7 +587,7 @@ export function QuestionBuilder({
                               setCriteriaChanged(true);
                             }}
                           >
-                            Delete
+                            {ui("Delete")}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -560,7 +611,7 @@ export function QuestionBuilder({
             }}
           >
             <Plus className="mr-1 h-3.5 w-3.5" />
-            Add Criterion
+            {ui("Add Criterion")}
           </Button>
         </CardContent>
       </Card>
@@ -585,6 +636,7 @@ function ImportQuestionsDialog({
   existingQuestionTexts: string[];
   onImported: () => void;
 }) {
+  const ui = useUiTranslation();
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [importing, setImporting] = useState(false);
@@ -601,8 +653,7 @@ function ImportQuestionsDialog({
     const existing = new Set(existingQuestionTexts.map((t) => t.toLowerCase()));
     let result = (allQuestions.data?.questions ?? []).filter(
       (q) =>
-        q.interview.id !== interviewId &&
-        !existing.has(q.text.toLowerCase()),
+        q.interview.id !== interviewId && !existing.has(q.text.toLowerCase()),
     );
     if (search.trim()) {
       const s = search.toLowerCase();
@@ -636,11 +687,20 @@ function ImportQuestionsDialog({
           order: baseOrder + i,
           text: q.text,
           description: q.description,
-          type: q.type as "OPEN_ENDED" | "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "CODING" | "WHITEBOARD" | "RESEARCH",
+          type: q.type as
+            | "OPEN_ENDED"
+            | "SINGLE_CHOICE"
+            | "MULTIPLE_CHOICE"
+            | "CODING"
+            | "WHITEBOARD"
+            | "RESEARCH",
           options: q.options ?? undefined,
-          starterCode: q.starterCode as { language: string; code: string } | null | undefined,
-        })
-      )
+          starterCode: q.starterCode as
+            | { language: string; code: string }
+            | null
+            | undefined,
+        }),
+      ),
     );
     setImporting(false);
     setSelectedIds(new Set());
@@ -661,9 +721,11 @@ function ImportQuestionsDialog({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Import Existing Questions</DialogTitle>
+          <DialogTitle>{ui("Import Existing Questions")}</DialogTitle>
           <DialogDescription>
-            Select questions from your other interviews to add to this one.
+            {ui(
+              "Select questions from your other interviews to add to this one.",
+            )}
           </DialogDescription>
         </DialogHeader>
 
@@ -671,7 +733,7 @@ function ImportQuestionsDialog({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search questions..."
+              placeholder={ui("Search questions...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -686,8 +748,8 @@ function ImportQuestionsDialog({
             ) : filteredQuestions.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted-foreground">
                 {search.trim()
-                  ? "No questions match your search."
-                  : "No questions available to import."}
+                  ? ui("No questions match your search.")
+                  : ui("No questions available to import.")}
               </p>
             ) : (
               <div className="divide-y">
@@ -716,7 +778,7 @@ function ImportQuestionsDialog({
                             className={cn("text-[10px]", style.badgeClass)}
                           >
                             <TypeIcon className="mr-0.5 h-2.5 w-2.5" />
-                            {style.label}
+                            {ui(style.label)}
                           </Badge>
                           <span className="text-xs text-muted-foreground">
                             {q.interview.title}
@@ -733,7 +795,7 @@ function ImportQuestionsDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => handleClose(false)}>
-            Cancel
+            {ui("Cancel")}
           </Button>
           <Button
             onClick={handleImport}
@@ -744,7 +806,8 @@ function ImportQuestionsDialog({
             ) : (
               <Copy className="mr-2 h-4 w-4" />
             )}
-            Import ({selectedIds.size})
+            {ui("Import (")}
+            {selectedIds.size})
           </Button>
         </DialogFooter>
       </DialogContent>

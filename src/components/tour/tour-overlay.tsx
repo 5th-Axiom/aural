@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { usePathname, useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -31,6 +33,7 @@ function renderDescription(desc: string) {
 }
 
 export function TourOverlay() {
+  const ui = useUiTranslation();
   const tour = useTourSafe();
   const router = useRouter();
   const pathname = usePathname();
@@ -142,7 +145,11 @@ export function TourOverlay() {
     const el = document.querySelector(tour.currentStep.selector);
     if (!el) return;
     scrolledForStepRef.current = key;
-    el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+    el.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+      inline: "center",
+    });
   }, [tour?.active, tour?.currentStep, tour?.showKey, targetRect]);
 
   // --- Auto-advance when a specified element appears in the DOM (polling) ---
@@ -160,9 +167,18 @@ export function TourOverlay() {
     check();
     if (!done) {
       const iv = setInterval(check, 150);
-      return () => { done = true; clearInterval(iv); };
+      return () => {
+        done = true;
+        clearInterval(iv);
+      };
     }
-  }, [tour?.active, tour?.currentStep?.id, tour?.currentStep?.advanceOnAppear, tour?.next, tour]);
+  }, [
+    tour?.active,
+    tour?.currentStep?.id,
+    tour?.currentStep?.advanceOnAppear,
+    tour?.next,
+    tour,
+  ]);
 
   // --- Auto-advance pointer handler (pointerdown so Radix dropdowns work) ---
   useEffect(() => {
@@ -246,7 +262,9 @@ export function TourOverlay() {
     const prevStep = TOUR_STEPS[prevIdx];
     tour.prev();
     if (prevStep && !pathname.includes(prevStep.page)) {
-      const url = prevStep.page.startsWith("/edit/") ? undefined : prevStep.page;
+      const url = prevStep.page.startsWith("/edit/")
+        ? undefined
+        : prevStep.page;
       if (url) router.push(url);
     }
   };
@@ -256,7 +274,9 @@ export function TourOverlay() {
     const nextStep = TOUR_STEPS[nextIdx];
     tour.next();
     if (nextStep && !pathname.includes(nextStep.page)) {
-      const url = nextStep.page.startsWith("/edit/") ? undefined : nextStep.page;
+      const url = nextStep.page.startsWith("/edit/")
+        ? undefined
+        : nextStep.page;
       if (url) router.push(url);
     }
   };
@@ -326,19 +346,23 @@ export function TourOverlay() {
           <div className="p-5 space-y-3">
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
-                Step {idx + 1} of {total}
+                {ui("Step")}
+                {idx + 1}
+                {ui("of")}
+                {total}
               </span>
             </div>
             <h3 className="text-[15px] font-bold text-gray-900 leading-tight">
-              {step.title}
+              {ui(step.title)}
             </h3>
             <p className="text-sm text-gray-600 leading-relaxed">
-              {renderDescription(step.description)}
+              {renderDescription(ui(step.description))}
             </p>
             <div className="pt-1">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[11px] font-medium text-gray-500">
-                  {Math.round(((idx + 1) / total) * 100)}% complete
+                  {Math.round(((idx + 1) / total) * 100)}
+                  {ui("% complete")}
                 </span>
               </div>
               <div className="h-1.5 w-full rounded-full bg-gray-200">
@@ -353,7 +377,7 @@ export function TourOverlay() {
                 onClick={tour.skip}
                 className="text-xs text-gray-500 hover:text-gray-900 transition-colors"
               >
-                Skip tour
+                {ui("Skip tour")}
               </button>
               <div className="flex gap-2">
                 {idx > 0 && (
@@ -361,7 +385,7 @@ export function TourOverlay() {
                     onClick={handleBack}
                     className="inline-flex items-center rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 transition-colors"
                   >
-                    Back
+                    {ui("Back")}
                   </button>
                 )}
                 <button
@@ -369,14 +393,13 @@ export function TourOverlay() {
                   disabled={!isLast && !inputFilled && idx >= maxStep}
                   className="inline-flex items-center rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {isLast ? "Finish" : "Next"}
+                  {isLast ? ui("Finish") : ui("Next")}
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
-
     </div>,
     document.body,
   );

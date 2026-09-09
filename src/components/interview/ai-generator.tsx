@@ -1,88 +1,97 @@
 "use client";
 
-import { QUESTION_TYPE_STYLES, QuestionCard } from "@/components/interview/question-card";
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
+import {
+  QUESTION_TYPE_STYLES,
+  QuestionCard,
+} from "@/components/interview/question-card";
 import { useOrg } from "@/components/org-provider";
 import { AiButton } from "@/components/ui/ai-button";
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import type { AssessmentCriterion, GeneratedInterview, GeneratedQuestion } from "@/lib/ai/types";
+import type {
+  AssessmentCriterion,
+  GeneratedInterview,
+  GeneratedQuestion,
+} from "@/lib/ai/types";
 import { AI_TONES, FOLLOW_UP_DEPTHS, LANGUAGES } from "@/lib/constants";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
 } from "@/components/ui/popover";
 import {
-    ArrowRight,
-    BrainCircuit,
-    Briefcase,
-    Check,
-    Code2,
-    Copy,
-    FileText,
-    Globe,
-    ListOrdered,
-    Loader2,
-    MessageSquareText,
-    Mic,
-    Pencil,
-    Plus,
-    RefreshCw,
-    Search,
-    ShieldCheck,
-    Sparkles,
-    Target,
-    Trash2,
-    Users,
-    Video,
-    X,
+  ArrowRight,
+  BrainCircuit,
+  Briefcase,
+  Check,
+  Code2,
+  Copy,
+  FileText,
+  Globe,
+  ListOrdered,
+  Loader2,
+  MessageSquareText,
+  Mic,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  Target,
+  Trash2,
+  Users,
+  Video,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -109,13 +118,18 @@ function rangesFromSegments(segments: PromptSegment[]): HLRange[] {
   let pos = 0;
   for (const seg of segments) {
     const text = typeof seg === "string" ? seg : seg.text;
-    if (typeof seg !== "string") ranges.push({ start: pos, end: pos + text.length });
+    if (typeof seg !== "string")
+      ranges.push({ start: pos, end: pos + text.length });
     pos += text.length;
   }
   return ranges;
 }
 
-function adjustRanges(ranges: HLRange[], oldText: string, newText: string): HLRange[] {
+function adjustRanges(
+  ranges: HLRange[],
+  oldText: string,
+  newText: string,
+): HLRange[] {
   if (!ranges.length) return ranges;
   let s = 0;
   const minLen = Math.min(oldText.length, newText.length);
@@ -126,7 +140,7 @@ function adjustRanges(ranges: HLRange[], oldText: string, newText: string): HLRa
     oe--;
     ne--;
   }
-  const delta = (ne - s) - (oe - s);
+  const delta = ne - s - (oe - s);
   return ranges
     .map(({ start: rs, end: re }) => {
       if (re <= s) return { start: rs, end: re };
@@ -147,7 +161,8 @@ function segmentsFromRanges(text: string, ranges: HLRange[]): PromptSegment[] {
   let pos = 0;
   for (const { start, end } of sorted) {
     if (start > pos) result.push(text.slice(pos, start));
-    if (end > start) result.push({ text: text.slice(start, end), highlight: true });
+    if (end > start)
+      result.push({ text: text.slice(start, end), highlight: true });
     pos = end;
   }
   if (pos < text.length) result.push(text.slice(pos));
@@ -253,9 +268,11 @@ const PROMPT_TEMPLATES: PromptTemplate[] = [
 ];
 
 export function AIGenerator({ projectId }: { projectId?: string } = {}) {
+  const ui = useUiTranslation();
   const router = useRouter();
   const { toast } = useToast();
   const { currentOrg } = useOrg();
+  const [roleTitle, setRoleTitle] = useState("通用岗位");
   const [description, setDescription] = useState("");
   const [activeTemplate, setActiveTemplate] = useState<number | null>(null);
   const [hlRanges, setHlRanges] = useState<HLRange[]>([]);
@@ -264,12 +281,18 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
   const [chatEnabled, setChatEnabled] = useState(true);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [videoEnabled, setVideoEnabled] = useState(true);
-  const [aiTone, setAiTone] = useState<"CASUAL" | "PROFESSIONAL" | "FORMAL" | "FRIENDLY">("FRIENDLY");
-  const [followUpDepth, setFollowUpDepth] = useState<"LIGHT" | "MODERATE" | "DEEP">("MODERATE");
-  const [language, setLanguage] = useState("en");
+  const [aiTone, setAiTone] = useState<
+    "CASUAL" | "PROFESSIONAL" | "FORMAL" | "FRIENDLY"
+  >("FRIENDLY");
+  const [followUpDepth, setFollowUpDepth] = useState<
+    "LIGHT" | "MODERATE" | "DEEP"
+  >("MODERATE");
+  const [language, setLanguage] = useState("zh");
   const [antiCheatingEnabled, setAntiCheatingEnabled] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [streamPhase, setStreamPhase] = useState<"idle" | "thinking" | "writing">("idle");
+  const [streamPhase, setStreamPhase] = useState<
+    "idle" | "thinking" | "writing"
+  >("idle");
   const [thinkingText, setThinkingText] = useState("");
   const [contentText, setContentText] = useState("");
   const thinkingRef = useRef<HTMLDivElement>(null);
@@ -279,10 +302,16 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
   const [saving, setSaving] = useState(false);
 
   // Editable state (separate from result so edits don't mutate original)
-  const [editableCriteria, setEditableCriteria] = useState<AssessmentCriterion[]>([]);
-  const [editableQuestions, setEditableQuestions] = useState<GeneratedQuestion[]>([]);
+  const [editableCriteria, setEditableCriteria] = useState<
+    AssessmentCriterion[]
+  >([]);
+  const [editableQuestions, setEditableQuestions] = useState<
+    GeneratedQuestion[]
+  >([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [editingCriterionIndex, setEditingCriterionIndex] = useState<number | null>(null);
+  const [editingCriterionIndex, setEditingCriterionIndex] = useState<
+    number | null
+  >(null);
   const criterionSnapshotRef = useRef<AssessmentCriterion | null>(null);
 
   // Context documents (JD / Resume)
@@ -308,21 +337,29 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
     if (thinkingRef.current) {
       thinkingRef.current.scrollTop = thinkingRef.current.scrollHeight;
     }
-    streamEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    streamEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+    });
   }, [thinkingText]);
 
   useEffect(() => {
     if (contentRef.current) {
       contentRef.current.scrollTop = contentRef.current.scrollHeight;
     }
-    streamEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    streamEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+    });
   }, [contentText]);
 
   const createMutation = trpc.interview.create.useMutation();
   const createQuestionMutation = trpc.question.create.useMutation();
 
   /** Consume an SSE stream from generate/refine and return parsed data. */
-  const consumeStream = async (response: Response): Promise<GeneratedInterview> => {
+  const consumeStream = async (
+    response: Response,
+  ): Promise<GeneratedInterview> => {
     const reader = response.body!.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
@@ -360,68 +397,89 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
     return result;
   };
 
-  const extractText = useCallback(async (source: { file?: File; url?: string }) => {
-    const formData = new FormData();
-    if (source.file) formData.append("file", source.file);
-    if (source.url) formData.append("url", source.url);
-    const res = await fetch("/api/ai/extract-text", { method: "POST", body: formData });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Extraction failed");
-    return data.text as string;
-  }, []);
+  const extractText = useCallback(
+    async (source: { file?: File; url?: string }) => {
+      const formData = new FormData();
+      if (source.file) formData.append("file", source.file);
+      if (source.url) formData.append("url", source.url);
+      const res = await fetch("/api/ai/extract-text", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Extraction failed");
+      return data.text as string;
+    },
+    [],
+  );
 
-  const handleJdFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setJdLoading(true);
-    setJdError("");
-    setJdPopoverOpen(false);
-    try {
-      const text = await extractText({ file });
-      setJdText(text);
-      setJdSource(file.name);
-    } catch (err) {
-      setJdError(err instanceof Error ? err.message : "Failed to extract text");
-    } finally {
-      setJdLoading(false);
-      if (jdFileRef.current) jdFileRef.current.value = "";
-    }
-  }, [extractText]);
+  const handleJdFile = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      setJdLoading(true);
+      setJdError("");
+      setJdPopoverOpen(false);
+      try {
+        const text = await extractText({ file });
+        setJdText(text);
+        setJdSource(file.name);
+      } catch (err) {
+        setJdError(
+          err instanceof Error ? err.message : "Failed to extract text",
+        );
+      } finally {
+        setJdLoading(false);
+        if (jdFileRef.current) jdFileRef.current.value = "";
+      }
+    },
+    [extractText],
+  );
 
-  const handleJdUrl = useCallback(async (pastedUrl?: string) => {
-    const url = (pastedUrl ?? jdUrlInput).trim();
-    if (!url) return;
-    setJdLoading(true);
-    setJdError("");
-    setJdPopoverOpen(false);
-    setJdUrlInput("");
-    try {
-      const text = await extractText({ url });
-      setJdText(text);
-      setJdSource(url);
-    } catch (err) {
-      setJdError(err instanceof Error ? err.message : "Failed to extract text");
-    } finally {
-      setJdLoading(false);
-    }
-  }, [jdUrlInput, extractText]);
+  const handleJdUrl = useCallback(
+    async (pastedUrl?: string) => {
+      const url = (pastedUrl ?? jdUrlInput).trim();
+      if (!url) return;
+      setJdLoading(true);
+      setJdError("");
+      setJdPopoverOpen(false);
+      setJdUrlInput("");
+      try {
+        const text = await extractText({ url });
+        setJdText(text);
+        setJdSource(url);
+      } catch (err) {
+        setJdError(
+          err instanceof Error ? err.message : "Failed to extract text",
+        );
+      } finally {
+        setJdLoading(false);
+      }
+    },
+    [jdUrlInput, extractText],
+  );
 
-  const handleResumeFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setResumeLoading(true);
-    setResumeError("");
-    try {
-      const text = await extractText({ file });
-      setResumeText(text);
-      setResumeSource(file.name);
-    } catch (err) {
-      setResumeError(err instanceof Error ? err.message : "Failed to extract text");
-    } finally {
-      setResumeLoading(false);
-      if (resumeFileRef.current) resumeFileRef.current.value = "";
-    }
-  }, [extractText]);
+  const handleResumeFile = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      setResumeLoading(true);
+      setResumeError("");
+      try {
+        const text = await extractText({ file });
+        setResumeText(text);
+        setResumeSource(file.name);
+      } catch (err) {
+        setResumeError(
+          err instanceof Error ? err.message : "Failed to extract text",
+        );
+      } finally {
+        setResumeLoading(false);
+        if (resumeFileRef.current) resumeFileRef.current.value = "";
+      }
+    },
+    [extractText],
+  );
 
   const handleGenerate = async () => {
     if (!description.trim()) return;
@@ -442,9 +500,10 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          description,
+          description: `岗位：${roleTitle}\n${description}`,
           durationMinutes: Number(duration) || 20,
-          language: LANGUAGES.find((l) => l.value === language)?.label ?? language,
+          language:
+            LANGUAGES.find((l) => l.value === language)?.label ?? language,
           organizationId: currentOrg?.id,
           projectId,
           ...(jdText && { jobDescription: jdText }),
@@ -460,15 +519,24 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
       const data = await consumeStream(response);
       setResult(data);
       setEditableCriteria(data.assessmentCriteria ?? []);
-      setEditableQuestions(data.questions.map((q, i) => ({
-        ...q,
-        order: i + 1,
-        starterCode: q.starterCode
-          ? { ...q.starterCode, language: q.starterCode.language.toLowerCase() }
-          : undefined,
-      })));
+      setEditableQuestions(
+        data.questions.map((q, i) => ({
+          ...q,
+          order: i + 1,
+          starterCode: q.starterCode
+            ? {
+                ...q.starterCode,
+                language: q.starterCode.language.toLowerCase(),
+              }
+            : undefined,
+        })),
+      );
     } catch {
-      toast({ title: "Generation failed", description: "Please try again or create the interview manually.", variant: "destructive" });
+      toast({
+        title: ui("Generation failed"),
+        description: ui("Please try again or create the interview manually."),
+        variant: "destructive",
+      });
     } finally {
       setGenerating(false);
       setStreamPhase("idle");
@@ -489,13 +557,18 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
         body: JSON.stringify({
           interview: {
             title: result.title,
+            roleTitle,
             description: result.description,
             objective: result.objective,
             assessmentCriteria: editableCriteria,
-            questions: editableQuestions.map((q) => ({ text: q.text, type: q.type })),
+            questions: editableQuestions.map((q) => ({
+              text: q.text,
+              type: q.type,
+            })),
           },
           feedback,
-          language: LANGUAGES.find((l) => l.value === language)?.label ?? language,
+          language:
+            LANGUAGES.find((l) => l.value === language)?.label ?? language,
           organizationId: currentOrg?.id,
           projectId,
           ...(jdText && { jobDescription: jdText }),
@@ -511,19 +584,28 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
       const data = await consumeStream(response);
       setResult(data);
       setEditableCriteria(data.assessmentCriteria ?? []);
-      setEditableQuestions(data.questions.map((q, i) => ({
-        ...q,
-        order: i + 1,
-        starterCode: q.starterCode
-          ? { ...q.starterCode, language: q.starterCode.language.toLowerCase() }
-          : undefined,
-      })));
+      setEditableQuestions(
+        data.questions.map((q, i) => ({
+          ...q,
+          order: i + 1,
+          starterCode: q.starterCode
+            ? {
+                ...q.starterCode,
+                language: q.starterCode.language.toLowerCase(),
+              }
+            : undefined,
+        })),
+      );
       setFeedback("");
       setEditingIndex(null);
       setEditingCriterionIndex(null);
-      toast({ title: "Interview refined based on your feedback!" });
+      toast({ title: ui("Interview refined based on your feedback!") });
     } catch {
-      toast({ title: "Refinement failed", description: "Please try again.", variant: "destructive" });
+      toast({
+        title: ui("Refinement failed"),
+        description: ui("Please try again."),
+        variant: "destructive",
+      });
     } finally {
       setRefining(false);
       setStreamPhase("idle");
@@ -538,9 +620,11 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
       const interview = await createMutation.mutateAsync({
         projectId,
         title: result.title,
+        roleTitle,
         description: result.description,
         objective: result.objective,
-        assessmentCriteria: editableCriteria.length > 0 ? editableCriteria : undefined,
+        assessmentCriteria:
+          editableCriteria.length > 0 ? editableCriteria : undefined,
         chatEnabled,
         voiceEnabled,
         videoEnabled,
@@ -558,22 +642,34 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
             interviewId: interview.id,
             order: i,
             text: q.text,
-            type: q.type as "OPEN_ENDED" | "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "CODING" | "WHITEBOARD" | "RESEARCH",
+            type: q.type as
+              | "OPEN_ENDED"
+              | "SINGLE_CHOICE"
+              | "MULTIPLE_CHOICE"
+              | "CODING"
+              | "WHITEBOARD"
+              | "RESEARCH",
             description: q.description ?? undefined,
             timeLimitSeconds: q.timeLimitSeconds ?? undefined,
             isRequired: q.isRequired ?? true,
             options: q.options ?? undefined,
             followUpPrompts: q.followUpPrompts ?? undefined,
-            starterCode: q.type === "CODING" && q.starterCode ? q.starterCode : undefined,
-          })
-        )
+            starterCode:
+              q.type === "CODING" && q.starterCode ? q.starterCode : undefined,
+          }),
+        ),
       );
 
-      toast({ title: "Interview created!" });
-      router.push(`/interviews/${interview.id}/edit/sessions`);
+      toast({ title: ui("Interview created!") });
+      router.push(`/interviews/${interview.id}/edit`);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Something went wrong";
-      toast({ title: "Error saving interview", description: message, variant: "destructive" });
+      const message =
+        err instanceof Error ? err.message : "Something went wrong";
+      toast({
+        title: ui("Error saving interview"),
+        description: message,
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
@@ -583,15 +679,17 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
   const updateQuestion = useCallback(
     (index: number, updates: Partial<GeneratedQuestion>) => {
       setEditableQuestions((prev) =>
-        prev.map((q, i) => (i === index ? { ...q, ...updates } : q))
+        prev.map((q, i) => (i === index ? { ...q, ...updates } : q)),
       );
     },
-    []
+    [],
   );
 
   const deleteQuestion = useCallback((index: number) => {
     setEditableQuestions((prev) =>
-      prev.filter((_, i) => i !== index).map((q, i) => ({ ...q, order: i + 1 }))
+      prev
+        .filter((_, i) => i !== index)
+        .map((q, i) => ({ ...q, order: i + 1 })),
     );
     setEditingIndex(null);
   }, []);
@@ -653,8 +751,10 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
       if (prev === null) return null;
       if (prev === fromIndex) return dropIndex;
       // Shift editing index if it was between from and drop
-      if (fromIndex < dropIndex && prev > fromIndex && prev <= dropIndex) return prev - 1;
-      if (fromIndex > dropIndex && prev >= dropIndex && prev < fromIndex) return prev + 1;
+      if (fromIndex < dropIndex && prev > fromIndex && prev <= dropIndex)
+        return prev - 1;
+      if (fromIndex > dropIndex && prev >= dropIndex && prev < fromIndex)
+        return prev + 1;
       return prev;
     });
     dragIndexRef.current = null;
@@ -673,71 +773,129 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5" />
-            AI Interview Generator
+            {ui("AI Interview Generator")}
           </CardTitle>
           <CardDescription>
-            Describe your goal in natural language and AI will create a complete
-            interview structure for you.
+            {ui(
+              "Describe your goal in natural language and AI will create a complete interview structure for you.",
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="ai-position">{ui("Position")}</Label>
+            <Input
+              id="ai-position"
+              value={roleTitle}
+              maxLength={100}
+              onChange={(e) => setRoleTitle(e.target.value)}
+              placeholder="例如：前端工程师"
+            />
+          </div>
           <div className="space-y-2" data-tour="interview-prompt">
-            <Label htmlFor="ai-description">What kind of interview do you need?</Label>
+            <Label htmlFor="ai-description">
+              {ui("What kind of interview do you need?")}
+            </Label>
             {(() => {
-              const segments = hlRanges.length ? segmentsFromRanges(description, hlRanges) : null;
-              const hasHL = segments?.some((s) => typeof s !== "string") ?? false;
+              const segments = hlRanges.length
+                ? segmentsFromRanges(description, hlRanges)
+                : null;
+              const hasHL =
+                segments?.some((s) => typeof s !== "string") ?? false;
               return (
                 <>
                   {/* Textarea with attachment area */}
                   <div className="rounded-md border bg-background focus-within:border-ring transition-colors">
                     {/* Hidden file inputs */}
-                    <input ref={jdFileRef} type="file" accept=".pdf" className="hidden" onChange={handleJdFile} />
-                    <input ref={resumeFileRef} type="file" accept=".pdf" className="hidden" onChange={handleResumeFile} />
+                    <input
+                      ref={jdFileRef}
+                      type="file"
+                      accept=".pdf"
+                      className="hidden"
+                      onChange={handleJdFile}
+                    />
+                    <input
+                      ref={resumeFileRef}
+                      type="file"
+                      accept=".pdf"
+                      className="hidden"
+                      onChange={handleResumeFile}
+                    />
 
                     {/* Attached files at the top */}
-                    {(jdText || resumeText || jdLoading || resumeLoading || jdError || resumeError) && (
+                    {(jdText ||
+                      resumeText ||
+                      jdLoading ||
+                      resumeLoading ||
+                      jdError ||
+                      resumeError) && (
                       <div className="flex flex-wrap items-center gap-2 px-3 pt-2.5 pb-1">
                         {jdLoading && (
                           <span className="inline-flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5 text-xs text-muted-foreground">
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            Extracting JD...
+                            {ui("Extracting JD...")}
                           </span>
                         )}
                         {jdText && (
                           <span className="inline-flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5 text-xs font-medium text-foreground">
-                            {jdSource.startsWith("http") ? <Globe className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : <Briefcase className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
-                            <span className="max-w-[180px] truncate">{jdSource}</span>
+                            {jdSource.startsWith("http") ? (
+                              <Globe className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                            ) : (
+                              <Briefcase className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                            )}
+                            <span className="max-w-[180px] truncate">
+                              {jdSource}
+                            </span>
                             <button
                               type="button"
                               className="shrink-0 rounded-full p-0.5 text-muted-foreground hover:text-foreground transition-colors"
-                              onClick={() => { setJdText(""); setJdSource(""); setJdUrlInput(""); setJdError(""); }}
+                              onClick={() => {
+                                setJdText("");
+                                setJdSource("");
+                                setJdUrlInput("");
+                                setJdError("");
+                              }}
                             >
                               <X className="h-3 w-3" />
                             </button>
                           </span>
                         )}
-                        {jdError && <span className="text-xs text-destructive">{jdError}</span>}
+                        {jdError && (
+                          <span className="text-xs text-destructive">
+                            {ui(jdError)}
+                          </span>
+                        )}
 
                         {resumeLoading && (
                           <span className="inline-flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5 text-xs text-muted-foreground">
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            Extracting resume...
+                            {ui("Extracting resume...")}
                           </span>
                         )}
                         {resumeText && (
                           <span className="inline-flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5 text-xs font-medium text-foreground">
                             <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                            <span className="max-w-[180px] truncate">{resumeSource}</span>
+                            <span className="max-w-[180px] truncate">
+                              {resumeSource}
+                            </span>
                             <button
                               type="button"
                               className="shrink-0 rounded-full p-0.5 text-muted-foreground hover:text-foreground transition-colors"
-                              onClick={() => { setResumeText(""); setResumeSource(""); setResumeError(""); }}
+                              onClick={() => {
+                                setResumeText("");
+                                setResumeSource("");
+                                setResumeError("");
+                              }}
                             >
                               <X className="h-3 w-3" />
                             </button>
                           </span>
                         )}
-                        {resumeError && <span className="text-xs text-destructive">{resumeError}</span>}
+                        {resumeError && (
+                          <span className="text-xs text-destructive">
+                            {ui(resumeError)}
+                          </span>
+                        )}
                       </div>
                     )}
 
@@ -748,7 +906,9 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                         value={description}
                         onChange={(e) => {
                           const next = e.target.value;
-                          setHlRanges((prev) => adjustRanges(prev, prevDescRef.current, next));
+                          setHlRanges((prev) =>
+                            adjustRanges(prev, prevDescRef.current, next),
+                          );
                           prevDescRef.current = next;
                           setDescription(next);
                           setActiveTemplate(null);
@@ -756,7 +916,8 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                         rows={4}
                         className={cn(
                           "border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 resize-none min-h-[96px] bg-transparent",
-                          hasHL && "text-transparent caret-foreground selection:bg-primary/20",
+                          hasHL &&
+                            "text-transparent caret-foreground selection:bg-primary/20",
                         )}
                       />
                       {hasHL && segments && (
@@ -770,7 +931,15 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                             ) : (
                               <mark
                                 key={j}
-                                style={{ backgroundColor: "hsl(var(--primary) / 0.12)", color: "hsl(var(--primary))", borderRadius: "3px", boxShadow: "-3px 0 0 hsl(var(--primary) / 0.12), 3px 0 0 hsl(var(--primary) / 0.12)", boxDecorationBreak: "clone", WebkitBoxDecorationBreak: "clone" }}
+                                style={{
+                                  backgroundColor: "hsl(var(--primary) / 0.12)",
+                                  color: "hsl(var(--primary))",
+                                  borderRadius: "3px",
+                                  boxShadow:
+                                    "-3px 0 0 hsl(var(--primary) / 0.12), 3px 0 0 hsl(var(--primary) / 0.12)",
+                                  boxDecorationBreak: "clone",
+                                  WebkitBoxDecorationBreak: "clone",
+                                }}
                               >
                                 {seg.text}
                               </mark>
@@ -783,7 +952,13 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                     {/* Bottom toolbar: JD & Resume buttons (right-aligned) */}
                     <div className="flex items-center justify-end gap-1.5 px-3 pb-2">
                       {/* JD button */}
-                      <Popover open={jdPopoverOpen} onOpenChange={(open) => { setJdPopoverOpen(open); if (!open) setJdUrlInput(""); }}>
+                      <Popover
+                        open={jdPopoverOpen}
+                        onOpenChange={(open) => {
+                          setJdPopoverOpen(open);
+                          if (!open) setJdUrlInput("");
+                        }}
+                      >
                         <PopoverTrigger asChild>
                           <button
                             type="button"
@@ -794,8 +969,12 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                                 : "text-muted-foreground hover:bg-muted hover:text-foreground",
                             )}
                           >
-                            {jdLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Briefcase className="h-3.5 w-3.5" />}
-                            JD
+                            {jdLoading ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Briefcase className="h-3.5 w-3.5" />
+                            )}
+                            {ui("JD")}
                           </button>
                         </PopoverTrigger>
                         <PopoverContent align="end" className="w-64 p-2">
@@ -803,22 +982,37 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                             <button
                               type="button"
                               className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-destructive hover:bg-muted transition-colors"
-                              onClick={() => { setJdText(""); setJdSource(""); setJdUrlInput(""); setJdError(""); setJdPopoverOpen(false); }}
+                              onClick={() => {
+                                setJdText("");
+                                setJdSource("");
+                                setJdUrlInput("");
+                                setJdError("");
+                                setJdPopoverOpen(false);
+                              }}
                             >
                               <X className="h-4 w-4" />
-                              Remove JD
+                              {ui("Remove JD")}
                             </button>
                           ) : (
                             <div className="space-y-1.5">
-                              <label className="block px-1 text-xs font-medium text-muted-foreground">Paste JD link</label>
+                              <label className="block px-1 text-xs font-medium text-muted-foreground">
+                                {ui("Paste JD link")}
+                              </label>
                               <div className="flex items-center gap-1.5 rounded-md border bg-muted/50 px-2 py-1.5">
                                 <Globe className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                                 <input
                                   type="text"
                                   placeholder="https://..."
                                   value={jdUrlInput}
-                                  onChange={(e) => setJdUrlInput(e.target.value)}
-                                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleJdUrl(); } }}
+                                  onChange={(e) =>
+                                    setJdUrlInput(e.target.value)
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault();
+                                      handleJdUrl();
+                                    }
+                                  }}
                                   className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 outline-none"
                                   autoFocus
                                 />
@@ -833,16 +1027,25 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                                 )}
                               </div>
                               <div className="relative">
-                                <div className="absolute inset-0 flex items-center"><div className="w-full border-t" /></div>
-                                <div className="relative flex justify-center"><span className="bg-popover px-2 text-xs text-muted-foreground">or</span></div>
+                                <div className="absolute inset-0 flex items-center">
+                                  <div className="w-full border-t" />
+                                </div>
+                                <div className="relative flex justify-center">
+                                  <span className="bg-popover px-2 text-xs text-muted-foreground">
+                                    {ui("or")}
+                                  </span>
+                                </div>
                               </div>
                               <button
                                 type="button"
                                 className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                                onClick={() => { jdFileRef.current?.click(); setJdPopoverOpen(false); }}
+                                onClick={() => {
+                                  jdFileRef.current?.click();
+                                  setJdPopoverOpen(false);
+                                }}
                               >
                                 <FileText className="h-4 w-4" />
-                                Upload PDF
+                                {ui("Upload PDF")}
                               </button>
                             </div>
                           )}
@@ -861,31 +1064,42 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                                 : "text-muted-foreground hover:bg-muted hover:text-foreground",
                             )}
                           >
-                            {resumeLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
-                            Resume
+                            {resumeLoading ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <FileText className="h-3.5 w-3.5" />
+                            )}
+                            {ui("Resume")}
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-44">
                           {resumeText ? (
-                            <DropdownMenuItem onClick={() => { setResumeText(""); setResumeSource(""); setResumeError(""); }}>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setResumeText("");
+                                setResumeSource("");
+                                setResumeError("");
+                              }}
+                            >
                               <X className="mr-2 h-4 w-4" />
-                              Remove Resume
+                              {ui("Remove Resume")}
                             </DropdownMenuItem>
                           ) : (
-                            <DropdownMenuItem onClick={() => resumeFileRef.current?.click()}>
+                            <DropdownMenuItem
+                              onClick={() => resumeFileRef.current?.click()}
+                            >
                               <FileText className="mr-2 h-4 w-4" />
-                              Upload PDF
+                              {ui("Upload PDF")}
                             </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {PROMPT_TEMPLATES.map((t, i) => (
                       <button
-                        key={t.label}
+                        key={ui(t.label)}
                         type="button"
                         className={cn(
                           "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors",
@@ -902,7 +1116,7 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                         }}
                       >
                         <t.icon className="h-3 w-3" />
-                        {t.label}
+                        {ui(t.label)}
                       </button>
                     ))}
                   </div>
@@ -912,7 +1126,7 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="duration">Duration (min)</Label>
+              <Label htmlFor="duration">{ui("Duration (min)")}</Label>
               <Input
                 id="duration"
                 type="number"
@@ -923,7 +1137,7 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
               />
             </div>
             <div className="space-y-2">
-              <Label>Language</Label>
+              <Label>{ui("Language")}</Label>
               <Select value={language} onValueChange={setLanguage}>
                 <SelectTrigger>
                   <SelectValue />
@@ -931,37 +1145,45 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                 <SelectContent>
                   {LANGUAGES.map((l) => (
                     <SelectItem key={l.value} value={l.value}>
-                      {l.label}
+                      {ui(l.label)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Tone</Label>
-              <Select value={aiTone} onValueChange={(v) => setAiTone(v as typeof aiTone)}>
+              <Label>{ui("Tone")}</Label>
+              <Select
+                value={aiTone}
+                onValueChange={(v) => setAiTone(v as typeof aiTone)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {AI_TONES.map((t) => (
                     <SelectItem key={t.value} value={t.value}>
-                      {t.label}
+                      {ui(t.label)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Follow-up Depth</Label>
-              <Select value={followUpDepth} onValueChange={(v) => setFollowUpDepth(v as typeof followUpDepth)}>
+              <Label>{ui("Follow-up Depth")}</Label>
+              <Select
+                value={followUpDepth}
+                onValueChange={(v) =>
+                  setFollowUpDepth(v as typeof followUpDepth)
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {FOLLOW_UP_DEPTHS.map((d) => (
                     <SelectItem key={d.value} value={d.value}>
-                      {d.label} ({d.description})
+                      {ui(d.label)} ({ui(d.description)})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -969,14 +1191,16 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
             </div>
           </div>
           <div className="space-y-2">
-            <Label>Communication Channels</Label>
+            <Label>{ui("Communication Channels")}</Label>
             <div className="space-y-2 rounded-lg border p-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <MessageSquareText className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <Label>Chat</Label>
-                    <p className="text-xs text-muted-foreground">Text messaging</p>
+                    <Label>{ui("Chat")}</Label>
+                    <p className="text-xs text-muted-foreground">
+                      {ui("Text messaging")}
+                    </p>
                   </div>
                 </div>
                 <Switch
@@ -992,8 +1216,10 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                 <div className="flex items-center gap-2">
                   <Mic className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <Label>Voice</Label>
-                    <p className="text-xs text-muted-foreground">Speech conversation</p>
+                    <Label>{ui("Voice")}</Label>
+                    <p className="text-xs text-muted-foreground">
+                      {ui("Speech conversation")}
+                    </p>
                   </div>
                 </div>
                 <Switch
@@ -1010,8 +1236,10 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                 <div className="flex items-center gap-2">
                   <Video className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <Label>Video</Label>
-                    <p className="text-xs text-muted-foreground">Camera &amp; screen recording</p>
+                    <Label>{ui("Video")}</Label>
+                    <p className="text-xs text-muted-foreground">
+                      {ui("Camera & screen recording")}
+                    </p>
                   </div>
                 </div>
                 <Switch
@@ -1023,15 +1251,17 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
             </div>
           </div>
           <div className="space-y-2">
-            <Label>Anti-Cheating Mode</Label>
+            <Label>{ui("Anti-Cheating Mode")}</Label>
             <div className="rounded-lg border p-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <Label>Enable Anti-Cheating</Label>
+                    <Label>{ui("Enable Anti-Cheating")}</Label>
                     <p className="text-xs text-muted-foreground">
-                      Requires camera, mic & screen sharing. Monitors tab switches, blocks external paste, and detects multiple screens
+                      {ui(
+                        "Requires camera, mic & screen sharing. Monitors tab switches, blocks external paste, and detects multiple screens",
+                      )}
                     </p>
                   </div>
                 </div>
@@ -1042,15 +1272,35 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
               </div>
               {antiCheatingEnabled && (
                 <div className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-                  <p className="font-medium">When enabled, interviewees will experience:</p>
+                  <p className="font-medium">
+                    {ui("When enabled, interviewees will experience:")}
+                  </p>
                   <ul className="mt-1 list-inside list-disc space-y-0.5">
-                    <li>Camera, microphone, and screen sharing will be mandatory (cannot be skipped)</li>
-                    <li>Tab switching and window focus loss will be tracked and flagged</li>
-                    <li>Pasting content from outside the interview page will be blocked</li>
-                    <li>Multiple monitor setups will be detected and warned against</li>
+                    <li>
+                      {ui(
+                        "Camera, microphone, and screen sharing will be mandatory (cannot be skipped)",
+                      )}
+                    </li>
+                    <li>
+                      {ui(
+                        "Tab switching and window focus loss will be tracked and flagged",
+                      )}
+                    </li>
+                    <li>
+                      {ui(
+                        "Pasting content from outside the interview page will be blocked",
+                      )}
+                    </li>
+                    <li>
+                      {ui(
+                        "Multiple monitor setups will be detected and warned against",
+                      )}
+                    </li>
                   </ul>
                   <p className="mt-1.5 text-amber-700 dark:text-amber-300">
-                    Candidates will be informed of these restrictions before starting.
+                    {ui(
+                      "Candidates will be informed of these restrictions before starting.",
+                    )}
                   </p>
                 </div>
               )}
@@ -1067,11 +1317,11 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
             {!generating && <Sparkles className="mr-2 h-4 w-4" />}
             {generating
               ? streamPhase === "thinking"
-                ? "Thinking..."
+                ? ui("Thinking...")
                 : streamPhase === "writing"
                   ? "Writing..."
                   : "Generating..."
-              : "Generate Interview"}
+              : ui("Generate Interview")}
           </AiButton>
         </CardContent>
       </Card>
@@ -1087,13 +1337,17 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                   {streamPhase === "thinking" && (
                     <Loader2 className="h-3 w-3 animate-spin" />
                   )}
-                  <span>{streamPhase === "thinking" ? "Thinking..." : "Thinking complete"}</span>
+                  <span>
+                    {streamPhase === "thinking"
+                      ? ui("Thinking...")
+                      : ui("Thinking complete")}
+                  </span>
                 </div>
                 <div
                   ref={thinkingRef}
                   className={cn(
                     "overflow-y-auto rounded-md bg-muted/50 px-3 py-2 code-scrollbar",
-                    streamPhase === "thinking" ? "max-h-40" : "max-h-20"
+                    streamPhase === "thinking" ? "max-h-40" : "max-h-20",
                   )}
                 >
                   <p className="whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground">
@@ -1109,9 +1363,16 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                   {streamPhase === "writing" && (
                     <Loader2 className="h-3 w-3 animate-spin" />
                   )}
-                  <span>{streamPhase === "writing" ? "Writing interview..." : "Finalizing..."}</span>
+                  <span>
+                    {streamPhase === "writing"
+                      ? ui("Writing interview...")
+                      : "Finalizing..."}
+                  </span>
                 </div>
-                <div ref={contentRef} className="max-h-40 overflow-y-auto rounded-md bg-muted/50 px-3 py-2 code-scrollbar">
+                <div
+                  ref={contentRef}
+                  className="max-h-40 overflow-y-auto rounded-md bg-muted/50 px-3 py-2 code-scrollbar"
+                >
                   <p className="whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground">
                     {contentText}
                   </p>
@@ -1130,15 +1391,17 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
             <CardTitle>{result.title}</CardTitle>
             <CardDescription>{result.objective}</CardDescription>
             <div className="flex gap-2 pt-2">
-              {chatEnabled && <Badge>Chat</Badge>}
-              {voiceEnabled && <Badge>Voice</Badge>}
-              {videoEnabled && <Badge>Video</Badge>}
+              {chatEnabled && <Badge>{ui("Chat")}</Badge>}
+              {voiceEnabled && <Badge>{ui("Voice")}</Badge>}
+              {videoEnabled && <Badge>{ui("Video")}</Badge>}
               <Badge variant="outline">{aiTone}</Badge>
               <Badge variant="secondary">
-                ~{result.estimatedDurationMinutes} min
+                ~{result.estimatedDurationMinutes}
+                {ui("min")}
               </Badge>
               <Badge variant="secondary">
-                {editableQuestions.length} questions
+                {editableQuestions.length}
+                {ui("questions")}
               </Badge>
             </div>
           </CardHeader>
@@ -1147,7 +1410,8 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
             <div className="space-y-3">
               <Label className="flex items-center gap-1.5 text-sm font-medium">
                 <ListOrdered className="h-4 w-4" />
-                Questions ({editableQuestions.length})
+                {ui("Questions (")}
+                {editableQuestions.length})
               </Label>
               <div className="space-y-1">
                 {editableQuestions.map((q, i) => (
@@ -1190,7 +1454,7 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                   className="flex-1 border-dashed"
                 >
                   <Plus className="mr-1 h-3.5 w-3.5" />
-                  Add New
+                  {ui("Add New")}
                 </Button>
                 <Button
                   variant="outline"
@@ -1199,7 +1463,7 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                   onClick={() => setImportOpen(true)}
                 >
                   <Copy className="mr-1 h-3.5 w-3.5" />
-                  Import Existing
+                  {ui("Import Existing")}
                 </Button>
               </div>
             </div>
@@ -1216,7 +1480,9 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                     order: prev.length + i + 1,
                   })),
                 ]);
-                toast({ title: `${imported.length} question${imported.length > 1 ? "s" : ""} imported` });
+                toast({
+                  title: ui("Imported {count} questions", {count: imported.length}),
+                });
               }}
               existingTexts={editableQuestions.map((q) => q.text)}
             />
@@ -1228,26 +1494,34 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
             <div className="space-y-3">
               <Label className="flex items-center gap-1.5 text-sm font-medium">
                 <Target className="h-4 w-4" />
-                Assessment Criteria ({editableCriteria.length})
+                {ui("Assessment Criteria (")}
+                {editableCriteria.length})
               </Label>
               <div className="space-y-1.5">
                 {editableCriteria.length === 0 ? (
                   <p className="py-2 text-sm text-muted-foreground">
-                    No assessment criteria defined yet.
+                    {ui("No assessment criteria defined yet.")}
                   </p>
                 ) : (
                   editableCriteria.map((c, i) => (
-                    <div key={i} className={`group flex items-start gap-2 rounded-md border px-3 py-2 transition-all ${editingCriterionIndex !== i ? "hover:border-primary/30" : ""}`}>
+                    <div
+                      key={i}
+                      className={`group flex items-start gap-2 rounded-md border px-3 py-2 transition-all ${editingCriterionIndex !== i ? "hover:border-primary/30" : ""}`}
+                    >
                       {editingCriterionIndex === i ? (
                         <div className="flex-1 space-y-2">
                           <Input
                             value={c.name}
                             onChange={(e) =>
                               setEditableCriteria((prev) =>
-                                prev.map((cr, idx) => idx === i ? { ...cr, name: e.target.value } : cr)
+                                prev.map((cr, idx) =>
+                                  idx === i
+                                    ? { ...cr, name: e.target.value }
+                                    : cr,
+                                ),
                               )
                             }
-                            placeholder="Criterion name..."
+                            placeholder={ui("Criterion name...")}
                             className="h-8 text-sm font-medium"
                             autoFocus
                           />
@@ -1255,10 +1529,14 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                             value={c.description}
                             onChange={(e) =>
                               setEditableCriteria((prev) =>
-                                prev.map((cr, idx) => idx === i ? { ...cr, description: e.target.value } : cr)
+                                prev.map((cr, idx) =>
+                                  idx === i
+                                    ? { ...cr, description: e.target.value }
+                                    : cr,
+                                ),
                               )
                             }
-                            placeholder="What this criterion measures..."
+                            placeholder={ui("What this criterion measures...")}
                             rows={2}
                             className="resize-y text-sm"
                           />
@@ -1271,27 +1549,35 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                                   className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
                                 >
                                   <Trash2 className="mr-1 h-3 w-3" />
-                                  Delete
+                                  {ui("Delete")}
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete criterion?</AlertDialogTitle>
+                                  <AlertDialogTitle>
+                                    {ui("Delete criterion?")}
+                                  </AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    This will permanently remove this assessment criterion. This action cannot be undone.
+                                    {ui(
+                                      "This will permanently remove this assessment criterion. This action cannot be undone.",
+                                    )}
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogCancel>
+                                    {ui("Cancel")}
+                                  </AlertDialogCancel>
                                   <AlertDialogAction
                                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                     onClick={() => {
-                                      setEditableCriteria((prev) => prev.filter((_, idx) => idx !== i));
+                                      setEditableCriteria((prev) =>
+                                        prev.filter((_, idx) => idx !== i),
+                                      );
                                       setEditingCriterionIndex(null);
                                       criterionSnapshotRef.current = null;
                                     }}
                                   >
-                                    Delete
+                                    {ui("Delete")}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
@@ -1318,14 +1604,17 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                               }}
                             >
                               <X className="mr-1 h-3 w-3" />
-                              Cancel
+                              {ui("Cancel")}
                             </Button>
-                            <Button size="sm" onClick={() => {
-                              criterionSnapshotRef.current = null;
-                              setEditingCriterionIndex(null);
-                            }}>
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                criterionSnapshotRef.current = null;
+                                setEditingCriterionIndex(null);
+                              }}
+                            >
                               <Check className="mr-1 h-3 w-3" />
-                              Done
+                              {ui("Done")}
                             </Button>
                           </div>
                         </div>
@@ -1334,12 +1623,16 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                           <div
                             className="flex-1 cursor-pointer"
                             onClick={() => {
-                              criterionSnapshotRef.current = structuredClone(editableCriteria[i]);
+                              criterionSnapshotRef.current = structuredClone(
+                                editableCriteria[i],
+                              );
                               setEditingCriterionIndex(i);
                             }}
                           >
                             <p className="text-sm font-medium">{c.name}</p>
-                            <p className="text-xs text-muted-foreground">{c.description}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {c.description}
+                            </p>
                           </div>
                           <div className="flex flex-col gap-1 shrink-0 opacity-0 transition-opacity group-hover:opacity-100">
                             <button
@@ -1347,7 +1640,9 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                               className="p-0.5 text-muted-foreground/80 hover:text-foreground transition-colors"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                criterionSnapshotRef.current = structuredClone(editableCriteria[i]);
+                                criterionSnapshotRef.current = structuredClone(
+                                  editableCriteria[i],
+                                );
                                 setEditingCriterionIndex(i);
                               }}
                             >
@@ -1365,22 +1660,30 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete criterion?</AlertDialogTitle>
+                                  <AlertDialogTitle>
+                                    {ui("Delete criterion?")}
+                                  </AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    This will permanently remove this assessment criterion. This action cannot be undone.
+                                    {ui(
+                                      "This will permanently remove this assessment criterion. This action cannot be undone.",
+                                    )}
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogCancel>
+                                    {ui("Cancel")}
+                                  </AlertDialogCancel>
                                   <AlertDialogAction
                                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                     onClick={() => {
-                                      setEditableCriteria((prev) => prev.filter((_, idx) => idx !== i));
+                                      setEditableCriteria((prev) =>
+                                        prev.filter((_, idx) => idx !== i),
+                                      );
                                       setEditingCriterionIndex(null);
                                       criterionSnapshotRef.current = null;
                                     }}
                                   >
-                                    Delete
+                                    {ui("Delete")}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
@@ -1397,12 +1700,15 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                 size="sm"
                 className="w-full border-dashed"
                 onClick={() => {
-                  setEditableCriteria((prev) => [...prev, { name: "", description: "" }]);
+                  setEditableCriteria((prev) => [
+                    ...prev,
+                    { name: "", description: "" },
+                  ]);
                   setEditingCriterionIndex(editableCriteria.length);
                 }}
               >
                 <Plus className="mr-1 h-3 w-3" />
-                Add Criterion
+                {ui("Add Criterion")}
               </Button>
             </div>
 
@@ -1413,10 +1719,12 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
             <div className="space-y-2 rounded-lg border bg-muted/30 p-4">
               <Label className="flex items-center gap-1.5 text-sm font-medium">
                 <MessageSquareText className="h-4 w-4" />
-                Refine with AI
+                {ui("Refine with AI")}
               </Label>
               <p className="text-xs text-muted-foreground">
-                Describe what you&apos;d like to change and AI will update the questions.
+                {ui(
+                  "Describe what you'd like to change and AI will update the questions.",
+                )}
               </p>
               <Textarea
                 value={feedback}
@@ -1435,11 +1743,11 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                 {!refining && <Sparkles className="mr-2 h-3.5 w-3.5" />}
                 {refining
                   ? streamPhase === "thinking"
-                    ? "Thinking..."
+                    ? ui("Thinking...")
                     : streamPhase === "writing"
                       ? "Writing..."
                       : "Refining..."
-                  : "Refine Questions"}
+                  : ui("Refine Questions")}
               </AiButton>
 
               {/* Refine streaming display */}
@@ -1452,13 +1760,19 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                           {streamPhase === "thinking" && (
                             <Loader2 className="h-3 w-3 animate-spin" />
                           )}
-                          <span>{streamPhase === "thinking" ? "Thinking..." : "Thinking complete"}</span>
+                          <span>
+                            {streamPhase === "thinking"
+                              ? ui("Thinking...")
+                              : ui("Thinking complete")}
+                          </span>
                         </div>
                         <div
                           ref={thinkingRef}
                           className={cn(
                             "overflow-y-auto rounded-md bg-muted/50 px-3 py-2 code-scrollbar",
-                            streamPhase === "thinking" ? "max-h-40" : "max-h-20"
+                            streamPhase === "thinking"
+                              ? "max-h-40"
+                              : "max-h-20",
                           )}
                         >
                           <p className="whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground">
@@ -1473,9 +1787,16 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                           {streamPhase === "writing" && (
                             <Loader2 className="h-3 w-3 animate-spin" />
                           )}
-                          <span>{streamPhase === "writing" ? "Writing interview..." : "Finalizing..."}</span>
+                          <span>
+                            {streamPhase === "writing"
+                              ? ui("Writing interview...")
+                              : "Finalizing..."}
+                          </span>
                         </div>
-                        <div ref={contentRef} className="max-h-40 overflow-y-auto rounded-md bg-muted/50 px-3 py-2 code-scrollbar">
+                        <div
+                          ref={contentRef}
+                          className="max-h-40 overflow-y-auto rounded-md bg-muted/50 px-3 py-2 code-scrollbar"
+                        >
                           <p className="whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground">
                             {contentText}
                           </p>
@@ -1490,13 +1811,17 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
 
             {/* Actions */}
             <div className="flex gap-3 border-t pt-4">
-              <Button data-tour="accept-create" onClick={handleAccept} disabled={saving || editableQuestions.length === 0}>
+              <Button
+                data-tour="accept-create"
+                onClick={handleAccept}
+                disabled={saving || editableQuestions.length === 0}
+              >
                 {saving ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <Check className="mr-2 h-4 w-4" />
                 )}
-                Accept & Create
+                {ui("Accept & Create")}
               </Button>
               <Button
                 variant="outline"
@@ -1504,7 +1829,7 @@ export function AIGenerator({ projectId }: { projectId?: string } = {}) {
                 disabled={generating}
               >
                 <RefreshCw className="mr-2 h-4 w-4" />
-                Regenerate All
+                {ui("Regenerate All")}
               </Button>
             </div>
           </CardContent>
@@ -1529,6 +1854,7 @@ function ImportDialog({
   onImport: (questions: GeneratedQuestion[]) => void;
   existingTexts: string[];
 }) {
+  const ui = useUiTranslation();
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
@@ -1596,9 +1922,9 @@ function ImportDialog({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Import Existing Questions</DialogTitle>
+          <DialogTitle>{ui("Import Existing Questions")}</DialogTitle>
           <DialogDescription>
-            Select questions from your existing interviews to add here.
+            {ui("Select questions from your existing interviews to add here.")}
           </DialogDescription>
         </DialogHeader>
 
@@ -1606,7 +1932,7 @@ function ImportDialog({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search questions..."
+              placeholder={ui("Search questions...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -1621,8 +1947,8 @@ function ImportDialog({
             ) : filteredQuestions.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted-foreground">
                 {search.trim()
-                  ? "No questions match your search."
-                  : "No questions available to import."}
+                  ? ui("No questions match your search.")
+                  : ui("No questions available to import.")}
               </p>
             ) : (
               <div className="divide-y">
@@ -1651,7 +1977,7 @@ function ImportDialog({
                             className={cn("text-[10px]", style.badgeClass)}
                           >
                             <TypeIcon className="mr-0.5 h-2.5 w-2.5" />
-                            {style.label}
+                            {ui(style.label)}
                           </Badge>
                           <span className="text-xs text-muted-foreground">
                             {q.interview.title}
@@ -1668,14 +1994,12 @@ function ImportDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => handleClose(false)}>
-            Cancel
+            {ui("Cancel")}
           </Button>
-          <Button
-            onClick={handleImport}
-            disabled={selectedIds.size === 0}
-          >
+          <Button onClick={handleImport} disabled={selectedIds.size === 0}>
             <Copy className="mr-2 h-4 w-4" />
-            Import ({selectedIds.size})
+            {ui("Import (")}
+            {selectedIds.size})
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { useOrg } from "@/components/org-provider";
@@ -48,6 +50,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus, Trash2, Pencil } from "lucide-react";
 
 export default function OrgSettingsMembersPage() {
+  const ui = useUiTranslation();
   const { toast } = useToast();
   const { currentOrg } = useOrg();
   const utils = trpc.useUtils();
@@ -57,7 +60,9 @@ export default function OrgSettingsMembersPage() {
   const [inviteRole, setInviteRole] = useState<"ADMIN" | "MEMBER" | "VIEWER">(
     "MEMBER",
   );
-  const [editingRoleUserId, setEditingRoleUserId] = useState<string | null>(null);
+  const [editingRoleUserId, setEditingRoleUserId] = useState<string | null>(
+    null,
+  );
 
   const membersQuery = trpc.orgMember.list.useQuery(
     { organizationId: currentOrg?.id ?? "" },
@@ -66,25 +71,29 @@ export default function OrgSettingsMembersPage() {
 
   const inviteMutation = trpc.orgMember.invite.useMutation({
     onSuccess: () => {
-      toast({ title: "Member invited" });
+      toast({ title: ui("Member invited") });
       setInviteOpen(false);
       setInviteEmail("");
       utils.orgMember.list.invalidate();
     },
     onError: (err) => {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({
+        title: ui("Error"),
+        description: err.message,
+        variant: "destructive",
+      });
     },
   });
 
   const updateRoleMutation = trpc.orgMember.updateRole.useMutation({
     onSuccess: () => {
-      toast({ title: "Role updated" });
+      toast({ title: ui("Role updated") });
       setEditingRoleUserId(null);
       utils.orgMember.list.invalidate();
     },
     onError: (err) => {
       toast({
-        title: "Error",
+        title: ui("Error"),
         description: err.message,
         variant: "destructive",
       });
@@ -93,12 +102,12 @@ export default function OrgSettingsMembersPage() {
 
   const removeMutation = trpc.orgMember.remove.useMutation({
     onSuccess: () => {
-      toast({ title: "Member removed" });
+      toast({ title: ui("Member removed") });
       utils.orgMember.list.invalidate();
     },
     onError: (err) => {
       toast({
-        title: "Error",
+        title: ui("Error"),
         description: err.message,
         variant: "destructive",
       });
@@ -108,7 +117,7 @@ export default function OrgSettingsMembersPage() {
   if (!currentOrg) {
     return (
       <div className="flex items-center justify-center py-20 text-muted-foreground">
-        No organization selected
+        {ui("No organization selected")}
       </div>
     );
   }
@@ -132,9 +141,11 @@ export default function OrgSettingsMembersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold">Members</h2>
+          <h2 className="text-xl font-semibold">{ui("Members")}</h2>
           <p className="text-sm text-muted-foreground">
-            Manage who has access to &quot;{currentOrg.name}&quot;.
+            {ui('Manage who has access to "')}
+            {currentOrg.name}
+            {ui('".')}
           </p>
         </div>
         {isAdmin && (
@@ -142,19 +153,19 @@ export default function OrgSettingsMembersPage() {
             <DialogTrigger asChild>
               <Button size="sm">
                 <Plus className="mr-2 h-4 w-4" />
-                Add member
+                {ui("Add member")}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Invite Member</DialogTitle>
+                <DialogTitle>{ui("Invite Member")}</DialogTitle>
                 <DialogDescription>
-                  They must have an account to be invited.
+                  {ui("They must have an account to be invited.")}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-2">
                 <div className="space-y-2">
-                  <Label>Email</Label>
+                  <Label>{ui("Email")}</Label>
                   <Input
                     type="email"
                     placeholder="colleague@company.com"
@@ -163,30 +174,25 @@ export default function OrgSettingsMembersPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Role</Label>
+                  <Label>{ui("Role")}</Label>
                   <Select
                     value={inviteRole}
-                    onValueChange={(v) =>
-                      setInviteRole(v as typeof inviteRole)
-                    }
+                    onValueChange={(v) => setInviteRole(v as typeof inviteRole)}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ADMIN">Admin</SelectItem>
-                      <SelectItem value="MEMBER">Member</SelectItem>
-                      <SelectItem value="VIEWER">Viewer</SelectItem>
+                      <SelectItem value="ADMIN">{ui("Admin")}</SelectItem>
+                      <SelectItem value="MEMBER">{ui("Member")}</SelectItem>
+                      <SelectItem value="VIEWER">{ui("Viewer")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setInviteOpen(false)}
-                >
-                  Cancel
+                <Button variant="outline" onClick={() => setInviteOpen(false)}>
+                  {ui("Cancel")}
                 </Button>
                 <Button
                   onClick={() =>
@@ -203,7 +209,7 @@ export default function OrgSettingsMembersPage() {
                   {inviteMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  Invite
+                  {ui("Invite")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -216,9 +222,9 @@ export default function OrgSettingsMembersPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Organization Role</TableHead>
+                <TableHead>{ui("Name")}</TableHead>
+                <TableHead>{ui("Email")}</TableHead>
+                <TableHead>{ui("Organization Role")}</TableHead>
                 {isAdmin && <TableHead className="w-10" />}
               </TableRow>
             </TableHeader>
@@ -236,9 +242,7 @@ export default function OrgSettingsMembersPage() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage
-                            src={m.profile?.avatar ?? undefined}
-                          />
+                          <AvatarImage src={m.profile?.avatar ?? undefined} />
                           <AvatarFallback className="text-xs">
                             {profileInitials}
                           </AvatarFallback>
@@ -280,9 +284,7 @@ export default function OrgSettingsMembersPage() {
                         </Select>
                       ) : (
                         <div className="flex items-center gap-1.5">
-                          <Badge variant={roleVariant(m.role)}>
-                            {m.role}
-                          </Badge>
+                          <Badge variant={roleVariant(m.role)}>{m.role}</Badge>
                           {isAdmin && m.role !== "OWNER" && (
                             <button
                               onClick={() => setEditingRoleUserId(m.userId)}
@@ -309,19 +311,25 @@ export default function OrgSettingsMembersPage() {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Remove Member</AlertDialogTitle>
+                                <AlertDialogTitle>
+                                  {ui("Remove Member")}
+                                </AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Are you sure you want to remove{" "}
+                                  {ui("Are you sure you want to remove")}{" "}
                                   <span className="font-medium text-foreground">
                                     {m.profile?.name ?? m.profile?.email}
                                   </span>{" "}
-                                  from &quot;{currentOrg.name}&quot;? They will
-                                  lose access to all projects in this
-                                  organization.
+                                  {ui('from "')}
+                                  {currentOrg.name}
+                                  {ui(
+                                    '"? They will lose access to all projects in this organization.',
+                                  )}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogCancel>
+                                  {ui("Cancel")}
+                                </AlertDialogCancel>
                                 <AlertDialogAction
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                   onClick={() =>
@@ -331,7 +339,7 @@ export default function OrgSettingsMembersPage() {
                                     })
                                   }
                                 >
-                                  Remove
+                                  {ui("Remove")}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>

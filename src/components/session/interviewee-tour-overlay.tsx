@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { getStepIllustration } from "./interviewee-guide-content";
@@ -17,6 +19,7 @@ const TOOLTIP_GAP = 12;
 const TOOLTIP_WIDTH = 320;
 
 export function IntervieweeTourOverlay() {
+  const ui = useUiTranslation();
   const tour = useIntervieweeTour();
   const [targetRect, setTargetRect] = useState<Rect | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
@@ -176,20 +179,26 @@ export function IntervieweeTourOverlay() {
         <div
           ref={tooltipRef}
           className="fixed z-[9999] rounded-xl border border-border/50 bg-white shadow-2xl dark:bg-zinc-900"
-          style={{ top: tooltipPos.top, left: tooltipPos.left, width: TOOLTIP_WIDTH }}
+          style={{
+            top: tooltipPos.top,
+            left: tooltipPos.left,
+            width: TOOLTIP_WIDTH,
+          }}
         >
           <div className="space-y-3 p-4">
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                {idx + 1} of {total}
+                {idx + 1}
+                {ui("of")}
+                {total}
               </span>
             </div>
             {getStepIllustration(step.id)}
             <h3 className="text-sm font-bold leading-tight text-foreground">
-              {step.title}
+              {ui(step.title)}
             </h3>
             <p className="text-[13px] leading-relaxed text-muted-foreground">
-              {step.description}
+              {ui(step.description)}
             </p>
             {/* Progress bar */}
             <div className="pt-0.5">
@@ -205,7 +214,7 @@ export function IntervieweeTourOverlay() {
                 onClick={tour.skip}
                 className="text-xs text-muted-foreground transition-colors hover:text-foreground"
               >
-                Skip tour
+                {ui("Skip tour")}
               </button>
               <div className="flex gap-1.5">
                 {idx > 0 && (
@@ -213,14 +222,14 @@ export function IntervieweeTourOverlay() {
                     onClick={tour.prev}
                     className="inline-flex items-center rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted"
                   >
-                    Back
+                    {ui("Back")}
                   </button>
                 )}
                 <button
                   onClick={isLast ? tour.skip : tour.next}
                   className="inline-flex items-center rounded-lg bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                 >
-                  {isLast ? "Done" : "Next"}
+                  {isLast ? ui("Done") : ui("Next")}
                 </button>
               </div>
             </div>

@@ -1,14 +1,16 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,26 +18,26 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { exportToXlsx } from "@/lib/export-xlsx";
@@ -43,25 +45,25 @@ import { effectivePrepDurationSeconds } from "@/lib/prep/session-duration";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import {
-    ArrowDown,
-    ArrowUp,
-    ArrowUpDown,
-    BrainCircuit,
-    Calendar,
-    CheckCircle2,
-    ChevronLeft,
-    ChevronRight,
-    CircleDot,
-    CirclePlay,
-    Clock,
-    Download,
-    FileText,
-    Loader2,
-    Search,
-    Sparkles,
-    Timer,
-    Trash2,
-    X,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  BrainCircuit,
+  Calendar,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  CircleDot,
+  CirclePlay,
+  Clock,
+  Download,
+  FileText,
+  Loader2,
+  Search,
+  Sparkles,
+  Timer,
+  Trash2,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -184,7 +186,10 @@ function statusLabel(status: string): string {
   return status.replace("_", " ");
 }
 
-function getSortValue(row: PracticeSessionSummary, key: SortKey): string | number {
+function getSortValue(
+  row: PracticeSessionSummary,
+  key: SortKey,
+): string | number {
   switch (key) {
     case "interview":
       return row.interviewTitle.toLowerCase();
@@ -287,6 +292,7 @@ export function PracticeSessionsDashboard({
   primaryAction?: React.ReactNode;
   toolbarAction?: React.ReactNode;
 }) {
+  const ui = useUiTranslation();
   const { toast } = useToast();
   const utils = trpc.useUtils();
   const [searchQuery, setSearchQuery] = useState("");
@@ -309,7 +315,7 @@ export function PracticeSessionsDashboard({
     },
     onError: (err) => {
       toast({
-        title: "Could not delete practices",
+        title: ui("Could not delete practices"),
         description: err.message,
         variant: "destructive",
       });
@@ -323,7 +329,9 @@ export function PracticeSessionsDashboard({
       .filter((score): score is number => typeof score === "number");
     const durations = rows
       .map(effectiveDuration)
-      .filter((value): value is number => typeof value === "number" && value > 0);
+      .filter(
+        (value): value is number => typeof value === "number" && value > 0,
+      );
     const averageScore =
       scored.length > 0
         ? scored.reduce((sum, score) => sum + score, 0) / scored.length
@@ -416,7 +424,8 @@ export function PracticeSessionsDashboard({
       "Attempts submitted": row.attemptCount,
       "Average score":
         row.averageScore !== null ? Number(row.averageScore.toFixed(1)) : "",
-      "Best score": row.bestScore !== null ? Number(row.bestScore.toFixed(1)) : "",
+      "Best score":
+        row.bestScore !== null ? Number(row.bestScore.toFixed(1)) : "",
       Duration: formatDuration(effectiveDuration(row)),
       Started: formatDate(row.startedAt),
       Completed: formatDate(row.completedAt),
@@ -450,454 +459,471 @@ export function PracticeSessionsDashboard({
 
   return (
     <TooltipProvider>
-    <div className="space-y-6" data-testid="practices-dashboard">
-      {showHeader ? (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">{title}</h1>
-            <p className="text-muted-foreground">{subtitle}</p>
+      <div className="space-y-6" data-testid="practices-dashboard">
+        {showHeader ? (
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">{title}</h1>
+              <p className="text-muted-foreground">{subtitle}</p>
+            </div>
+            {primaryAction}
           </div>
-          {primaryAction}
-        </div>
-      ) : null}
+        ) : null}
 
-      {showMetrics ? (
-        <div className="grid gap-4 md:grid-cols-4">
-          <Metric icon={BrainCircuit} label="Total Practices" value={metrics.total} />
-          <Metric
-            icon={CheckCircle2}
-            label="Completed"
-            value={metrics.completed}
-          />
-          <Metric
-            icon={Sparkles}
-            label="Avg Score"
-            value={
-              metrics.averageScore !== null
-                ? `${metrics.averageScore.toFixed(1)}/10`
-                : "N/A"
-            }
-            tone={
-              metrics.averageScore !== null
-                ? scoreTone(metrics.averageScore)
-                : undefined
-            }
-          />
-          <Metric
-            icon={Clock}
-            label="Avg Duration"
-            value={formatDuration(metrics.averageDuration)}
-          />
-        </div>
-      ) : null}
+        {showMetrics ? (
+          <div className="grid gap-4 md:grid-cols-4">
+            <Metric
+              icon={BrainCircuit}
+              label={ui("Total Practices")}
+              value={metrics.total}
+            />
+            <Metric
+              icon={CheckCircle2}
+              label={ui("Completed")}
+              value={metrics.completed}
+            />
+            <Metric
+              icon={Sparkles}
+              label={ui("Avg Score")}
+              value={
+                metrics.averageScore !== null
+                  ? `${metrics.averageScore.toFixed(1)}/10`
+                  : "N/A"
+              }
+              tone={
+                metrics.averageScore !== null
+                  ? scoreTone(metrics.averageScore)
+                  : undefined
+              }
+            />
+            <Metric
+              icon={Clock}
+              label={ui("Avg Duration")}
+              value={formatDuration(metrics.averageDuration)}
+            />
+          </div>
+        ) : null}
 
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder={
-              showInterviewColumn
-                ? "Search by interview or status..."
-                : "Search by status..."
-            }
-            value={searchQuery}
-            onChange={(event) => {
-              setSearchQuery(event.target.value);
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder={
+                showInterviewColumn
+                  ? ui("Search by interview or status...")
+                  : ui("Search by status...")
+              }
+              value={searchQuery}
+              onChange={(event) => {
+                setSearchQuery(event.target.value);
+                setPage(0);
+              }}
+              className="pl-9"
+            />
+          </div>
+
+          <Select
+            value={timeRange}
+            onValueChange={(value) => {
+              setTimeRange(value);
               setPage(0);
             }}
-            className="pl-9"
-          />
+          >
+            <SelectTrigger className="w-full xl:w-[160px]">
+              <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TIME_RANGE_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => {
+              setStatusFilter(value);
+              setPage(0);
+            }}
+          >
+            <SelectTrigger className="w-full xl:w-[160px]">
+              <CircleDot className="mr-2 h-4 w-4 text-muted-foreground" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">{ui("All Status")}</SelectItem>
+              <SelectItem value="COMPLETED">{ui("Completed")}</SelectItem>
+              <SelectItem value="IN_PROGRESS">{ui("In Progress")}</SelectItem>
+              <SelectItem value="ABANDONED">{ui("Abandoned")}</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Button
+            variant="outline"
+            onClick={handleExport}
+            disabled={processedRows.length === 0}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {ui("Export")}
+          </Button>
+
+          {allowSelection && selectedIds.size > 0 ? (
+            <>
+              <Button
+                variant="destructive"
+                onClick={() => setConfirmDelete(true)}
+                disabled={deleteMutation.isLoading}
+              >
+                {deleteMutation.isLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="mr-2 h-4 w-4" />
+                )}
+                {ui("Delete (")}
+                {selectedIds.size})
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setSelectedIds(new Set())}
+              >
+                <X className="mr-2 h-4 w-4" />
+                {ui("Cancel")}
+              </Button>
+            </>
+          ) : (
+            toolbarAction
+          )}
         </div>
 
-        <Select
-          value={timeRange}
-          onValueChange={(value) => {
-            setTimeRange(value);
-            setPage(0);
-          }}
-        >
-          <SelectTrigger className="w-full xl:w-[160px]">
-            <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {TIME_RANGE_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={statusFilter}
-          onValueChange={(value) => {
-            setStatusFilter(value);
-            setPage(0);
-          }}
-        >
-          <SelectTrigger className="w-full xl:w-[160px]">
-            <CircleDot className="mr-2 h-4 w-4 text-muted-foreground" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">All Status</SelectItem>
-            <SelectItem value="COMPLETED">Completed</SelectItem>
-            <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-            <SelectItem value="ABANDONED">Abandoned</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Button
-          variant="outline"
-          onClick={handleExport}
-          disabled={processedRows.length === 0}
-        >
-          <Download className="mr-2 h-4 w-4" />
-          Export
-        </Button>
-
-        {allowSelection && selectedIds.size > 0 ? (
-          <>
-            <Button
-              variant="destructive"
-              onClick={() => setConfirmDelete(true)}
-              disabled={deleteMutation.isLoading}
-            >
-              {deleteMutation.isLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Trash2 className="mr-2 h-4 w-4" />
-              )}
-              Delete ({selectedIds.size})
-            </Button>
-            <Button variant="outline" onClick={() => setSelectedIds(new Set())}>
-              <X className="mr-2 h-4 w-4" />
-              Cancel
-            </Button>
-          </>
-        ) : (
-          toolbarAction
-        )}
-      </div>
-
-      <div className="rounded-lg border" data-testid="practices-table">
-        {isLoading ? (
-          <div className="p-6">
-            <Skeleton className="h-48" />
-          </div>
-        ) : processedRows.length === 0 ? (
-          <p className="py-8 text-center text-muted-foreground">
-            {isFiltering
-              ? "No practices match your filters."
-              : "No practice sessions yet."}
-          </p>
-        ) : (
-          <>
-            <div className="overflow-x-auto code-scrollbar">
-              <Table className="border-collapse">
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    {showInterviewColumn ? (
-                      <TableHead className="min-w-[240px]">
-                        <div className="flex items-center gap-3">
-                          {allowSelection ? (
-                            <Checkbox
-                              checked={
-                                allPageSelected
-                                  ? true
-                                  : somePageSelected
-                                    ? "indeterminate"
-                                    : false
-                              }
-                              onCheckedChange={toggleSelectAll}
-                            />
-                          ) : null}
-                          <span
-                            className="group inline-flex cursor-pointer select-none items-center gap-1 whitespace-nowrap hover:text-foreground"
-                            onClick={() => handleSort("interview")}
-                          >
-                            Interview
-                            {sortKey === "interview" ? (
-                              sortDir === "asc" ? (
-                                <ArrowUp className="h-3.5 w-3.5" />
-                              ) : (
-                                <ArrowDown className="h-3.5 w-3.5" />
-                              )
-                            ) : (
-                              <ArrowUpDown className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-40" />
-                            )}
-                          </span>
-                        </div>
-                      </TableHead>
-                    ) : null}
-                    {!showInterviewColumn && allowSelection ? (
-                      <TableHead className="w-12">
-                        <Checkbox
-                          checked={
-                            allPageSelected
-                              ? true
-                              : somePageSelected
-                                ? "indeterminate"
-                                : false
-                          }
-                          onCheckedChange={toggleSelectAll}
-                        />
-                      </TableHead>
-                    ) : null}
-                    <SortableHead
-                      label="Status"
-                      sortKey="status"
-                      activeKey={sortKey}
-                      direction={sortDir}
-                      onSort={handleSort}
-                    />
-                    <SortableHead
-                      label="Score"
-                      sortKey="score"
-                      activeKey={sortKey}
-                      direction={sortDir}
-                      onSort={handleSort}
-                    />
-                    <SortableHead
-                      label="Attempts"
-                      sortKey="attempts"
-                      activeKey={sortKey}
-                      direction={sortDir}
-                      onSort={handleSort}
-                    />
-                    <SortableHead
-                      label="Mode"
-                      sortKey="mode"
-                      activeKey={sortKey}
-                      direction={sortDir}
-                      onSort={handleSort}
-                    />
-                    <SortableHead
-                      label="Duration"
-                      sortKey="duration"
-                      activeKey={sortKey}
-                      direction={sortDir}
-                      onSort={handleSort}
-                    />
-                    <SortableHead
-                      label="Started"
-                      sortKey="started"
-                      activeKey={sortKey}
-                      direction={sortDir}
-                      onSort={handleSort}
-                    />
-                    <SortableHead
-                      label="Completed"
-                      sortKey="completed"
-                      activeKey={sortKey}
-                      direction={sortDir}
-                      onSort={handleSort}
-                    />
-                    <TableHead className="whitespace-nowrap text-right">
-                      Action
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedRows.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      data-state={selectedIds.has(row.id) ? "selected" : undefined}
-                    >
+        <div className="rounded-lg border" data-testid="practices-table">
+          {isLoading ? (
+            <div className="p-6">
+              <Skeleton className="h-48" />
+            </div>
+          ) : processedRows.length === 0 ? (
+            <p className="py-8 text-center text-muted-foreground">
+              {isFiltering
+                ? ui("No practices match your filters.")
+                : ui("No practice sessions yet.")}
+            </p>
+          ) : (
+            <>
+              <div className="overflow-x-auto code-scrollbar">
+                <Table className="border-collapse">
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
                       {showInterviewColumn ? (
-                        <TableCell className="min-w-[220px] font-medium">
+                        <TableHead className="min-w-[240px]">
                           <div className="flex items-center gap-3">
                             {allowSelection ? (
                               <Checkbox
-                                checked={selectedIds.has(row.id)}
-                                onCheckedChange={() => toggleSelect(row.id)}
+                                checked={
+                                  allPageSelected
+                                    ? true
+                                    : somePageSelected
+                                      ? "indeterminate"
+                                      : false
+                                }
+                                onCheckedChange={toggleSelectAll}
                               />
                             ) : null}
-                            <Link
-                              href={`/interviews/${row.interviewId}/edit/prep`}
-                              className="hover:underline"
+                            <span
+                              className="group inline-flex cursor-pointer select-none items-center gap-1 whitespace-nowrap hover:text-foreground"
+                              onClick={() => handleSort("interview")}
                             >
-                              {row.interviewTitle}
-                            </Link>
+                              {ui("Interview")}
+                              {sortKey === "interview" ? (
+                                sortDir === "asc" ? (
+                                  <ArrowUp className="h-3.5 w-3.5" />
+                                ) : (
+                                  <ArrowDown className="h-3.5 w-3.5" />
+                                )
+                              ) : (
+                                <ArrowUpDown className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-40" />
+                              )}
+                            </span>
                           </div>
-                        </TableCell>
+                        </TableHead>
                       ) : null}
                       {!showInterviewColumn && allowSelection ? (
-                        <TableCell>
+                        <TableHead className="w-12">
                           <Checkbox
-                            checked={selectedIds.has(row.id)}
-                            onCheckedChange={() => toggleSelect(row.id)}
+                            checked={
+                              allPageSelected
+                                ? true
+                                : somePageSelected
+                                  ? "indeterminate"
+                                  : false
+                            }
+                            onCheckedChange={toggleSelectAll}
                           />
-                        </TableCell>
+                        </TableHead>
                       ) : null}
-                      <TableCell>
-                        <Badge
-                          variant={statusVariant(row.status)}
-                          className="whitespace-nowrap"
-                        >
-                          {statusLabel(row.status)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {row.averageScore !== null ? (
-                          <span
-                            className={cn(
-                              "font-semibold",
-                              scoreTone(row.averageScore),
-                            )}
-                          >
-                            {row.averageScore.toFixed(1)}/10
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <span className="whitespace-nowrap">
-                          {row.attemptCount}/{row.questionCount || "-"}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">{row.mode}</Badge>
-                          {row.timed ? (
-                            <Badge variant="secondary" className="gap-1">
-                              <Timer className="h-3 w-3" />
-                              {row.durationLimitMinutes}m
-                            </Badge>
-                          ) : null}
-                        </div>
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        {formatDuration(effectiveDuration(row))}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        {formatDate(row.startedAt)}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        {formatDate(row.completedAt)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              asChild
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                            >
-                              <Link
-                                href={practiceSessionHref(row)}
-                                target={
-                                  row.status === "COMPLETED"
-                                    ? undefined
-                                    : "_blank"
-                                }
-                              >
-                                {row.status === "COMPLETED" ? (
-                                  <FileText className="h-4 w-4" />
-                                ) : (
-                                  <CirclePlay className="h-4 w-4" />
-                                )}
-                                <span className="sr-only">
-                                  {practiceSessionActionLabel(row)}
-                                </span>
-                              </Link>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="left">
-                            {practiceSessionActionLabel(row)}
-                          </TooltipContent>
-                        </Tooltip>
-                      </TableCell>
+                      <SortableHead
+                        label={ui("Status")}
+                        sortKey="status"
+                        activeKey={sortKey}
+                        direction={sortDir}
+                        onSort={handleSort}
+                      />
+                      <SortableHead
+                        label={ui("Score")}
+                        sortKey="score"
+                        activeKey={sortKey}
+                        direction={sortDir}
+                        onSort={handleSort}
+                      />
+                      <SortableHead
+                        label={ui("Attempts")}
+                        sortKey="attempts"
+                        activeKey={sortKey}
+                        direction={sortDir}
+                        onSort={handleSort}
+                      />
+                      <SortableHead
+                        label={ui("Mode")}
+                        sortKey="mode"
+                        activeKey={sortKey}
+                        direction={sortDir}
+                        onSort={handleSort}
+                      />
+                      <SortableHead
+                        label={ui("Duration")}
+                        sortKey="duration"
+                        activeKey={sortKey}
+                        direction={sortDir}
+                        onSort={handleSort}
+                      />
+                      <SortableHead
+                        label={ui("Started")}
+                        sortKey="started"
+                        activeKey={sortKey}
+                        direction={sortDir}
+                        onSort={handleSort}
+                      />
+                      <SortableHead
+                        label={ui("Completed")}
+                        sortKey="completed"
+                        activeKey={sortKey}
+                        direction={sortDir}
+                        onSort={handleSort}
+                      />
+                      <TableHead className="whitespace-nowrap text-right">
+                        {ui("Action")}
+                      </TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            {processedRows.length > PAGE_SIZE_OPTIONS[0] && (
-              <div className="flex items-center justify-between border-t px-4 py-3">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>Rows per page</span>
-                  <select
-                    className="rounded border bg-background px-2 py-1 text-sm"
-                    value={pageSize}
-                    onChange={(e) => {
-                      setPageSize(Number(e.target.value));
-                      setPage(0);
-                    }}
-                  >
-                    {PAGE_SIZE_OPTIONS.map((size) => (
-                      <option key={size} value={size}>
-                        {size}
-                      </option>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedRows.map((row) => (
+                      <TableRow
+                        key={row.id}
+                        data-state={
+                          selectedIds.has(row.id) ? "selected" : undefined
+                        }
+                      >
+                        {showInterviewColumn ? (
+                          <TableCell className="min-w-[220px] font-medium">
+                            <div className="flex items-center gap-3">
+                              {allowSelection ? (
+                                <Checkbox
+                                  checked={selectedIds.has(row.id)}
+                                  onCheckedChange={() => toggleSelect(row.id)}
+                                />
+                              ) : null}
+                              <Link
+                                href={`/interviews/${row.interviewId}/edit/prep`}
+                                className="hover:underline"
+                              >
+                                {row.interviewTitle}
+                              </Link>
+                            </div>
+                          </TableCell>
+                        ) : null}
+                        {!showInterviewColumn && allowSelection ? (
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedIds.has(row.id)}
+                              onCheckedChange={() => toggleSelect(row.id)}
+                            />
+                          </TableCell>
+                        ) : null}
+                        <TableCell>
+                          <Badge
+                            variant={statusVariant(row.status)}
+                            className="whitespace-nowrap"
+                          >
+                            {statusLabel(row.status)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {row.averageScore !== null ? (
+                            <span
+                              className={cn(
+                                "font-semibold",
+                                scoreTone(row.averageScore),
+                              )}
+                            >
+                              {row.averageScore.toFixed(1)}/10
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span className="whitespace-nowrap">
+                            {row.attemptCount}/{row.questionCount || "-"}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline">{row.mode}</Badge>
+                            {row.timed ? (
+                              <Badge variant="secondary" className="gap-1">
+                                <Timer className="h-3 w-3" />
+                                {row.durationLimitMinutes}m
+                              </Badge>
+                            ) : null}
+                          </div>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {formatDuration(effectiveDuration(row))}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {formatDate(row.startedAt)}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {formatDate(row.completedAt)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                asChild
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                              >
+                                <Link
+                                  href={practiceSessionHref(row)}
+                                  target={
+                                    row.status === "COMPLETED"
+                                      ? undefined
+                                      : "_blank"
+                                  }
+                                >
+                                  {row.status === "COMPLETED" ? (
+                                    <FileText className="h-4 w-4" />
+                                  ) : (
+                                    <CirclePlay className="h-4 w-4" />
+                                  )}
+                                  <span className="sr-only">
+                                    {practiceSessionActionLabel(row)}
+                                  </span>
+                                </Link>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="left">
+                              {practiceSessionActionLabel(row)}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </select>
-                  <span className="ml-2">
-                    {safePage * pageSize + 1}–
-                    {Math.min(
-                      (safePage + 1) * pageSize,
-                      processedRows.length,
-                    )}{" "}
-                    of {processedRows.length}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage((value) => Math.max(0, value - 1))}
-                    disabled={safePage === 0}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <span className="text-sm">
-                    {safePage + 1} / {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      setPage((value) => Math.min(totalPages - 1, value + 1))
-                    }
-                    disabled={safePage >= totalPages - 1}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
+                  </TableBody>
+                </Table>
               </div>
-            )}
-          </>
-        )}
-      </div>
 
-      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete practice sessions</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete {selectedIds.size} practice{" "}
-              {selectedIds.size === 1 ? "session" : "sessions"}? This will
-              permanently remove the selected practice attempts and feedback.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                deleteMutation.mutate({ ids: Array.from(selectedIds) });
-                setConfirmDelete(false);
-              }}
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+              {processedRows.length > PAGE_SIZE_OPTIONS[0] && (
+                <div className="flex items-center justify-between border-t px-4 py-3">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span>{ui("Rows per page")}</span>
+                    <select
+                      className="rounded border bg-background px-2 py-1 text-sm"
+                      value={pageSize}
+                      onChange={(e) => {
+                        setPageSize(Number(e.target.value));
+                        setPage(0);
+                      }}
+                    >
+                      {PAGE_SIZE_OPTIONS.map((size) => (
+                        <option key={size} value={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="ml-2">
+                      {safePage * pageSize + 1}–
+                      {Math.min(
+                        (safePage + 1) * pageSize,
+                        processedRows.length,
+                      )}{" "}
+                      {ui("of")}
+                      {processedRows.length}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((value) => Math.max(0, value - 1))}
+                      disabled={safePage === 0}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm">
+                      {safePage + 1} / {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setPage((value) => Math.min(totalPages - 1, value + 1))
+                      }
+                      disabled={safePage >= totalPages - 1}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {ui("Delete practice sessions")}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {ui("Are you sure you want to delete")}
+                {selectedIds.size}
+                {ui("practice")}{" "}
+                {selectedIds.size === 1 ? ui("session") : "sessions"}
+                {ui(
+                  "? This will permanently remove the selected practice attempts and feedback.",
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{ui("Cancel")}</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => {
+                  deleteMutation.mutate({ ids: Array.from(selectedIds) });
+                  setConfirmDelete(false);
+                }}
+              >
+                {ui("Delete")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </TooltipProvider>
   );
 }

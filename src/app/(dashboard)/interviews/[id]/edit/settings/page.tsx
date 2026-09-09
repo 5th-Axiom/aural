@@ -1,15 +1,17 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,16 +19,16 @@ import { useToast } from "@/hooks/use-toast";
 import { AI_TONES, FOLLOW_UP_DEPTHS, LANGUAGES } from "@/lib/constants";
 import { trpc } from "@/lib/trpc/client";
 import {
-    Copy,
-    Globe,
-    LinkIcon as LinkPlusIcon,
-    Loader2,
-    Lock,
-    MessageSquare,
-    Mic,
-    ShieldCheck,
-    Video,
-    X
+  Copy,
+  Globe,
+  LinkIcon as LinkPlusIcon,
+  Loader2,
+  Lock,
+  MessageSquare,
+  Mic,
+  ShieldCheck,
+  Video,
+  X,
 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useEditInterview } from "../edit-context";
@@ -57,21 +59,33 @@ function normalizeInterviewLanguage(language?: string | null): string {
 }
 
 export default function SettingsTab() {
+  const ui = useUiTranslation();
   const { interview, interviewId, updateMutation } = useEditInterview();
   const { toast } = useToast();
   const utils = trpc.useUtils();
 
   const publishMutation = trpc.interview.publish.useMutation();
 
+  const [roleTitle, setRoleTitle] = useState<string>(interview.roleTitle || "");
   const [title, setTitle] = useState<string>(interview.title);
-  const [description, setDescription] = useState<string>(interview.description ?? "");
+  const [description, setDescription] = useState<string>(
+    interview.description ?? "",
+  );
   const [objective, setObjective] = useState<string>(interview.objective ?? "");
-  const [chatEnabled, setChatEnabled] = useState<boolean>(interview.chatEnabled ?? true);
-  const [voiceEnabled, setVoiceEnabled] = useState<boolean>(interview.voiceEnabled ?? false);
-  const [videoEnabled, setVideoEnabled] = useState<boolean>(interview.videoEnabled ?? false);
+  const [chatEnabled, setChatEnabled] = useState<boolean>(
+    interview.chatEnabled ?? true,
+  );
+  const [voiceEnabled, setVoiceEnabled] = useState<boolean>(
+    interview.voiceEnabled ?? false,
+  );
+  const [videoEnabled, setVideoEnabled] = useState<boolean>(
+    interview.videoEnabled ?? false,
+  );
   const [aiName, setAiName] = useState<string>(interview.aiName);
   const [aiTone, setAiTone] = useState<string>(interview.aiTone);
-  const [followUpDepth, setFollowUpDepth] = useState<string>(interview.followUpDepth);
+  const [followUpDepth, setFollowUpDepth] = useState<string>(
+    interview.followUpDepth,
+  );
   const [language, setLanguage] = useState<string>(
     normalizeInterviewLanguage(interview.language),
   );
@@ -104,14 +118,14 @@ export default function SettingsTab() {
             {
               onSuccess: () => {
                 utils.interview.getById.invalidate({ id: interviewId });
-                toast({ title: "Shareable link created" });
+                toast({ title: ui("Shareable link created") });
               },
             },
           );
         },
       },
     );
-  }, [interviewId, publishMutation, updateMutation, utils, toast]);
+  }, [ui, interviewId, publishMutation, updateMutation, utils, toast]);
 
   const handleRevokeShareableLink = useCallback(() => {
     updateMutation.mutate(
@@ -119,18 +133,18 @@ export default function SettingsTab() {
       {
         onSuccess: () => {
           utils.interview.getById.invalidate({ id: interviewId });
-          toast({ title: "Shareable link revoked" });
+          toast({ title: ui("Shareable link revoked") });
         },
       },
     );
-  }, [interviewId, updateMutation, utils, toast]);
+  }, [ui, interviewId, updateMutation, utils, toast]);
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
       {/* Shareable Link */}
       <Card className="md:col-span-2">
         <CardHeader>
-          <CardTitle>Shareable Link</CardTitle>
+          <CardTitle>{ui("Shareable Link")}</CardTitle>
         </CardHeader>
         <CardContent>
           {hasShareableLink ? (
@@ -140,9 +154,11 @@ export default function SettingsTab() {
                   <Globe className="h-4 w-4" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">Open access enabled</p>
+                  <p className="text-sm font-medium">
+                    {ui("Open access enabled")}
+                  </p>
                   <p className="text-xs text-muted-foreground">
-                    Anyone with this link can start the interview
+                    {ui("Anyone with this link can start the interview")}
                   </p>
                 </div>
               </div>
@@ -157,11 +173,11 @@ export default function SettingsTab() {
                     className="h-7 shrink-0 px-2"
                     onClick={() => {
                       navigator.clipboard.writeText(shareableUrl);
-                      toast({ title: "Link copied!" });
+                      toast({ title: ui("Link copied!") });
                     }}
                   >
                     <Copy className="mr-1.5 h-3.5 w-3.5" />
-                    Copy
+                    {ui("Copy")}
                   </Button>
                 </div>
               )}
@@ -177,7 +193,7 @@ export default function SettingsTab() {
                 ) : (
                   <X className="mr-2 h-3.5 w-3.5" />
                 )}
-                Revoke shareable link
+                {ui("Revoke shareable link")}
               </Button>
             </div>
           ) : (
@@ -187,10 +203,11 @@ export default function SettingsTab() {
                   <Lock className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium">Invite only</p>
+                  <p className="text-sm font-medium">{ui("Invite only")}</p>
                   <p className="text-xs text-muted-foreground">
-                    Only sessions added from the Sessions tab can access this
-                    interview via their unique invite links.
+                    {ui(
+                      "Only sessions added from the Sessions tab can access this interview via their unique invite links.",
+                    )}
                   </p>
                 </div>
               </div>
@@ -205,7 +222,7 @@ export default function SettingsTab() {
                 ) : (
                   <LinkPlusIcon className="mr-2 h-3.5 w-3.5" />
                 )}
-                Create shareable link
+                {ui("Create shareable link")}
               </Button>
             </div>
           )}
@@ -214,48 +231,57 @@ export default function SettingsTab() {
 
       <Card>
         <CardHeader>
-          <CardTitle>General</CardTitle>
+          <CardTitle>{ui("General")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Title</Label>
+            <Label>{ui("Position")}</Label>
+            <Input
+              aria-label="岗位"
+              value={roleTitle}
+              maxLength={100}
+              onChange={(e) => setRoleTitle(e.target.value)}
+            />
+            <Label>{ui("Title")}</Label>
             <Input value={title} onChange={(e) => setTitle(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label>Description</Label>
+            <Label>{ui("Description")}</Label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
           <div className="space-y-2">
-            <Label>Objective</Label>
+            <Label>{ui("Objective")}</Label>
             <Textarea
               value={objective}
               onChange={(e) => setObjective(e.target.value)}
             />
           </div>
           <div className="space-y-2">
-            <Label>Duration (minutes)</Label>
+            <Label>{ui("Duration (minutes)")}</Label>
             <Input
               type="number"
               value={timeLimitMinutes}
               onChange={(e) => setTimeLimitMinutes(e.target.value)}
-              placeholder="No limit"
+              placeholder={ui("No limit")}
             />
           </div>
           <div className="space-y-2">
-            <Label>Communication Channels</Label>
+            <Label>{ui("Communication Channels")}</Label>
             <p className="text-xs text-muted-foreground">
-              Choose how participants interact during the interview
+              {ui("Choose how participants interact during the interview")}
             </p>
             <div className="space-y-2 rounded-lg border p-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <MessageSquare className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <Label>Chat</Label>
-                    <p className="text-xs text-muted-foreground">Text messaging</p>
+                    <Label>{ui("Chat")}</Label>
+                    <p className="text-xs text-muted-foreground">
+                      {ui("Text messaging")}
+                    </p>
                   </div>
                 </div>
                 <Switch
@@ -271,8 +297,10 @@ export default function SettingsTab() {
                 <div className="flex items-center gap-2">
                   <Mic className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <Label>Voice</Label>
-                    <p className="text-xs text-muted-foreground">Speech conversation</p>
+                    <Label>{ui("Voice")}</Label>
+                    <p className="text-xs text-muted-foreground">
+                      {ui("Speech conversation")}
+                    </p>
                   </div>
                 </div>
                 <Switch
@@ -289,8 +317,10 @@ export default function SettingsTab() {
                 <div className="flex items-center gap-2">
                   <Video className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <Label>Video</Label>
-                    <p className="text-xs text-muted-foreground">Camera &amp; screen recording</p>
+                    <Label>{ui("Video")}</Label>
+                    <p className="text-xs text-muted-foreground">
+                      {ui("Camera & screen recording")}
+                    </p>
                   </div>
                 </div>
                 <Switch
@@ -306,15 +336,15 @@ export default function SettingsTab() {
 
       <Card>
         <CardHeader>
-          <CardTitle>AI Configuration</CardTitle>
+          <CardTitle>{ui("AI Configuration")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>AI Name</Label>
+            <Label>{ui("AI Name")}</Label>
             <Input value={aiName} onChange={(e) => setAiName(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label>Tone</Label>
+            <Label>{ui("Tone")}</Label>
             <Select value={aiTone} onValueChange={setAiTone}>
               <SelectTrigger>
                 <SelectValue />
@@ -322,14 +352,14 @@ export default function SettingsTab() {
               <SelectContent>
                 {AI_TONES.map((t) => (
                   <SelectItem key={t.value} value={t.value}>
-                    {t.label}
+                    {ui(t.label)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Follow-up Depth</Label>
+            <Label>{ui("Follow-up Depth")}</Label>
             <Select value={followUpDepth} onValueChange={setFollowUpDepth}>
               <SelectTrigger>
                 <SelectValue />
@@ -337,14 +367,14 @@ export default function SettingsTab() {
               <SelectContent>
                 {FOLLOW_UP_DEPTHS.map((d) => (
                   <SelectItem key={d.value} value={d.value}>
-                    {d.label} ({d.description})
+                    {ui(d.label)} ({ui(d.description)})
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Language</Label>
+            <Label>{ui("Language")}</Label>
             <Select value={language} onValueChange={setLanguage}>
               <SelectTrigger>
                 <SelectValue />
@@ -352,7 +382,7 @@ export default function SettingsTab() {
               <SelectContent>
                 {LANGUAGES.map((l) => (
                   <SelectItem key={l.value} value={l.value}>
-                    {l.label}
+                    {ui(l.label)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -363,7 +393,7 @@ export default function SettingsTab() {
 
       <Card className="md:col-span-2">
         <CardHeader>
-          <CardTitle>Anti-Cheating Mode</CardTitle>
+          <CardTitle>{ui("Anti-Cheating Mode")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="rounded-lg border p-3">
@@ -371,9 +401,11 @@ export default function SettingsTab() {
               <div className="flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <Label>Enable Anti-Cheating</Label>
+                  <Label>{ui("Enable Anti-Cheating")}</Label>
                   <p className="text-xs text-muted-foreground">
-                    Requires camera, mic & screen sharing. Monitors tab switches, blocks external paste, and detects multiple screens
+                    {ui(
+                      "Requires camera, mic & screen sharing. Monitors tab switches, blocks external paste, and detects multiple screens",
+                    )}
                   </p>
                 </div>
               </div>
@@ -384,15 +416,35 @@ export default function SettingsTab() {
             </div>
             {antiCheatingEnabled && (
               <div className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-                <p className="font-medium">When enabled, interviewees will experience:</p>
+                <p className="font-medium">
+                  {ui("When enabled, interviewees will experience:")}
+                </p>
                 <ul className="mt-1 list-inside list-disc space-y-0.5">
-                  <li>Camera, microphone, and screen sharing will be mandatory (cannot be skipped)</li>
-                  <li>Tab switching and window focus loss will be tracked and flagged</li>
-                  <li>Pasting content from outside the interview page will be blocked</li>
-                  <li>Multiple monitor setups will be detected and warned against</li>
+                  <li>
+                    {ui(
+                      "Camera, microphone, and screen sharing will be mandatory (cannot be skipped)",
+                    )}
+                  </li>
+                  <li>
+                    {ui(
+                      "Tab switching and window focus loss will be tracked and flagged",
+                    )}
+                  </li>
+                  <li>
+                    {ui(
+                      "Pasting content from outside the interview page will be blocked",
+                    )}
+                  </li>
+                  <li>
+                    {ui(
+                      "Multiple monitor setups will be detected and warned against",
+                    )}
+                  </li>
                 </ul>
                 <p className="mt-1.5 text-amber-700 dark:text-amber-300">
-                  Candidates will be informed of these restrictions before starting.
+                  {ui(
+                    "Candidates will be informed of these restrictions before starting.",
+                  )}
                 </p>
               </div>
             )}
@@ -406,6 +458,7 @@ export default function SettingsTab() {
             updateMutation.mutate({
               id: interviewId,
               title,
+              roleTitle,
               description,
               objective,
               chatEnabled,
@@ -426,7 +479,7 @@ export default function SettingsTab() {
           {updateMutation.isLoading && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           )}
-          Save Settings
+          {ui("Save Settings")}
         </Button>
       </div>
     </div>

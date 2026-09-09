@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { useAppLocale } from "@/components/app-locale-provider";
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -39,6 +41,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 
 export default function ProjectDetailPage() {
+  const ui = useUiTranslation();
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
@@ -109,7 +112,7 @@ export default function ProjectDetailPage() {
   if (!project) {
     return (
       <div className="flex items-center justify-center py-20 text-muted-foreground">
-        {isZh ? "未找到项目" : "Project not found"}
+        {isZh ? "未找到项目" : ui("Project not found")}
       </div>
     );
   }
@@ -140,7 +143,7 @@ export default function ProjectDetailPage() {
                 onClick={() => updateMutation.mutate({ id: projectId, name })}
                 disabled={updateMutation.isPending || !name.trim()}
               >
-                {isZh ? "保存" : "Save"}
+                {isZh ? "保存" : ui("Save")}
               </Button>
               <Button
                 size="sm"
@@ -150,7 +153,7 @@ export default function ProjectDetailPage() {
                   setEditingName(false);
                 }}
               >
-                {isZh ? "取消" : "Cancel"}
+                {isZh ? "取消" : ui("Cancel")}
               </Button>
             </div>
           ) : (
@@ -178,7 +181,7 @@ export default function ProjectDetailPage() {
           <Link href={`/interviews/new?projectId=${projectId}`}>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
-              {isZh ? "新建面试" : "New Interview"}
+              {isZh ? "新建面试" : ui("New Interview")}
             </Button>
           </Link>
           {isAdmin && (
@@ -191,23 +194,25 @@ export default function ProjectDetailPage() {
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>
-                    {isZh ? "删除项目？" : "Delete project?"}
+                    {isZh ? "删除项目？" : ui("Delete project?")}
                   </AlertDialogTitle>
                   <AlertDialogDescription>
                     {isZh
                       ? "该项目中的所有面试都将失去项目归属。"
-                      : "All interviews in this project will lose their project assignment."}
+                      : ui(
+                          "All interviews in this project will lose their project assignment.",
+                        )}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>
-                    {isZh ? "取消" : "Cancel"}
+                    {isZh ? "取消" : ui("Cancel")}
                   </AlertDialogCancel>
                   <AlertDialogAction
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     onClick={() => deleteMutation.mutate({ id: projectId })}
                   >
-                    {isZh ? "删除" : "Delete"}
+                    {isZh ? "删除" : ui("Delete")}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -218,7 +223,7 @@ export default function ProjectDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{isZh ? "面试" : "Interviews"}</CardTitle>
+          <CardTitle>{isZh ? "面试" : ui("Interviews")}</CardTitle>
           <CardDescription>
             {interviews.length}{" "}
             {isZh
@@ -231,16 +236,16 @@ export default function ProjectDetailPage() {
             <div className="p-6 text-center text-muted-foreground">
               {isZh
                 ? "还没有面试。创建一个开始使用。"
-                : "No interviews yet. Create one to get started."}
+                : ui("No interviews yet. Create one to get started.")}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{isZh ? "标题" : "Title"}</TableHead>
-                  <TableHead>{isZh ? "题目数" : "Questions"}</TableHead>
-                  <TableHead>{isZh ? "会话数" : "Sessions"}</TableHead>
-                  <TableHead>{isZh ? "更新时间" : "Updated"}</TableHead>
+                  <TableHead>{isZh ? "标题" : ui("Title")}</TableHead>
+                  <TableHead>{isZh ? "题目数" : ui("Questions")}</TableHead>
+                  <TableHead>{isZh ? "会话数" : ui("Sessions")}</TableHead>
+                  <TableHead>{isZh ? "更新时间" : ui("Updated")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

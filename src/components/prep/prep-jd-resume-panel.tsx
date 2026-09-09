@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import type { PrepContextInitial } from "@/components/prep/prep-context-types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,14 +11,14 @@ import { useToast } from "@/hooks/use-toast";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import {
-    Briefcase,
-    CheckCircle2,
-    CircleDot,
-    FileText,
-    Loader2,
-    Save,
-    Upload,
-    UserSquare2,
+  Briefcase,
+  CheckCircle2,
+  CircleDot,
+  FileText,
+  Loader2,
+  Save,
+  Upload,
+  UserSquare2,
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
@@ -60,6 +62,7 @@ function applyContext(
 }
 
 export function PrepJdResumePanel({ interviewId, initial, onSaved }: Props) {
+  const ui = useUiTranslation();
   const { toast } = useToast();
   const utils = trpc.useUtils();
   const normalizedInitial = normalizeContext(initial);
@@ -67,7 +70,9 @@ export function PrepJdResumePanel({ interviewId, initial, onSaved }: Props) {
   const [jobDescription, setJobDescription] = useState(
     normalizedInitial.jobDescription ?? "",
   );
-  const [resumeText, setResumeText] = useState(normalizedInitial.resumeText ?? "");
+  const [resumeText, setResumeText] = useState(
+    normalizedInitial.resumeText ?? "",
+  );
   const [companyName, setCompanyName] = useState(
     normalizedInitial.companyName ?? "",
   );
@@ -120,12 +125,12 @@ export function PrepJdResumePanel({ interviewId, initial, onSaved }: Props) {
         utils.prep.getBundle.invalidate({ interviewId }),
         utils.interview.getById.invalidate({ id: interviewId }),
       ]);
-      toast({ title: "Practice context saved" });
+      toast({ title: ui("Practice context saved") });
       await onSaved?.();
     },
     onError: (err) => {
       toast({
-        title: "Could not save",
+        title: ui("Could not save"),
         description: err.message,
         variant: "destructive",
       });
@@ -180,11 +185,11 @@ export function PrepJdResumePanel({ interviewId, initial, onSaved }: Props) {
       <Section
         index={1}
         icon={Briefcase}
-        title="Target role"
+        title={ui("Target role")}
         description="Where you're interviewing — used to phrase questions and frame feedback."
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field htmlFor="prep-role" label="Role">
+          <Field htmlFor="prep-role" label={ui("Role")}>
             <Input
               id="prep-role"
               value={roleTitle}
@@ -192,7 +197,7 @@ export function PrepJdResumePanel({ interviewId, initial, onSaved }: Props) {
               placeholder="e.g. Senior Frontend Engineer"
             />
           </Field>
-          <Field htmlFor="prep-company" label="Company">
+          <Field htmlFor="prep-company" label={ui("Company")}>
             <Input
               id="prep-company"
               value={companyName}
@@ -206,7 +211,7 @@ export function PrepJdResumePanel({ interviewId, initial, onSaved }: Props) {
       <Section
         index={2}
         icon={FileText}
-        title="Job description"
+        title={ui("Job description")}
         description="Paste the JD or upload a PDF. The AI grades your answers against the signals it asks for."
         action={
           <PdfUploadButton
@@ -222,14 +227,16 @@ export function PrepJdResumePanel({ interviewId, initial, onSaved }: Props) {
           className="min-h-[220px]"
           value={jobDescription}
           onChange={(e) => setJobDescription(e.target.value)}
-          placeholder="Paste the job description here, or upload a PDF using the button above."
+          placeholder={ui(
+            "Paste the job description here, or upload a PDF using the button above.",
+          )}
         />
       </Section>
 
       <Section
         index={3}
         icon={UserSquare2}
-        title="Your resume"
+        title={ui("Your resume")}
         description="Paste your resume or upload a PDF. The AI grounds hints and sample answers in your real experience."
         action={
           <PdfUploadButton
@@ -245,7 +252,9 @@ export function PrepJdResumePanel({ interviewId, initial, onSaved }: Props) {
           className="min-h-[220px]"
           value={resumeText}
           onChange={(e) => setResumeText(e.target.value)}
-          placeholder="Paste your resume here, or upload a PDF using the button above."
+          placeholder={ui(
+            "Paste your resume here, or upload a PDF using the button above.",
+          )}
         />
       </Section>
 
@@ -261,7 +270,7 @@ export function PrepJdResumePanel({ interviewId, initial, onSaved }: Props) {
           ) : (
             <Save className="h-4 w-4" />
           )}
-          Save context
+          {ui("Save context")}
         </Button>
       </div>
     </div>
@@ -316,7 +325,10 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={htmlFor} className="text-xs font-medium text-muted-foreground">
+      <Label
+        htmlFor={htmlFor}
+        className="text-xs font-medium text-muted-foreground"
+      >
         {label}
       </Label>
       {children}
@@ -335,6 +347,7 @@ function PdfUploadButton({
   loading: boolean;
   onFileChosen: (file: File) => void;
 }) {
+  const ui = useUiTranslation();
   return (
     <>
       <input
@@ -362,18 +375,19 @@ function PdfUploadButton({
         ) : (
           <Upload className="h-4 w-4" />
         )}
-        Upload PDF
+        {ui("Upload PDF")}
       </Button>
     </>
   );
 }
 
 function SaveStatus({ dirty, loading }: { dirty: boolean; loading: boolean }) {
+  const ui = useUiTranslation();
   if (loading) {
     return (
       <p className="flex items-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="h-3.5 w-3.5 animate-spin" />
-        Saving…
+        {ui("Saving…")}
       </p>
     );
   }
@@ -386,14 +400,14 @@ function SaveStatus({ dirty, loading }: { dirty: boolean; loading: boolean }) {
         )}
       >
         <CircleDot className="h-3.5 w-3.5" />
-        Unsaved changes
+        {ui("Unsaved changes")}
       </p>
     );
   }
   return (
     <p className="flex items-center gap-2 text-sm text-muted-foreground">
       <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-      All changes saved
+      {ui("All changes saved")}
     </p>
   );
 }

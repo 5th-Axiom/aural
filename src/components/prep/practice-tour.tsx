@@ -1,31 +1,33 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-    BookOpenCheck,
-    CheckCircle2,
-    CircleHelp,
-    ClipboardList,
-    FileText,
-    Flag,
-    Mic,
-    RefreshCw,
-    Send,
-    Sparkles,
-    Target,
-    Timer,
-    TrendingUp,
-    Waves,
+  BookOpenCheck,
+  CheckCircle2,
+  CircleHelp,
+  ClipboardList,
+  FileText,
+  Flag,
+  Mic,
+  RefreshCw,
+  Send,
+  Sparkles,
+  Target,
+  Timer,
+  TrendingUp,
+  Waves,
 } from "lucide-react";
 import React, {
-    createContext,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 import { createPortal } from "react-dom";
 
@@ -92,7 +94,8 @@ export const PRACTICE_TOUR_STEPS: PracticeTourStep[] = [
     id: "suggested",
     selector: '[data-tour="practice-suggested"]',
     title: "Peek at a model answer",
-    description: "Open a tailored sample answer, tune it, or practice it aloud.",
+    description:
+      "Open a tailored sample answer, tune it, or practice it aloud.",
     placement: "left",
     optional: true,
   },
@@ -149,7 +152,9 @@ interface PracticeTourContextValue {
   restart: () => void;
 }
 
-const PracticeTourContext = createContext<PracticeTourContextValue | null>(null);
+const PracticeTourContext = createContext<PracticeTourContextValue | null>(
+  null,
+);
 
 export function usePracticeTour() {
   return useContext(PracticeTourContext);
@@ -220,7 +225,7 @@ export function PracticeTourProvider({
     start();
   }, [start]);
 
-  const currentStep = active ? steps[stepIndex] ?? null : null;
+  const currentStep = active ? (steps[stepIndex] ?? null) : null;
 
   const value = useMemo(
     () => ({
@@ -268,12 +273,13 @@ const TOOLTIP_GAP = 12;
 const TOOLTIP_WIDTH = 320;
 
 function PracticeWelcomeIllustration() {
+  const ui = useUiTranslation();
   return (
     <div className="relative bg-gradient-to-br from-primary/10 via-primary/5 to-orange-50 px-6 pb-0 pt-6 dark:from-primary/20 dark:via-background dark:to-zinc-900">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/images/docs/practices-session.webp"
-        alt="Practice interface preview"
+        alt={ui("Practice interface preview")}
         className="block h-48 w-full rounded-t-lg object-cover object-top shadow-sm"
       />
       <div className="absolute -bottom-px left-0 right-0 h-6 bg-gradient-to-t from-white/95 to-transparent dark:from-zinc-900/95" />
@@ -290,11 +296,14 @@ function IllustrationShell({ children }: { children: React.ReactNode }) {
 }
 
 function PracticeProgressIllustration() {
+  const ui = useUiTranslation();
   return (
     <IllustrationShell>
       <div className="w-52 space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-semibold text-foreground">Practice run</span>
+          <span className="text-[10px] font-semibold text-foreground">
+            {ui("Practice run")}
+          </span>
           <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary">
             Q7 / 8
           </span>
@@ -305,9 +314,9 @@ function PracticeProgressIllustration() {
         <div className="flex items-center justify-between text-[9px] text-muted-foreground">
           <span className="inline-flex items-center gap-1">
             <TrendingUp className="h-3 w-3 text-primary" />
-            Best 3.0
+            {ui("Best 3.0")}
           </span>
-          <span>1 to retry</span>
+          <span>{ui("1 to retry")}</span>
         </div>
       </div>
     </IllustrationShell>
@@ -315,12 +324,13 @@ function PracticeProgressIllustration() {
 }
 
 function PracticeQuestionIllustration() {
+  const ui = useUiTranslation();
   return (
     <IllustrationShell>
       <div className="w-52 rounded-lg border bg-card p-2.5">
         <div className="mb-2 flex items-center gap-1.5 text-[9px] font-semibold text-primary">
           <BookOpenCheck className="h-3 w-3" />
-          Question 7
+          {ui("Question 7")}
         </div>
         <div className="space-y-1.5 text-[8px] text-foreground">
           <div className="h-2 w-full rounded bg-muted" />
@@ -328,8 +338,12 @@ function PracticeQuestionIllustration() {
           <div className="h-2 w-8/12 rounded bg-muted" />
         </div>
         <div className="mt-2 flex gap-1">
-          <span className="rounded-full border px-1.5 py-0.5 text-[8px]">Intro arc</span>
-          <span className="rounded-full border px-1.5 py-0.5 text-[8px]">60-90s</span>
+          <span className="rounded-full border px-1.5 py-0.5 text-[8px]">
+            {ui("Intro arc")}
+          </span>
+          <span className="rounded-full border px-1.5 py-0.5 text-[8px]">
+            60-90s
+          </span>
         </div>
       </div>
     </IllustrationShell>
@@ -337,6 +351,7 @@ function PracticeQuestionIllustration() {
 }
 
 function PracticeTargetIllustration() {
+  const ui = useUiTranslation();
   return (
     <IllustrationShell>
       <div className="grid w-56 grid-cols-[auto_1fr] gap-3">
@@ -344,7 +359,7 @@ function PracticeTargetIllustration() {
           <Target className="h-5 w-5" />
         </div>
         <div className="space-y-1.5">
-          {["Structure", "Signals", "Timing"].map((label) => (
+          {[ui("Structure"), ui("Signals"), ui("Timing")].map((label) => (
             <div key={label} className="flex items-center gap-2">
               <CheckCircle2 className="h-3 w-3 shrink-0 text-primary" />
               <span className="text-[9px] font-medium">{label}</span>
@@ -358,12 +373,13 @@ function PracticeTargetIllustration() {
 }
 
 function PracticeNavigatorIllustration() {
+  const ui = useUiTranslation();
   return (
     <IllustrationShell>
       <div className="w-52 rounded-lg border bg-card p-2">
         <div className="mb-1.5 flex items-center gap-1.5 text-[9px] font-semibold">
           <ClipboardList className="h-3 w-3 text-primary" />
-          Questions
+          {ui("Questions")}
         </div>
         <div className="space-y-1">
           {[1, 2, 3, 4].map((item) => (
@@ -371,14 +387,20 @@ function PracticeNavigatorIllustration() {
               key={item}
               className={cn(
                 "flex items-center justify-between rounded-md px-1.5 py-1 text-[8px]",
-                item === 3 ? "border border-primary/40 bg-primary/10" : "bg-muted/60",
+                item === 3
+                  ? "border border-primary/40 bg-primary/10"
+                  : "bg-muted/60",
               )}
             >
               <span className="inline-flex items-center gap-1">
                 <span className="h-1.5 w-1.5 rounded-full border border-muted-foreground/50" />
                 Q{item}
               </span>
-              {item === 3 ? <span className="font-semibold text-primary">retry</span> : null}
+              {item === 3 ? (
+                <span className="font-semibold text-primary">
+                  {ui("retry")}
+                </span>
+              ) : null}
             </div>
           ))}
         </div>
@@ -388,16 +410,21 @@ function PracticeNavigatorIllustration() {
 }
 
 function PracticeComposerIllustration() {
+  const ui = useUiTranslation();
   return (
     <IllustrationShell>
       <div className="w-56 rounded-xl border bg-card p-2">
         <div className="mb-2 h-9 rounded-md bg-muted px-2 py-1.5 text-[9px] text-muted-foreground">
-          Speak or edit your transcript...
+          {ui("Speak or edit your transcript...")}
         </div>
         <div className="flex items-center justify-between">
           <div className="flex gap-1">
-            <span className="rounded-md bg-muted px-1.5 py-1 text-[8px]">Previous</span>
-            <span className="rounded-md bg-muted px-1.5 py-1 text-[8px]">Next</span>
+            <span className="rounded-md bg-muted px-1.5 py-1 text-[8px]">
+              {ui("Previous")}
+            </span>
+            <span className="rounded-md bg-muted px-1.5 py-1 text-[8px]">
+              {ui("Next")}
+            </span>
           </div>
           <div className="flex gap-1.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-full border text-primary">
@@ -414,6 +441,7 @@ function PracticeComposerIllustration() {
 }
 
 function PracticeVoiceButtonIllustration() {
+  const ui = useUiTranslation();
   return (
     <IllustrationShell>
       <div className="flex items-center gap-4">
@@ -421,16 +449,20 @@ function PracticeVoiceButtonIllustration() {
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
             <Mic className="h-5 w-5" />
           </div>
-          <span className="text-[9px] font-semibold text-primary">Voice</span>
+          <span className="text-[9px] font-semibold text-primary">
+            {ui("Voice")}
+          </span>
         </div>
         <div className="w-36 rounded-lg border bg-card p-2">
           <div className="mb-1 flex items-center gap-1 text-[8px] font-semibold text-primary">
             <Waves className="h-3 w-3" />
-            Delivery scores
+            {ui("Delivery scores")}
           </div>
-          {["Confidence", "Clarity", "Tone"].map((label, index) => (
+          {[ui("Confidence"), ui("Clarity"), ui("Tone")].map((label, index) => (
             <div key={label} className="mb-1 flex items-center gap-1.5">
-              <span className="w-12 text-[7px] text-muted-foreground">{label}</span>
+              <span className="w-12 text-[7px] text-muted-foreground">
+                {label}
+              </span>
               <div className="h-1 flex-1 rounded-full bg-muted">
                 <div
                   className="h-full rounded-full bg-primary"
@@ -446,12 +478,13 @@ function PracticeVoiceButtonIllustration() {
 }
 
 function PracticeSuggestedIllustration() {
+  const ui = useUiTranslation();
   return (
     <IllustrationShell>
       <div className="w-52 rounded-lg border bg-card p-2.5">
         <div className="mb-2 flex items-center gap-1.5 text-[9px] font-semibold text-primary">
           <Sparkles className="h-3 w-3" />
-          Suggested answer
+          {ui("Suggested answer")}
         </div>
         <div className="space-y-1.5">
           {[1, 2, 3].map((item) => (
@@ -463,7 +496,7 @@ function PracticeSuggestedIllustration() {
         </div>
         <div className="mt-2 flex items-center gap-1.5 text-[8px] text-muted-foreground">
           <RefreshCw className="h-3 w-3" />
-          Tune and practice aloud
+          {ui("Tune and practice aloud")}
         </div>
       </div>
     </IllustrationShell>
@@ -471,6 +504,7 @@ function PracticeSuggestedIllustration() {
 }
 
 function PracticeFinishIllustration() {
+  const ui = useUiTranslation();
   return (
     <IllustrationShell>
       <div className="flex items-center gap-4">
@@ -480,14 +514,14 @@ function PracticeFinishIllustration() {
         <div className="w-36 space-y-1.5">
           <div className="flex items-center gap-1.5 text-[9px] font-semibold">
             <FileText className="h-3 w-3 text-primary" />
-            Practice report
+            {ui("Practice report")}
           </div>
           <div className="rounded-md border bg-card px-2 py-1.5 text-[8px]">
-            scores, attempts, next run
+            {ui("scores, attempts, next run")}
           </div>
           <div className="flex items-center gap-1.5 text-[8px] text-muted-foreground">
             <Timer className="h-3 w-3" />
-            saved for review
+            {ui("saved for review")}
           </div>
         </div>
       </div>
@@ -511,6 +545,7 @@ function getPracticeStepIllustration(stepId: string): React.ReactNode | null {
 }
 
 export function PracticeTourOverlay() {
+  const ui = useUiTranslation();
   const tour = usePracticeTour();
   const [targetRect, setTargetRect] = useState<Rect | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
@@ -539,7 +574,10 @@ export function PracticeTourOverlay() {
       (r.top < 0 || r.bottom > window.innerHeight)
     ) {
       scrolledStepRef.current = tour.currentStep.id;
-      el.scrollIntoView({ block: "center", behavior: "instant" as ScrollBehavior });
+      el.scrollIntoView({
+        block: "center",
+        behavior: "instant" as ScrollBehavior,
+      });
       return;
     }
     scrolledStepRef.current = tour.currentStep.id;
@@ -613,14 +651,15 @@ export function PracticeTourOverlay() {
           <PracticeWelcomeIllustration />
           <div className="space-y-3 px-8 pb-8 pt-2 text-center">
             <h3 className="text-xl font-bold text-gray-900 dark:text-zinc-50">
-              Welcome to practice mode!
+              {ui("Welcome to practice mode!")}
             </h3>
             <p className="text-[15px] font-medium text-gray-700 dark:text-zinc-200">
-              Take a quick tour of the practice interface.
+              {ui("Take a quick tour of the practice interface.")}
             </p>
             <p className="text-sm leading-relaxed text-gray-500 dark:text-zinc-400">
-              We&apos;ll show the key controls: progress, targets, voice,
-              feedback, and sample answers.
+              {ui(
+                "We'll show the key controls: progress, targets, voice, feedback, and sample answers.",
+              )}
             </p>
             <div className="flex flex-col-reverse gap-3 pt-3 sm:flex-row sm:items-stretch">
               <Button
@@ -629,10 +668,10 @@ export function PracticeTourOverlay() {
                 className="text-muted-foreground"
                 onClick={tour.skip}
               >
-                Skip for now
+                {ui("Skip for now")}
               </Button>
               <Button className="sm:flex-1" size="lg" onClick={tour.start}>
-                Take a quick tour
+                {ui("Take a quick tour")}
               </Button>
             </div>
           </div>
@@ -718,12 +757,18 @@ export function PracticeTourOverlay() {
         <div
           ref={tooltipRef}
           className="fixed z-[9999] rounded-xl border border-border/50 bg-white shadow-2xl dark:bg-zinc-900"
-          style={{ top: tooltipPos.top, left: tooltipPos.left, width: TOOLTIP_WIDTH }}
+          style={{
+            top: tooltipPos.top,
+            left: tooltipPos.left,
+            width: TOOLTIP_WIDTH,
+          }}
         >
           <div className="space-y-3 p-4">
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                {idx + 1} of {total}
+                {idx + 1}
+                {ui("of")}
+                {total}
               </span>
             </div>
             {getPracticeStepIllustration(step.id)}
@@ -746,7 +791,7 @@ export function PracticeTourOverlay() {
                 onClick={tour.skip}
                 className="text-xs text-muted-foreground transition-colors hover:text-foreground"
               >
-                Skip tour
+                {ui("Skip tour")}
               </button>
               <div className="flex gap-1.5">
                 {idx > 0 && (
@@ -754,14 +799,14 @@ export function PracticeTourOverlay() {
                     onClick={tour.prev}
                     className="inline-flex items-center rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted"
                   >
-                    Back
+                    {ui("Back")}
                   </button>
                 )}
                 <button
                   onClick={isLast ? tour.skip : tour.next}
                   className="inline-flex items-center rounded-lg bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                 >
-                  {isLast ? "Done" : "Next"}
+                  {isLast ? ui("Done") : ui("Next")}
                 </button>
               </div>
             </div>
@@ -775,6 +820,7 @@ export function PracticeTourOverlay() {
 
 /** Header help button that replays the practice tour. */
 export function PracticeTourHelpButton({ className }: { className?: string }) {
+  const ui = useUiTranslation();
   const tour = usePracticeTour();
   if (!tour) return null;
   return (
@@ -782,10 +828,13 @@ export function PracticeTourHelpButton({ className }: { className?: string }) {
       type="button"
       variant="ghost"
       size="icon"
-      className={cn("h-8 w-8 text-muted-foreground hover:text-foreground", className)}
+      className={cn(
+        "h-8 w-8 text-muted-foreground hover:text-foreground",
+        className,
+      )}
       onClick={tour.restart}
-      aria-label="Replay practice tour"
-      title="Replay practice tour"
+      aria-label={ui("Replay practice tour")}
+      title={ui("Replay practice tour")}
     >
       <CircleHelp className="h-4 w-4" />
     </Button>

@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { useAppLocale } from "@/components/app-locale-provider";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
@@ -29,6 +31,7 @@ import { useToast } from "@/hooks/use-toast";
 import { FolderKanban, Loader2, Plus } from "lucide-react";
 
 export default function ProjectsPage() {
+  const ui = useUiTranslation();
   const { toast } = useToast();
   const { locale } = useAppLocale();
   const { currentOrg } = useOrg();
@@ -64,7 +67,7 @@ export default function ProjectsPage() {
   if (!currentOrg) {
     return (
       <div className="flex items-center justify-center py-20 text-muted-foreground">
-        {isZh ? "尚未选择组织" : "No organization selected"}
+        {isZh ? "尚未选择组织" : ui("No organization selected")}
       </div>
     );
   }
@@ -76,11 +79,13 @@ export default function ProjectsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">{isZh ? "项目" : "Projects"}</h1>
+          <h1 className="text-3xl font-bold">
+            {isZh ? "项目" : ui("Projects")}
+          </h1>
           <p className="text-muted-foreground">
             {isZh
               ? "将面试归类到不同项目中。"
-              : "Organize interviews into projects."}
+              : ui("Organize interviews into projects.")}
           </p>
         </div>
         {isAdmin && (
@@ -88,23 +93,23 @@ export default function ProjectsPage() {
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
-                {isZh ? "新建项目" : "New Project"}
+                {isZh ? "新建项目" : ui("New Project")}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>
-                  {isZh ? "创建项目" : "Create Project"}
+                  {isZh ? "创建项目" : ui("Create Project")}
                 </DialogTitle>
                 <DialogDescription>
                   {isZh
                     ? "创建一个新项目来组织面试。"
-                    : "Create a new project to organize interviews."}
+                    : ui("Create a new project to organize interviews.")}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-2">
                 <div className="space-y-2">
-                  <Label>{isZh ? "名称" : "Name"}</Label>
+                  <Label>{isZh ? "名称" : ui("Name")}</Label>
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -115,18 +120,20 @@ export default function ProjectsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>
-                    {isZh ? "描述（可选）" : "Description (optional)"}
+                    {isZh ? "描述（可选）" : ui("Description (optional)")}
                   </Label>
                   <Textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder={isZh ? "简要描述..." : "Brief description..."}
+                    placeholder={
+                      isZh ? "简要描述..." : ui("Brief description...")
+                    }
                   />
                 </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setCreateOpen(false)}>
-                  {isZh ? "取消" : "Cancel"}
+                  {isZh ? "取消" : ui("Cancel")}
                 </Button>
                 <Button
                   onClick={() =>
@@ -141,7 +148,7 @@ export default function ProjectsPage() {
                   {createMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  {isZh ? "创建" : "Create"}
+                  {isZh ? "创建" : ui("Create")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -153,12 +160,12 @@ export default function ProjectsPage() {
         <div className="rounded-lg border border-dashed p-12 text-center">
           <FolderKanban className="mx-auto h-12 w-12 text-muted-foreground/50" />
           <h3 className="mt-4 text-lg font-semibold">
-            {isZh ? "还没有项目" : "No projects yet"}
+            {isZh ? "还没有项目" : ui("No projects yet")}
           </h3>
           <p className="mt-1 text-sm text-muted-foreground">
             {isZh
               ? "创建一个项目以开始组织面试。"
-              : "Create a project to start organizing interviews."}
+              : ui("Create a project to start organizing interviews.")}
           </p>
         </div>
       ) : (

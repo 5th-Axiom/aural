@@ -1,13 +1,15 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import type { PrepContextInitial } from "@/components/prep/prep-context-types";
 import { PrepJdResumePanel } from "@/components/prep/prep-jd-resume-panel";
 import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
 } from "@/components/ui/sheet";
 import { trpc } from "@/lib/trpc/client";
 import { SlidersHorizontal } from "lucide-react";
@@ -27,6 +29,7 @@ export function PrepContextDrawer({
   fallbackInitial,
   onContextSaved,
 }: Props) {
+  const ui = useUiTranslation();
   const utils = trpc.useUtils();
 
   return (
@@ -38,11 +41,12 @@ export function PrepContextDrawer({
         <SheetHeader className="pr-8">
           <SheetTitle className="flex items-center gap-2">
             <SlidersHorizontal className="h-5 w-5 text-primary" />
-            Practice context
+            {ui("Practice context")}
           </SheetTitle>
           <SheetDescription>
-            Job description and resume context are reused by hints, feedback,
-            ratings, and suggested answers.
+            {ui(
+              "Job description and resume context are reused by hints, feedback, ratings, and suggested answers.",
+            )}
           </SheetDescription>
         </SheetHeader>
         <div className="mt-4 flex-1">

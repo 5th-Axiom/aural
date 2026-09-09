@@ -15,9 +15,15 @@ export function buildInterviewerPrompt(ctx: InterviewContext): LLMMessage[] {
     .map((q, i) => {
       let line = `${i + 1}. [${q.type}] ${q.text}`;
       if (q.description) line += ` (${q.description})`;
-      const opts = q.options as { options: string[]; allowMultiple?: boolean } | null;
+      const opts = q.options as {
+        options: string[];
+        allowMultiple?: boolean;
+      } | null;
       const qType = q.type as string;
-      if ((qType === "SINGLE_CHOICE" || qType === "MULTIPLE_CHOICE") && opts?.options?.length) {
+      if (
+        (qType === "SINGLE_CHOICE" || qType === "MULTIPLE_CHOICE") &&
+        opts?.options?.length
+      ) {
         line += ` | Options: ${opts.options.map((o, j) => `${String.fromCharCode(65 + j)}. ${o}`).join(", ")}`;
       }
       return line;
@@ -28,7 +34,9 @@ export function buildInterviewerPrompt(ctx: InterviewContext): LLMMessage[] {
     interview.chatEnabled && "Chat",
     interview.voiceEnabled && "Voice",
     interview.videoEnabled && "Video",
-  ].filter(Boolean).join(", ");
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   const maxFollowUps = maxFollowUpsForDepth(interview.followUpDepth);
   const maxResearchFollowUps = maxFollowUpsForDepth(
@@ -40,6 +48,7 @@ export function buildInterviewerPrompt(ctx: InterviewContext): LLMMessage[] {
 
 INTERVIEW CONTEXT:
 - Title: ${interview.title}
+- Position: ${interview.roleTitle || "Not specified"}
 - Objective: ${interview.objective ?? "Gather insights through conversation"}
 - Tone: ${interview.aiTone}
 - Language: ${interview.language}
@@ -54,9 +63,11 @@ YOUR ROLE:
 6. Keep track of what has been discussed to avoid repetition
 
 FOLLOW-UP STRATEGY (${interview.followUpDepth} depth — a HARD LIMIT of ${maxFollowUps} follow-up${maxFollowUps === 1 ? "" : "s"} per scripted question):
-${maxFollowUps === 0
+${
+  maxFollowUps === 0
     ? "- Ask only the scripted questions. Once the participant has answered, move on\n- Probe only if their answer was unintelligible or clearly about a different topic"
-    : `- Ask at most ${maxFollowUps} follow-up${maxFollowUps === 1 ? "" : "s"} per scripted question, and only when the response is vague, short, or leaves a key thread unexplored\n- Move on as soon as you have a reasonable answer — you do not have to spend the full budget\n- Once you have asked ${maxFollowUps} follow-up${maxFollowUps === 1 ? "" : "s"} on a question, you MUST move to the next scripted question even if the topic feels unfinished`}
+    : `- Ask at most ${maxFollowUps} follow-up${maxFollowUps === 1 ? "" : "s"} per scripted question, and only when the response is vague, short, or leaves a key thread unexplored\n- Move on as soon as you have a reasonable answer — you do not have to spend the full budget\n- Once you have asked ${maxFollowUps} follow-up${maxFollowUps === 1 ? "" : "s"} on a question, you MUST move to the next scripted question even if the topic feels unfinished`
+}
 - Answering a question the participant asks you, or repeating the question for them, does not count against this budget
 
 CONVERSATION FLOW:
@@ -122,7 +133,7 @@ RULES:
 export function buildFollowUpDetectionPrompt(
   question: string,
   response: string,
-  depth: string
+  depth: string,
 ): LLMMessage[] {
   return [
     {

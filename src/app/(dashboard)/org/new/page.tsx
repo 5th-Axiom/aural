@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { useAppLocale } from "@/components/app-locale-provider";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +20,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function NewOrgPage() {
+  const ui = useUiTranslation();
   const router = useRouter();
   const { toast } = useToast();
   const { locale } = useAppLocale();
@@ -57,17 +60,17 @@ export default function NewOrgPage() {
     <div className="mx-auto max-w-lg py-10">
       <Card>
         <CardHeader>
-          <CardTitle>{isZh ? "创建组织" : "Create Organization"}</CardTitle>
+          <CardTitle>{isZh ? "创建组织" : ui("Create Organization")}</CardTitle>
           <CardDescription>
             {isZh
               ? "创建一个新组织以与你的团队协作。"
-              : "Create a new organization to collaborate with your team."}
+              : ui("Create a new organization to collaborate with your team.")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="orgName">
-              {isZh ? "组织名称" : "Organization Name"}
+              {isZh ? "组织名称" : ui("Organization Name")}
             </Label>
             <Input
               id="orgName"
@@ -83,7 +86,7 @@ export default function NewOrgPage() {
               onClick={() => router.push("/organizations")}
               disabled={loading}
             >
-              {isZh ? "取消" : "Cancel"}
+              {isZh ? "取消" : ui("Cancel")}
             </Button>
             <Button
               className="flex-1"
@@ -91,7 +94,7 @@ export default function NewOrgPage() {
               disabled={loading || !name.trim()}
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isZh ? "创建组织" : "Create organization"}
+              {isZh ? "创建组织" : ui("Create organization")}
             </Button>
           </div>
         </CardContent>

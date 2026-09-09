@@ -1,4 +1,5 @@
 "use client";
+import uiZh from "@/lib/ui-zh.json";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
@@ -16,6 +17,7 @@ const STORAGE_KEY = "aural.app.locale";
 
 const translations: TranslationMap = {
   en: {
+    "candidate.questionCount": "{count} questions · ",
     "common.or": "or",
     "common.cancel": "Cancel",
     "common.delete": "Delete",
@@ -53,7 +55,8 @@ const translations: TranslationMap = {
     "sidebar.aiTokens": "AI Tokens",
     "sidebar.creditBalance": "Credits",
     "sidebar.planUsage": "Plan Usage",
-    "sidebar.resourcesLow": "Included limits low and no credits for overage — top up in Billing",
+    "sidebar.resourcesLow":
+      "Included limits low and no credits for overage — top up in Billing",
     "sidebar.theme": "Theme",
     "header.dashboard": "Dashboard",
     "header.interviews": "Interviews",
@@ -209,7 +212,8 @@ const translations: TranslationMap = {
     "interviewForm.durationMinShort": "Duration (min)",
     "interviewForm.noDurationLimit": "No limit",
     "interviewForm.channels": "Communication Channels",
-    "interviewForm.channelsHint": "Choose how participants interact during the interview",
+    "interviewForm.channelsHint":
+      "Choose how participants interact during the interview",
     "interviewForm.chat": "Chat",
     "interviewForm.chatSub": "Text messaging",
     "interviewForm.voice": "Voice",
@@ -220,7 +224,8 @@ const translations: TranslationMap = {
     "interviewForm.antiCheating.enable": "Enable Anti-Cheating",
     "interviewForm.antiCheating.hint":
       "Requires camera, mic & screen sharing. Monitors tab switches, blocks external paste, and detects multiple screens",
-    "interviewForm.antiCheating.whenEnabled": "When enabled, interviewees will experience:",
+    "interviewForm.antiCheating.whenEnabled":
+      "When enabled, interviewees will experience:",
     "interviewForm.antiCheating.rule1":
       "Camera, microphone, and screen sharing will be mandatory (cannot be skipped)",
     "interviewForm.antiCheating.rule2":
@@ -248,7 +253,8 @@ const translations: TranslationMap = {
     "interviewForm.languageOption.fr": "French",
     "interviewSettings.shareableLink": "Shareable Link",
     "interviewSettings.openAccessTitle": "Open access enabled",
-    "interviewSettings.openAccessDesc": "Anyone with this link can start the interview",
+    "interviewSettings.openAccessDesc":
+      "Anyone with this link can start the interview",
     "interviewSettings.copyLink": "Copy",
     "interviewSettings.revokeShareableLink": "Revoke shareable link",
     "interviewSettings.inviteOnlyDescription":
@@ -276,7 +282,8 @@ const translations: TranslationMap = {
     "aiGenerator.jd": "JD",
     "aiGenerator.resume": "Resume",
     "aiGenerator.generationFailed": "Generation failed",
-    "aiGenerator.generationFailedDesc": "Please try again or create the interview manually.",
+    "aiGenerator.generationFailedDesc":
+      "Please try again or create the interview manually.",
     "aiGenerator.refinedToast": "Interview refined based on your feedback!",
     "aiGenerator.refinementFailed": "Refinement failed",
     "aiGenerator.refinementFailedDesc": "Please try again.",
@@ -308,13 +315,14 @@ const translations: TranslationMap = {
     "aiGenerator.refineHint":
       "Describe what you'd like to change and AI will update the questions.",
     "aiGenerator.refinePlaceholder":
-      "e.g. \"Make the questions harder\", \"Add more behavioral questions\", \"Remove the ice-breaker\"...",
+      'e.g. "Make the questions harder", "Add more behavioral questions", "Remove the ice-breaker"...',
     "aiGenerator.refining": "Refining...",
     "aiGenerator.refineQuestions": "Refine Questions",
     "aiGenerator.acceptCreate": "Accept & Create",
     "aiGenerator.regenerateAll": "Regenerate All",
     "aiGenerator.importDialogTitle": "Import Existing Questions",
-    "aiGenerator.importDialogDesc": "Select questions from your existing interviews to add here.",
+    "aiGenerator.importDialogDesc":
+      "Select questions from your existing interviews to add here.",
     "aiGenerator.searchQuestions": "Search questions...",
     "aiGenerator.noMatchSearch": "No questions match your search.",
     "aiGenerator.noQuestionsImport": "No questions available to import.",
@@ -567,11 +575,13 @@ const translations: TranslationMap = {
     "interviewForm.antiCheating.hint":
       "需要摄像头、麦克风和屏幕共享。可监控切换标签页、阻止外部粘贴，并检测多屏。",
     "interviewForm.antiCheating.whenEnabled": "启用后，候选人将遇到以下情况：",
-    "interviewForm.antiCheating.rule1": "必须开启摄像头、麦克风和屏幕共享（不可跳过）",
+    "interviewForm.antiCheating.rule1":
+      "必须开启摄像头、麦克风和屏幕共享（不可跳过）",
     "interviewForm.antiCheating.rule2": "切换标签页和窗口失焦会被记录并标记",
     "interviewForm.antiCheating.rule3": "将阻止从面试页面外部粘贴内容",
     "interviewForm.antiCheating.rule4": "会检测并警告多显示器环境",
-    "interviewForm.antiCheating.informed": "候选人在开始前会被明确告知这些限制。",
+    "interviewForm.antiCheating.informed":
+      "候选人在开始前会被明确告知这些限制。",
     "interviewForm.aiName": "AI 名称",
     "interviewForm.toneSelect": "语气",
     "interviewForm.followUpDepthSelect": "追问深度",
@@ -601,7 +611,8 @@ const translations: TranslationMap = {
     "interviewSettings.aiConfiguration": "AI 配置",
     "interviewSettings.saveSettings": "保存设置",
     "aiGenerator.cardTitle": "AI 面试生成器",
-    "aiGenerator.cardDescription": "用自然语言描述你的目标，AI 将为你生成完整的面试结构。",
+    "aiGenerator.cardDescription":
+      "用自然语言描述你的目标，AI 将为你生成完整的面试结构。",
     "aiGenerator.promptLabel": "你需要什么样的面试？",
     "aiGenerator.promptPlaceholder":
       "e.g. I want to assess senior React developers for our fintech startup, focusing on system design and problem-solving skills...",
@@ -707,11 +718,11 @@ const translations: TranslationMap = {
 const AppLocaleContext = createContext<AppLocaleContextValue | null>(null);
 
 function resolveInitialLocale(): { locale: AppLocale; isExplicit: boolean } {
-  if (typeof window === "undefined") return { locale: "en", isExplicit: false };
+  if (typeof window === "undefined") return { locale: "zh", isExplicit: false };
   const stored = window.localStorage.getItem(STORAGE_KEY);
-  if (stored === "zh" || stored === "en") return { locale: stored, isExplicit: true };
-  const browserLocale: AppLocale = window.navigator.language.toLowerCase().startsWith("zh") ? "zh" : "en";
-  return { locale: browserLocale, isExplicit: false };
+  if (stored === "zh" || stored === "en")
+    return { locale: stored, isExplicit: true };
+  return { locale: "zh", isExplicit: false };
 }
 
 function interpolate(
@@ -725,7 +736,7 @@ function interpolate(
 }
 
 export function AppLocaleProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<AppLocale>("en");
+  const [locale, setLocaleState] = useState<AppLocale>("zh");
 
   useEffect(() => {
     const { locale: initial, isExplicit } = resolveInitialLocale();
@@ -745,6 +756,9 @@ export function AppLocaleProvider({ children }: { children: React.ReactNode }) {
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";
+  }, [locale]);
   const value = useMemo<AppLocaleContextValue>(
     () => ({
       locale,
@@ -756,7 +770,12 @@ export function AppLocaleProvider({ children }: { children: React.ReactNode }) {
       },
       t: (key, params) =>
         interpolate(
-          translations[locale][key] ?? translations.en[key] ?? key,
+          translations[locale][key] ??
+            (locale === "zh"
+              ? (uiZh as Record<string, string>)[key]
+              : undefined) ??
+            translations.en[key] ??
+            key,
           params,
         ),
     }),

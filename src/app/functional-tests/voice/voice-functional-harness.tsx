@@ -1,4 +1,5 @@
 "use client";
+import { useUiTranslation } from "@/hooks/use-ui-translation";
 
 import { VoiceInterface } from "@/components/session/voice-interface";
 import { useEffect, useState } from "react";
@@ -211,7 +212,8 @@ const functionalScenarios: Record<FunctionalScenarioId, FunctionalScenario> = {
 };
 
 function installFunctionalRelayMocks(scenario: FunctionalScenario) {
-  const normalizePath = (pathname: string) => pathname.replace(/\/+$/, "") || "/";
+  const normalizePath = (pathname: string) =>
+    pathname.replace(/\/+$/, "") || "/";
   const relayPaths = new Set(["/ws/voice", "/ws/openai-voice"]);
 
   window.__functionalRelayConnections = [];
@@ -249,7 +251,9 @@ function installFunctionalRelayMocks(scenario: FunctionalScenario) {
 
     constructor(url: string | URL) {
       this.url = String(url);
-      this.path = normalizePath(new URL(this.url, window.location.href).pathname);
+      this.path = normalizePath(
+        new URL(this.url, window.location.href).pathname,
+      );
       this.events = window.__functionalRelayScenario?.[this.path]?.events ?? [];
 
       const nextConnections = [
@@ -330,7 +334,10 @@ function installFunctionalRelayMocks(scenario: FunctionalScenario) {
     }
   }
 
-  window.WebSocket = function functionalWebSocket(url: string | URL, protocols?: string | string[]) {
+  window.WebSocket = function functionalWebSocket(
+    url: string | URL,
+    protocols?: string | string[],
+  ) {
     const resolved = new URL(String(url), window.location.href);
     const path = normalizePath(resolved.pathname);
     if (relayPaths.has(path)) {
@@ -350,6 +357,7 @@ export function VoiceFunctionalHarness({
   language: string;
   scenario: string;
 }) {
+  const ui = useUiTranslation();
   const [parentCompleted, setParentCompleted] = useState(false);
   const [mocksReady, setMocksReady] = useState(false);
 
@@ -363,11 +371,7 @@ export function VoiceFunctionalHarness({
 
   return (
     <div className="relative min-h-screen bg-background">
-      <div
-        data-testid="parent-complete"
-        className="sr-only"
-        aria-live="polite"
-      >
+      <div data-testid="parent-complete" className="sr-only" aria-live="polite">
         {parentCompleted ? "true" : "false"}
       </div>
       <div data-testid="harness-language" className="sr-only">
@@ -384,7 +388,7 @@ export function VoiceFunctionalHarness({
         questionCount={1}
         durationMinutes={15}
         interviewContext={{
-          title: "Functional Voice Interview",
+          title: ui("Functional Voice Interview"),
           objective: "Exercise the core voice interview flow in browser tests.",
           aiName: "TestInterviewer",
           aiTone: "Professional",
@@ -394,7 +398,7 @@ export function VoiceFunctionalHarness({
             {
               text: "Tell me about a project you are proud of.",
               type: "OPEN_ENDED",
-              description: "Functional test prompt",
+              description: ui("Functional test prompt"),
               order: 0,
             },
           ],

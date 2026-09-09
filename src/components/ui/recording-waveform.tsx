@@ -1,4 +1,5 @@
 "use client";
+import { useUiTranslation } from "@/hooks/use-ui-translation";
 
 import { cn } from "@/lib/utils";
 import { Square } from "lucide-react";
@@ -39,9 +40,7 @@ function CodexCenteredBars({
         {Array.from({ length: barCount }).map((_, i) => {
           const wobble = Math.sin((i + tick) * 0.55) * 0.35 + 0.65;
           const active = level > 0.01;
-          const halfH = active
-            ? Math.max(3, level * wobble * maxHalfPx)
-            : 2;
+          const halfH = active ? Math.max(3, level * wobble * maxHalfPx) : 2;
           return (
             <div
               key={i}
@@ -67,6 +66,7 @@ export function RecordingWaveform({
   expanded = false,
   inline = false,
 }: Props) {
+  const ui = useUiTranslation();
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -79,7 +79,7 @@ export function RecordingWaveform({
       <div
         className={cn("flex min-w-0 flex-1 items-center gap-2", className)}
         aria-live="polite"
-        aria-label="Recording"
+        aria-label={ui("Recording")}
       >
         <CodexCenteredBars level={level} tick={tick} barCount={96} />
         <span className="shrink-0 tabular-nums text-xs font-medium text-muted-foreground">
@@ -92,7 +92,7 @@ export function RecordingWaveform({
             size="icon"
             className="h-8 w-8 shrink-0 rounded-full"
             onClick={onStop}
-            aria-label="Stop recording"
+            aria-label={ui("Stop recording")}
           >
             <Square className="h-3.5 w-3.5 fill-current" />
           </Button>
@@ -109,7 +109,7 @@ export function RecordingWaveform({
       <div
         className={cn("flex w-full min-h-[48px] items-center gap-3", className)}
         aria-live="polite"
-        aria-label="Recording"
+        aria-label={ui("Recording")}
       >
         <div className="flex h-10 min-w-0 flex-1 items-center justify-between gap-px rounded-md bg-muted/25 px-2 py-1.5">
           {Array.from({ length: barCount }).map((_, i) => {
@@ -137,7 +137,7 @@ export function RecordingWaveform({
             size="icon"
             className="h-8 w-8 shrink-0 rounded-full"
             onClick={onStop}
-            aria-label="Stop recording"
+            aria-label={ui("Stop recording")}
           >
             <Square className="h-3.5 w-3.5 fill-current" />
           </Button>
@@ -179,7 +179,7 @@ export function RecordingWaveform({
           size="icon"
           className="h-7 w-7 shrink-0 rounded-md"
           onClick={onStop}
-          aria-label="Stop recording"
+          aria-label={ui("Stop recording")}
         >
           <Square className="h-3.5 w-3.5 fill-current" />
         </Button>

@@ -1,69 +1,71 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { scoreBadgeClasses } from "@/components/prep/prep-types";
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-    plainToRichHtml,
-    RichTextContent,
-    RichTextEditor,
-    richTextToPlain,
-    sanitizeRichHtml,
+  plainToRichHtml,
+  RichTextContent,
+  RichTextEditor,
+  richTextToPlain,
+  sanitizeRichHtml,
 } from "@/components/ui/rich-text-editor";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { exportToXlsx } from "@/lib/export-xlsx";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import {
-    Briefcase,
-    Calendar,
-    ChevronDown,
-    CirclePlay,
-    Download,
-    Loader2,
-    Mic,
-    NotebookPen,
-    Pencil,
-    Plus,
-    Search,
-    Sparkles,
-    Trash2,
+  Briefcase,
+  Calendar,
+  ChevronDown,
+  CirclePlay,
+  Download,
+  Loader2,
+  Mic,
+  NotebookPen,
+  Pencil,
+  Plus,
+  Search,
+  Sparkles,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
@@ -170,6 +172,7 @@ function NoteEditor({
   onSave: (note: string) => void;
   saving: boolean;
 }) {
+  const ui = useUiTranslation();
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(entry.note ?? "");
 
@@ -185,7 +188,8 @@ function NoteEditor({
       >
         <NotebookPen className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
         <span className="min-w-0 flex-1 whitespace-pre-wrap leading-relaxed">
-          {entry.note?.trim() || "Add a personal note (why this answer works, when to use it)…"}
+          {entry.note?.trim() ||
+            "Add a personal note (why this answer works, when to use it)…"}
         </span>
       </button>
     );
@@ -198,7 +202,7 @@ function NoteEditor({
         onChange={(event) => setValue(event.target.value)}
         rows={3}
         maxLength={2000}
-        placeholder="Why does this answer work? When should you use it?"
+        placeholder={ui("Why does this answer work? When should you use it?")}
         className="resize-none text-sm"
         autoFocus
       />
@@ -211,7 +215,7 @@ function NoteEditor({
           onClick={() => setEditing(false)}
           disabled={saving}
         >
-          Cancel
+          {ui("Cancel")}
         </Button>
         <Button
           type="button"
@@ -223,7 +227,7 @@ function NoteEditor({
             setEditing(false);
           }}
         >
-          Save note
+          {ui("Save note")}
         </Button>
       </div>
     </div>
@@ -301,6 +305,7 @@ function AnswerBankCard({
   onSaveAnswer: (answerHtml: string) => void;
   answerSaving: boolean;
 }) {
+  const ui = useUiTranslation();
   const [editing, setEditing] = useState(false);
   const [draftHtml, setDraftHtml] = useState("");
 
@@ -332,8 +337,7 @@ function AnswerBankCard({
     <Card
       className={cn(
         "group/card transition-colors",
-        !editing &&
-          "hover:border-primary/15 hover:bg-muted/10",
+        !editing && "hover:border-primary/15 hover:bg-muted/10",
       )}
     >
       <CardContent className="space-y-3 p-4">
@@ -349,9 +353,7 @@ function AnswerBankCard({
               <p className="text-sm font-semibold leading-relaxed">
                 {entry.questionText}
               </p>
-              {entry.score != null ? (
-                <ScoreBadge score={entry.score} />
-              ) : null}
+              {entry.score != null ? <ScoreBadge score={entry.score} /> : null}
             </div>
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
               {entry.questionType ? (
@@ -373,7 +375,10 @@ function AnswerBankCard({
                 )
               ) : null}
               <span aria-hidden>·</span>
-              <span>Saved {formatDate(entry.createdAt)}</span>
+              <span>
+                {ui("Saved")}
+                {formatDate(entry.createdAt)}
+              </span>
             </div>
           </div>
           <div
@@ -383,24 +388,24 @@ function AnswerBankCard({
             {canPractice ? (
               <IconAction
                 icon={CirclePlay}
-                label="Practice this question"
+                label={ui("Practice this question")}
                 href={`/practice/${entry.interviewId}?question=${entry.questionId}`}
               />
             ) : null}
             <IconAction
               icon={Pencil}
-              label="Edit answer"
+              label={ui("Edit answer")}
               onClick={startEditing}
             />
             <IconAction
               icon={Trash2}
-              label="Remove from answer bank"
+              label={ui("Remove from answer bank")}
               onClick={onRemove}
               destructive
             />
             <IconAction
               icon={ChevronDown}
-              label={expanded ? "Collapse" : "Expand"}
+              label={expanded ? ui("Collapse") : ui("Expand")}
               onClick={toggleExpanded}
               aria-expanded={expanded}
               iconClassName={cn(
@@ -431,7 +436,7 @@ function AnswerBankCard({
                 <RichTextEditor
                   value={draftHtml}
                   onChange={setDraftHtml}
-                  placeholder="Write your answer…"
+                  placeholder={ui("Write your answer…")}
                   autoFocus
                 />
                 <div className="flex justify-end gap-2">
@@ -443,19 +448,21 @@ function AnswerBankCard({
                     onClick={() => setEditing(false)}
                     disabled={answerSaving}
                   >
-                    Cancel
+                    {ui("Cancel")}
                   </Button>
                   <Button
                     type="button"
                     size="sm"
                     className="h-7 px-2.5 text-xs"
-                    disabled={answerSaving || !richTextToPlain(draftHtml).trim()}
+                    disabled={
+                      answerSaving || !richTextToPlain(draftHtml).trim()
+                    }
                     onClick={saveAnswer}
                   >
                     {answerSaving ? (
                       <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
                     ) : null}
-                    Save answer
+                    {ui("Save answer")}
                   </Button>
                 </div>
               </div>
@@ -516,6 +523,7 @@ function AddAnswerDialog({
   onCreate: (input: { questionText: string; answerText: string }) => void;
   creating: boolean;
 }) {
+  const ui = useUiTranslation();
   const [question, setQuestion] = useState("");
   const [answerHtml, setAnswerHtml] = useState("");
 
@@ -542,14 +550,16 @@ function AddAnswerDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Add answer</DialogTitle>
+          <DialogTitle>{ui("Add answer")}</DialogTitle>
           <DialogDescription>
-            Save a question and the answer you want to reuse in interviews.
+            {ui(
+              "Save a question and the answer you want to reuse in interviews.",
+            )}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="answer-bank-question">Question</Label>
+            <Label htmlFor="answer-bank-question">{ui("Question")}</Label>
             <Textarea
               id="answer-bank-question"
               value={question}
@@ -561,11 +571,11 @@ function AddAnswerDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Answer</Label>
+            <Label>{ui("Answer")}</Label>
             <RichTextEditor
               value={answerHtml}
               onChange={setAnswerHtml}
-              placeholder="Write the answer you want to keep…"
+              placeholder={ui("Write the answer you want to keep…")}
             />
           </div>
         </div>
@@ -576,11 +586,17 @@ function AddAnswerDialog({
             onClick={() => handleOpenChange(false)}
             disabled={creating}
           >
-            Cancel
+            {ui("Cancel")}
           </Button>
-          <Button type="button" disabled={!canSave || creating} onClick={submit}>
-            {creating ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
-            Save answer
+          <Button
+            type="button"
+            disabled={!canSave || creating}
+            onClick={submit}
+          >
+            {creating ? (
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+            ) : null}
+            {ui("Save answer")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -589,6 +605,7 @@ function AddAnswerDialog({
 }
 
 export default function AnswerBankPage() {
+  const ui = useUiTranslation();
   const { toast } = useToast();
   const utils = trpc.useUtils();
   const [search, setSearch] = useState("");
@@ -613,9 +630,7 @@ export default function AnswerBankPage() {
         map.set(row.interviewId, row.interviewTitle);
       }
     }
-    return Array.from(map.entries()).sort((a, b) =>
-      a[1].localeCompare(b[1]),
-    );
+    return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1]));
   }, [allRows]);
 
   const hasManualEntries = useMemo(
@@ -626,11 +641,11 @@ export default function AnswerBankPage() {
     onSuccess: () => {
       utils.answerBank.list.invalidate();
       utils.answerBank.listAttemptIds.invalidate();
-      toast({ title: "Removed from your answer bank" });
+      toast({ title: ui("Removed from your answer bank") });
     },
     onError: (err) => {
       toast({
-        title: "Could not remove answer",
+        title: ui("Could not remove answer"),
         description: err.message,
         variant: "destructive",
       });
@@ -639,11 +654,11 @@ export default function AnswerBankPage() {
   const noteMutation = trpc.answerBank.updateNote.useMutation({
     onSuccess: () => {
       utils.answerBank.list.invalidate();
-      toast({ title: "Note saved" });
+      toast({ title: ui("Note saved") });
     },
     onError: (err) => {
       toast({
-        title: "Could not save note",
+        title: ui("Could not save note"),
         description: err.message,
         variant: "destructive",
       });
@@ -652,11 +667,11 @@ export default function AnswerBankPage() {
   const answerMutation = trpc.answerBank.updateAnswer.useMutation({
     onSuccess: () => {
       utils.answerBank.list.invalidate();
-      toast({ title: "Answer updated" });
+      toast({ title: ui("Answer updated") });
     },
     onError: (err) => {
       toast({
-        title: "Could not update answer",
+        title: ui("Could not update answer"),
         description: err.message,
         variant: "destructive",
       });
@@ -666,11 +681,11 @@ export default function AnswerBankPage() {
     onSuccess: () => {
       utils.answerBank.list.invalidate();
       setAddOpen(false);
-      toast({ title: "Added to your answer bank" });
+      toast({ title: ui("Added to your answer bank") });
     },
     onError: (err) => {
       toast({
-        title: "Could not add answer",
+        title: ui("Could not add answer"),
         description: err.message,
         variant: "destructive",
       });
@@ -747,10 +762,11 @@ export default function AnswerBankPage() {
     <TooltipProvider delayDuration={200}>
       <div className="space-y-6" data-testid="answer-bank-page">
         <div>
-          <h1 className="text-3xl font-bold">Answer bank</h1>
+          <h1 className="text-3xl font-bold">{ui("Answer bank")}</h1>
           <p className="text-muted-foreground">
-            Your strongest practice answers, saved for quick review before
-            interviews.
+            {ui(
+              "Your strongest practice answers, saved for quick review before interviews.",
+            )}
           </p>
         </div>
 
@@ -758,7 +774,7 @@ export default function AnswerBankPage() {
           <div className="relative min-w-[220px] flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search questions, answers, notes…"
+              placeholder={ui("Search questions, answers, notes…")}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               className="pl-9"
@@ -785,9 +801,9 @@ export default function AnswerBankPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">All Interviews</SelectItem>
+              <SelectItem value="ALL">{ui("All Interviews")}</SelectItem>
               {hasManualEntries ? (
-                <SelectItem value="MANUAL">Manual entries</SelectItem>
+                <SelectItem value="MANUAL">{ui("Manual entries")}</SelectItem>
               ) : null}
               {interviewOptions.map(([id, title]) => (
                 <SelectItem key={id} value={id}>
@@ -804,7 +820,7 @@ export default function AnswerBankPage() {
             disabled={entries.length === 0}
           >
             <Download className="mr-2 h-4 w-4" />
-            Export
+            {ui("Export")}
           </Button>
 
           <Tooltip>
@@ -815,7 +831,7 @@ export default function AnswerBankPage() {
                 size="icon"
                 onClick={toggleExpandAll}
                 disabled={entries.length === 0}
-                aria-label={allExpanded ? "Collapse all" : "Expand all"}
+                aria-label={allExpanded ? ui("Collapse all") : ui("Expand all")}
               >
                 {allExpanded ? (
                   <CollapseAllIcon className="h-4 w-4" />
@@ -825,12 +841,12 @@ export default function AnswerBankPage() {
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">
-              {allExpanded ? "Collapse all" : "Expand all"}
+              {allExpanded ? ui("Collapse all") : ui("Expand all")}
             </TooltipContent>
           </Tooltip>
           <Button type="button" onClick={() => setAddOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Add answer
+            {ui("Add answer")}
           </Button>
         </div>
 
@@ -843,27 +859,32 @@ export default function AnswerBankPage() {
         ) : entries.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center gap-3 py-14 text-center">
-              <Sparkles className="h-10 w-10 text-muted-foreground/60" aria-hidden />
+              <Sparkles
+                className="h-10 w-10 text-muted-foreground/60"
+                aria-hidden
+              />
               <div>
                 <p className="font-medium">
                   {isFiltering
-                    ? "No saved answers match your filters."
-                    : "No saved answers yet."}
+                    ? ui("No saved answers match your filters.")
+                    : ui("No saved answers yet.")}
                 </p>
                 <p className="mt-1 max-w-md text-sm text-muted-foreground">
                   {isFiltering
-                    ? "Try adjusting your search or filters."
-                    : "During practice, tap the bookmark icon on coach feedback (or in a practice report) to save your strongest answers here."}
+                    ? ui("Try adjusting your search or filters.")
+                    : ui(
+                        "During practice, tap the bookmark icon on coach feedback (or in a practice report) to save your strongest answers here.",
+                      )}
                 </p>
               </div>
               {!isFiltering ? (
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Button asChild>
-                    <Link href="/practices">Go to practices</Link>
+                    <Link href="/practices">{ui("Go to practices")}</Link>
                   </Button>
                   <Button variant="outline" onClick={() => setAddOpen(true)}>
                     <Plus className="mr-2 h-4 w-4" />
-                    Add answer manually
+                    {ui("Add answer manually")}
                   </Button>
                 </div>
               ) : null}
@@ -908,14 +929,15 @@ export default function AnswerBankPage() {
         >
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Remove saved answer?</AlertDialogTitle>
+              <AlertDialogTitle>{ui("Remove saved answer?")}</AlertDialogTitle>
               <AlertDialogDescription>
-                This removes the answer from your answer bank. The original
-                practice attempt is not affected.
+                {ui(
+                  "This removes the answer from your answer bank. The original practice attempt is not affected.",
+                )}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Keep it</AlertDialogCancel>
+              <AlertDialogCancel>{ui("Keep it")}</AlertDialogCancel>
               <AlertDialogAction
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 onClick={() => {
@@ -925,7 +947,7 @@ export default function AnswerBankPage() {
                   setPendingDelete(null);
                 }}
               >
-                Remove
+                {ui("Remove")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

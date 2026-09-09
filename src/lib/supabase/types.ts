@@ -21,6 +21,7 @@ export type Database = {
         Row: {
           id: string;
           email: string;
+          phone?: string | null;
           name: string | null;
           avatar: string | null;
           organization: string | null;
@@ -31,6 +32,7 @@ export type Database = {
         Insert: {
           id: string;
           email: string;
+          phone?: string | null;
           name?: string | null;
           avatar?: string | null;
           organization?: string | null;
@@ -41,6 +43,7 @@ export type Database = {
         Update: {
           id?: string;
           email?: string;
+          phone?: string | null;
           name?: string | null;
           avatar?: string | null;
           organization?: string | null;
@@ -211,6 +214,9 @@ export type Database = {
       };
       questions: {
         Row: {
+          candidateId?: string | null;
+          resumeEvidence?: string | null;
+
           id: string;
           interviewId: string;
           order: number;
@@ -233,6 +239,9 @@ export type Database = {
           updatedAt: string;
         };
         Insert: {
+          candidateId?: string | null;
+          resumeEvidence?: string | null;
+
           id?: string;
           interviewId: string;
           order: number;
@@ -255,6 +264,9 @@ export type Database = {
           updatedAt?: string;
         };
         Update: {
+          candidateId?: string | null;
+          resumeEvidence?: string | null;
+
           id?: string;
           interviewId?: string;
           order?: number;
@@ -280,6 +292,10 @@ export type Database = {
       };
       sessions: {
         Row: {
+          candidateId?: string | null;
+          participantUserId?: string | null;
+          roleTitle?: string | null;
+
           id: string;
           interviewId: string;
           participantEmail: string | null;
@@ -305,6 +321,10 @@ export type Database = {
           updatedAt: string;
         };
         Insert: {
+          candidateId?: string | null;
+          participantUserId?: string | null;
+          roleTitle?: string | null;
+
           id?: string;
           interviewId: string;
           participantEmail?: string | null;
@@ -330,6 +350,10 @@ export type Database = {
           updatedAt?: string;
         };
         Update: {
+          candidateId?: string | null;
+          participantUserId?: string | null;
+          roleTitle?: string | null;
+
           id?: string;
           interviewId?: string;
           participantEmail?: string | null;
@@ -722,13 +746,7 @@ export type Database = {
         | "RESEARCH";
       SessionStatus: "IN_PROGRESS" | "COMPLETED" | "ABANDONED";
       MessageRole: "USER" | "ASSISTANT" | "SYSTEM";
-      ContentType:
-        | "TEXT"
-        | "AUDIO"
-        | "FILE"
-        | "IMAGE"
-        | "WHITEBOARD"
-        | "CODE";
+      ContentType: "TEXT" | "AUDIO" | "FILE" | "IMAGE" | "WHITEBOARD" | "CODE";
     };
     CompositeTypes: Record<string, never>;
   };

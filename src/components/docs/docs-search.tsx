@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Search, X } from "lucide-react";
 import Link from "next/link";
@@ -19,16 +21,22 @@ function Highlight({ text, query }: { text: string; query: string }) {
     <>
       {parts.map((part, i) =>
         part.toLowerCase() === query.toLowerCase() ? (
-          <mark key={i} className="bg-mk-terracotta/20 text-inherit rounded-sm px-0.5">{part}</mark>
+          <mark
+            key={i}
+            className="bg-mk-terracotta/20 text-inherit rounded-sm px-0.5"
+          >
+            {part}
+          </mark>
         ) : (
           part
-        )
+        ),
       )}
     </>
   );
 }
 
 export function DocsSearch({ compact }: DocsSearchProps) {
+  const ui = useUiTranslation();
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -46,7 +54,7 @@ export function DocsSearch({ compact }: DocsSearchProps) {
 
   const results = useMemo<SearchResult[]>(
     () => (query.length >= 2 ? searchArticles(query) : []),
-    [query]
+    [query],
   );
 
   const showResults = focused && query.length >= 2;
@@ -57,7 +65,7 @@ export function DocsSearch({ compact }: DocsSearchProps) {
         <Search
           className={cn(
             "absolute left-3.5 top-1/2 -translate-y-1/2 text-mk-text-muted",
-            compact ? "h-4 w-4" : "h-5 w-5"
+            compact ? "h-4 w-4" : "h-5 w-5",
           )}
         />
         <input
@@ -72,7 +80,7 @@ export function DocsSearch({ compact }: DocsSearchProps) {
             "w-full bg-white border border-mk-border text-sm text-mk-text placeholder:text-mk-text-muted focus:outline-none focus:border-mk-terracotta/50 focus:ring-2 focus:ring-mk-terracotta/10 transition-all",
             compact
               ? "pl-10 pr-16 py-2 rounded-lg"
-              : "pl-12 pr-10 py-3.5 rounded-xl"
+              : "pl-12 pr-10 py-3.5 rounded-xl",
           )}
         />
         {query ? (
@@ -93,7 +101,9 @@ export function DocsSearch({ compact }: DocsSearchProps) {
         <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-mk-border rounded-xl shadow-lg overflow-hidden z-50 max-h-96 overflow-y-auto code-scrollbar">
           {results.length === 0 ? (
             <div className="px-5 py-8 text-center text-sm text-mk-text-muted">
-              No articles found for &quot;{query}&quot;
+              {ui('No articles found for "')}
+              {query}
+              {ui('"')}
             </div>
           ) : (
             results.map(({ article, snippet }) => {

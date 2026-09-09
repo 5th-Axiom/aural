@@ -1,5 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 
 import { useAppLocale } from "@/components/app-locale-provider";
 import { useProject } from "@/components/project-provider";
@@ -83,6 +86,7 @@ type CandidateRow = {
   inviteToken: string | null;
   session: any;
   createdAt: string;
+  roleTitle: string;
   interviewTitle: string;
   interviewId: string;
 };
@@ -93,6 +97,7 @@ type WalkInRow = {
   email: string | null;
   name: string | null;
   session: any;
+  roleTitle: string;
   interviewTitle: string;
   interviewId: string;
 };
@@ -100,6 +105,7 @@ type WalkInRow = {
 type UnifiedRow = CandidateRow | WalkInRow;
 
 type SortKey =
+  | "roleTitle"
   | "interview"
   | "name"
   | "email"
@@ -136,6 +142,12 @@ type ColumnDef = {
 
 const COLUMNS: ColumnDef[] = [
   {
+    key: "roleTitle",
+    label: "岗位",
+    sortKey: "roleTitle",
+    defaultVisible: true,
+  },
+  {
     key: "interview",
     label: "Interview",
     sortKey: "interview",
@@ -143,8 +155,8 @@ const COLUMNS: ColumnDef[] = [
     alwaysVisible: true,
   },
   { key: "name", label: "Name", sortKey: "name", defaultVisible: true },
-  { key: "email", label: "Email", sortKey: "email", defaultVisible: true },
-  { key: "phone", label: "Phone", sortKey: "phone", defaultVisible: false },
+  { key: "email", label: "Email", sortKey: "email", defaultVisible: false },
+  { key: "phone", label: "Phone", sortKey: "phone", defaultVisible: true },
   { key: "gender", label: "Gender", sortKey: "gender", defaultVisible: false },
   {
     key: "birthday",
@@ -292,6 +304,8 @@ function getSessionScore(row: UnifiedRow): number | null {
 function getSortValue(row: UnifiedRow, key: SortKey): string | number {
   const c = getCandidateField(row);
   switch (key) {
+    case "roleTitle":
+      return row.roleTitle;
     case "interview":
       return row.interviewTitle.toLowerCase();
     case "name":
@@ -379,6 +393,7 @@ function SortableHead({
 /* ------------------------------------------------------------------ */
 
 export default function CandidatesPage() {
+  const ui = useUiTranslation();
   const { locale } = useAppLocale();
   const { toast } = useToast();
   const utils = trpc.useUtils();
@@ -386,6 +401,7 @@ export default function CandidatesPage() {
   const projectId = currentProject?.id;
   const isZh = locale === "zh";
   const columnLabel: Record<string, string> = {
+    roleTitle: isZh ? "岗位" : "Position",
     interview: isZh ? "面试" : "Interview",
     name: isZh ? "姓名" : "Name",
     email: isZh ? "邮箱" : "Email",
@@ -449,6 +465,11 @@ export default function CandidatesPage() {
   );
 
   // ── State ──
+  const [roleFilter, setRoleFilter] = useState("");
+  const positions = trpc.interview.positions.useQuery(
+    { projectId: projectId! },
+    { enabled: !!projectId },
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [timeRange, setTimeRange] = useState("ALL");
@@ -541,7 +562,11 @@ export default function CandidatesPage() {
 
   // ── Data ──
   const candidateList = trpc.candidate.listAll.useQuery(
-    { limit: 200, projectId: projectId ?? undefined },
+    {
+      limit: 200,
+      projectId: projectId ?? undefined,
+      roleTitle: roleFilter || undefined,
+    },
     { enabled: !!projectId },
   );
 
@@ -589,6 +614,7 @@ export default function CandidatesPage() {
       inviteToken: c.inviteToken,
       session: c.session,
       createdAt: c.createdAt,
+      roleTitle: c.session?.roleTitle ?? c.interview?.roleTitle ?? "",
       interviewTitle: c.interview?.title ?? "-",
       interviewId: c.interview?.id ?? c.interviewId,
     }),
@@ -601,6 +627,7 @@ export default function CandidatesPage() {
       email: s.participantEmail,
       name: s.participantName,
       session: s,
+      roleTitle: s.roleTitle ?? s.interview?.roleTitle ?? "",
       interviewTitle: s.interview?.title ?? "-",
       interviewId: s.interview?.id ?? s.interviewId,
     }),
@@ -623,6 +650,8 @@ export default function CandidatesPage() {
         (row) =>
           (row.email?.toLowerCase().includes(q) ?? false) ||
           (row.name?.toLowerCase().includes(q) ?? false) ||
+          row.roleTitle.toLowerCase().includes(q) ||
+          (row.session?.participantPhone || "").toLowerCase().includes(q) ||
           row.interviewTitle.toLowerCase().includes(q),
       );
     }
@@ -784,6 +813,9 @@ export default function CandidatesPage() {
       const record: Record<string, string | number | null> = {};
       for (const col of visibleCols) {
         switch (col.key) {
+          case "roleTitle":
+            record[col.label] = row.roleTitle;
+            break;
           case "interview":
             record[col.label] = row.interviewTitle;
             break;
@@ -866,6 +898,8 @@ export default function CandidatesPage() {
     const hasSession = !!session && status !== "Not Started";
 
     switch (key) {
+      case "roleTitle":
+        return row.roleTitle || (isZh ? "未设置" : "Not set");
       case "name":
         return (
           <span className="font-medium">
@@ -879,7 +913,7 @@ export default function CandidatesPage() {
       case "phone":
         return (
           <span className="whitespace-nowrap text-muted-foreground">
-            {c?.phone || "-"}
+            {c?.phone || session?.participantPhone || "-"}
           </span>
         );
       case "gender":
@@ -1000,23 +1034,39 @@ export default function CandidatesPage() {
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">{isZh ? "会话" : "Sessions"}</h1>
+        <h1 className="text-3xl font-bold">{isZh ? "会话" : ui("Sessions")}</h1>
         <p className="text-muted-foreground">
           {isZh
             ? "查看所有面试中的会话"
-            : "All sessions across your interviews"}
+            : ui("All sessions across your interviews")}
         </p>
       </div>
 
       {/* Filters toolbar */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <select
+          aria-label="按岗位筛选"
+          className="h-9 w-full sm:w-44 rounded-md border bg-background px-3"
+          value={roleFilter}
+          onChange={(e) => {
+            setRoleFilter(e.target.value);
+            setPage(0);
+          }}
+        >
+          <option value="">{isZh ? "全部岗位" : ui("All positions")}</option>
+          {(positions.data || []).map((role) => (
+            <option key={role} value={role}>
+              {role}
+            </option>
+          ))}
+        </select>
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={
               isZh
-                ? "按面试、姓名或邮箱搜索..."
-                : "Search by interview, name, or email..."
+                ? "按岗位、面试、姓名或手机号搜索..."
+                : ui("Search by interview, name, or email...")
             }
             value={searchQuery}
             onChange={(e) => {
@@ -1060,16 +1110,16 @@ export default function CandidatesPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ALL">
-              {isZh ? "全部状态" : "All Status"}
+              {isZh ? "全部状态" : ui("All Status")}
             </SelectItem>
             <SelectItem value="COMPLETED">
-              {isZh ? "已完成" : "Completed"}
+              {isZh ? "已完成" : ui("Completed")}
             </SelectItem>
             <SelectItem value="IN_PROGRESS">
-              {isZh ? "进行中" : "In Progress"}
+              {isZh ? "进行中" : ui("In Progress")}
             </SelectItem>
             <SelectItem value="NOT_STARTED">
-              {isZh ? "未开始" : "Not Started"}
+              {isZh ? "未开始" : ui("Not Started")}
             </SelectItem>
           </SelectContent>
         </Select>
@@ -1080,7 +1130,7 @@ export default function CandidatesPage() {
           disabled={processedRows.length === 0}
         >
           <Download className="mr-2 h-4 w-4" />
-          {isZh ? "导出" : "Export"}
+          {isZh ? "导出" : ui("Export")}
         </Button>
 
         {selectedIds.size > 0 && (
@@ -1101,7 +1151,7 @@ export default function CandidatesPage() {
             </Button>
             <Button variant="outline" onClick={() => setSelectedIds(new Set())}>
               <X className="mr-1 h-4 w-4" />
-              {isZh ? "取消" : "Cancel"}
+              {isZh ? "取消" : ui("Cancel")}
             </Button>
           </>
         )}
@@ -1118,10 +1168,10 @@ export default function CandidatesPage() {
             {isFiltering
               ? isZh
                 ? "没有符合筛选条件的会话。"
-                : "No sessions match your filters."
+                : ui("No sessions match your filters.")
               : isZh
                 ? "还没有会话。"
-                : "No sessions yet."}
+                : ui("No sessions yet.")}
           </p>
         ) : (
           <>
@@ -1131,7 +1181,7 @@ export default function CandidatesPage() {
                   <TableRow className="hover:bg-transparent">
                     {/* Frozen left: checkbox + interview name */}
                     <TableHead className="sticky left-0 z-20 min-w-[180px] bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         <Checkbox
                           checked={
                             allPageSelected
@@ -1245,7 +1295,7 @@ export default function CandidatesPage() {
                       >
                         {/* Frozen left: checkbox + interview */}
                         <TableCell className="sticky left-0 z-10 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
-                          <div className="flex items-center gap-3">
+                          <div className="flex flex-wrap items-center gap-3">
                             <div onClick={(e) => e.stopPropagation()}>
                               <Checkbox
                                 checked={selectedIds.has(compositeId)}
@@ -1278,7 +1328,9 @@ export default function CandidatesPage() {
                               size="icon"
                               className="h-7 w-7"
                               title={
-                                isZh ? "查看会话详情" : "View session details"
+                                isZh
+                                  ? "查看会话详情"
+                                  : ui("View session details")
                               }
                               onClick={() => handleRowClick(row)}
                             >
@@ -1297,7 +1349,7 @@ export default function CandidatesPage() {
             {processedRows.length > PAGE_SIZE_OPTIONS[0] && (
               <div className="flex items-center justify-between border-t px-4 py-3">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>{isZh ? "每页行数" : "Rows per page"}</span>
+                  <span>{isZh ? "每页行数" : ui("Rows per page")}</span>
                   <select
                     className="rounded border bg-background px-2 py-1 text-sm"
                     value={pageSize}
@@ -1315,7 +1367,7 @@ export default function CandidatesPage() {
                   <span className="ml-2">
                     {safePage * pageSize + 1}–
                     {Math.min((safePage + 1) * pageSize, processedRows.length)}{" "}
-                    {isZh ? " / 共 " : " of "} {processedRows.length}
+                    {isZh ? " / 共 " : ui(" of ")} {processedRows.length}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1352,7 +1404,7 @@ export default function CandidatesPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {isZh ? "删除会话" : "Delete Sessions"}
+              {isZh ? "删除会话" : ui("Delete Sessions")}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {isZh
@@ -1361,7 +1413,9 @@ export default function CandidatesPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{isZh ? "取消" : "Cancel"}</AlertDialogCancel>
+            <AlertDialogCancel>
+              {isZh ? "取消" : ui("Cancel")}
+            </AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
@@ -1369,7 +1423,7 @@ export default function CandidatesPage() {
                 setConfirmDelete(false);
               }}
             >
-              {isZh ? "删除" : "Delete"}
+              {isZh ? "删除" : ui("Delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

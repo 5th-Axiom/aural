@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { useAppLocale } from "@/components/app-locale-provider";
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc/client";
@@ -32,6 +34,7 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function ProjectSettingsGeneralPage() {
+  const ui = useUiTranslation();
   const { toast } = useToast();
   const { locale } = useAppLocale();
   const router = useRouter();
@@ -83,7 +86,7 @@ export default function ProjectSettingsGeneralPage() {
   if (!currentProject) {
     return (
       <div className="flex items-center justify-center py-20 text-muted-foreground">
-        {isZh ? "尚未选择项目" : "No project selected"}
+        {isZh ? "尚未选择项目" : ui("No project selected")}
       </div>
     );
   }
@@ -93,15 +96,17 @@ export default function ProjectSettingsGeneralPage() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <h2 className="text-xl font-semibold">{isZh ? "通用" : "General"}</h2>
+        <h2 className="text-xl font-semibold">
+          {isZh ? "通用" : ui("General")}
+        </h2>
         <p className="text-sm text-muted-foreground">
-          {isZh ? "管理你的项目设置。" : "Manage your project settings."}
+          {isZh ? "管理你的项目设置。" : ui("Manage your project settings.")}
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>{isZh ? "项目名称" : "Project Name"}</CardTitle>
+          <CardTitle>{isZh ? "项目名称" : ui("Project Name")}</CardTitle>
           <CardDescription>
             {isZh
               ? `你当前的项目名称是“${currentProject.name}”。`
@@ -110,7 +115,7 @@ export default function ProjectSettingsGeneralPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="projectName">{isZh ? "名称" : "Name"}</Label>
+            <Label htmlFor="projectName">{isZh ? "名称" : ui("Name")}</Label>
             <Input
               id="projectName"
               value={name}
@@ -120,7 +125,7 @@ export default function ProjectSettingsGeneralPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="projectDesc">
-              {isZh ? "描述（可选）" : "Description (optional)"}
+              {isZh ? "描述（可选）" : ui("Description (optional)")}
             </Label>
             <Textarea
               id="projectDesc"
@@ -129,7 +134,7 @@ export default function ProjectSettingsGeneralPage() {
               placeholder={
                 isZh
                   ? "简要描述这个项目..."
-                  : "Brief description of this project..."
+                  : ui("Brief description of this project...")
               }
               disabled={!isAdmin}
             />
@@ -154,7 +159,7 @@ export default function ProjectSettingsGeneralPage() {
               {updateMutation.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              {isZh ? "保存" : "Save"}
+              {isZh ? "保存" : ui("Save")}
             </Button>
           )}
         </CardContent>
@@ -164,19 +169,21 @@ export default function ProjectSettingsGeneralPage() {
         <Card className="border-destructive">
           <CardHeader>
             <CardTitle className="text-destructive">
-              {isZh ? "危险区域" : "Danger Zone"}
+              {isZh ? "危险区域" : ui("Danger Zone")}
             </CardTitle>
             <CardDescription>
               {isZh
                 ? "永久删除此项目。项目中的面试将失去项目归属。"
-                : "Permanently delete this project. Interviews will lose their project assignment."}
+                : ui(
+                    "Permanently delete this project. Interviews will lose their project assignment.",
+                  )}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" size="sm">
-                  {isZh ? "删除项目" : "Delete Project"}
+                  {isZh ? "删除项目" : ui("Delete Project")}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -189,12 +196,14 @@ export default function ProjectSettingsGeneralPage() {
                   <AlertDialogDescription>
                     {isZh
                       ? "此操作无法撤销。该项目中的所有面试都将失去项目归属。"
-                      : "This action is irreversible. All interviews in this project will lose their project assignment."}
+                      : ui(
+                          "This action is irreversible. All interviews in this project will lose their project assignment.",
+                        )}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>
-                    {isZh ? "取消" : "Cancel"}
+                    {isZh ? "取消" : ui("Cancel")}
                   </AlertDialogCancel>
                   <AlertDialogAction
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -205,7 +214,7 @@ export default function ProjectSettingsGeneralPage() {
                     {deleteMutation.isPending && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    {isZh ? "永久删除" : "Delete permanently"}
+                    {isZh ? "永久删除" : ui("Delete permanently")}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

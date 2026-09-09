@@ -1,84 +1,59 @@
+import { assertSessionAccess } from "../session-access";
+import { questionsForCandidate } from "@/lib/session-question-scope";
 import { createLogger } from "@/lib/logger";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { filterAccessibleProjectIds, hasProjectAccess, protectedProcedure, publicProcedure, router } from "../trpc";
+import {
+  filterAccessibleProjectIds,
+  hasProjectAccess,
+  protectedProcedure,
+  publicProcedure,
+  router,
+} from "../trpc";
 
 const log = createLogger("router/session");
 
 export const sessionRouter = router({
-  create: publicProcedure
+  create: protectedProcedure
     .input(
       z.object({
         interviewSlug: z.string(),
-        participantName: z.string().optional(),
-        participantEmail: z.string().email().optional(),
+        participantName: z.string().trim().min(1).max(100),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const phone = ctx.user.app_metadata?.phone;
+      if (typeof phone !== "string" || !phone)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "请先使用手机号登录",
+        });
       const { data: interview } = await ctx.supabase
         .from("interviews")
         .select("*, questions(*)")
         .eq("publicSlug", input.interviewSlug)
         .eq("isActive", true)
-        .order("order", { referencedTable: "questions", ascending: true })
         .single();
-
-      if (!interview) {
+      if (!interview)
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Interview not found or inactive",
+          message: "面试不存在或已关闭",
         });
-      }
-
-      // Enforce invite-only access via candidates table
-      if (interview.requireInvite) {
-        const email = input.participantEmail?.trim().toLowerCase();
-        if (!email) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "Email is required for invite-only interviews.",
-          });
-        }
-        const { data: candidate } = await ctx.supabase
-          .from("candidates")
-          .select("id")
-          .eq("interviewId", interview.id)
-          .eq("email", email)
-          .single();
-
-        if (!candidate) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "Your email is not on the invite list for this interview.",
-          });
-        }
-      }
-
-      const questions = (interview.questions ?? []) as { id: string }[];
-
-      const derivedMode = interview.voiceEnabled ? "VOICE" : "CHAT";
-
-      const { data: sessionJson, error } = await ctx.supabase.rpc(
-        "create_interview_session",
+      const { data: session, error } = await ctx.supabase.rpc(
+        "start_phone_interview",
         {
           p_interview_id: interview.id,
-          p_participant_name: input.participantName ?? null,
-          p_participant_email: input.participantEmail ?? null,
-          p_mode_used: derivedMode,
-          p_current_question_id: questions[0]?.id ?? null,
+          p_phone: phone,
+          p_user_id: ctx.user.id,
+          p_name: input.participantName,
         },
       );
-
-      if (error) {
-        log.error("RPC error (create):", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error.message,
-        });
-      }
-
-      const session = sessionJson as { id: string };
-
+      if (error)
+        throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
+      interview.questions = questionsForCandidate(
+        interview.questions || [],
+        session.candidateId,
+      );
       return { sessionId: session.id, interview };
     }),
 
@@ -97,10 +72,15 @@ export const sessionRouter = router({
         .single();
 
       if (!interviewAccess) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Interview not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Interview not found",
+        });
       }
 
-      const project = interviewAccess.project as unknown as { organizationId: string };
+      const project = interviewAccess.project as unknown as {
+        organizationId: string;
+      };
       const { data: membership } = await ctx.supabase
         .from("organization_members")
         .select("role")
@@ -135,7 +115,10 @@ export const sessionRouter = router({
         .single();
 
       if (!interview) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Interview not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Interview not found",
+        });
       }
       if (!interview.publicSlug || !interview.isActive) {
         throw new TRPCError({
@@ -150,11 +133,13 @@ export const sessionRouter = router({
         .eq("id", ctx.user.id)
         .single();
 
-      const questions = (interview.questions ?? []) as { id: string }[];
+      interview.questions = questionsForCandidate(interview.questions ?? []);
+      const questions = interview.questions as { id: string }[];
       const targetQuestionId =
-        input.questionId && questions.some((question) => question.id === input.questionId)
+        input.questionId &&
+        questions.some((question) => question.id === input.questionId)
           ? input.questionId
-          : questions[0]?.id ?? null;
+          : (questions[0]?.id ?? null);
       const derivedMode = interview.voiceEnabled ? "VOICE" : "CHAT";
 
       const { data: sessionJson, error } = await ctx.supabase.rpc(
@@ -170,71 +155,53 @@ export const sessionRouter = router({
 
       if (error) {
         log.error("RPC error (createPreview):", error);
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error.message,
+        });
       }
 
       const session = sessionJson as { id: string };
       return { sessionId: session.id, slug: interview.publicSlug };
     }),
 
-  createFromInvite: publicProcedure
+  createFromInvite: protectedProcedure
     .input(z.object({ inviteToken: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      // Look up candidate + interview via the RPC
+      const phone = ctx.user.app_metadata?.phone;
+      if (typeof phone !== "string" || !phone)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "请先使用手机号登录",
+        });
       const { data: candidate } = await ctx.supabase
         .from("candidates")
         .select("*, interview:interviews(*, questions(*))")
         .eq("inviteToken", input.inviteToken)
-        // The first question is what a new session starts on, so the rows must not arrive unordered.
-        .order("order", { referencedTable: "interviews.questions", ascending: true })
         .single();
-
-      if (!candidate) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Invalid invite link" });
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const interview = candidate.interview as any;
-      if (!interview) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Interview is no longer available" });
-      }
-
-      // If session already exists, return it
-      if (candidate.sessionId) {
-        const { data: existingSession } = await ctx.supabase
-          .from("sessions")
-          .select("*")
-          .eq("id", candidate.sessionId)
-          .single();
-
-        if (existingSession) {
-          return { sessionId: existingSession.id, interview, isExisting: true };
-        }
-      }
-
-      // Sort questions
-      const questions = (interview.questions ?? []) as { id: string; order: number }[];
-      questions.sort((a, b) => a.order - b.order);
-
-      // Create session via RPC (also links it to the candidate)
-      const derivedMode = interview.voiceEnabled ? "VOICE" : "CHAT";
-
-      const { data: sessionJson, error } = await ctx.supabase.rpc(
-        "create_invite_session",
+      if (!candidate?.interview)
+        throw new TRPCError({ code: "NOT_FOUND", message: "邀请链接无效" });
+      const { data: session, error } = await ctx.supabase.rpc(
+        "start_phone_interview",
         {
+          p_interview_id: candidate.interviewId,
+          p_phone: phone,
+          p_user_id: ctx.user.id,
           p_invite_token: input.inviteToken,
-          p_mode_used: derivedMode,
-          p_current_question_id: questions[0]?.id ?? null,
         },
       );
-
-      if (error) {
-        log.error("RPC error (createFromInvite):", error);
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
-      }
-
-      const session = sessionJson as { id: string };
-      return { sessionId: session.id, interview, isExisting: false };
+      if (error)
+        throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
+      const interview = candidate.interview;
+      interview.questions = questionsForCandidate(
+        interview.questions || [],
+        candidate.id,
+      );
+      return {
+        sessionId: session.id,
+        interview,
+        isExisting: !!candidate.sessionId,
+      };
     }),
 
   getById: publicProcedure
@@ -242,9 +209,7 @@ export const sessionRouter = router({
     .query(async ({ ctx, input }) => {
       const { data: session } = await ctx.supabase
         .from("sessions")
-        .select(
-          "*, interview:interviews!inner(*, questions(*)), messages(*)",
-        )
+        .select("*, interview:interviews!inner(*, questions(*)), messages(*)")
         .eq("id", input.id)
         .order("order", {
           referencedTable: "interviews.questions",
@@ -257,6 +222,13 @@ export const sessionRouter = router({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
+      await assertSessionAccess(ctx, input.id);
+      session.interview.questions = questionsForCandidate(
+        session.interview.questions || [],
+        session.candidateId,
+      );
+      session.interview.roleTitle =
+        session.roleTitle ?? session.interview.roleTitle;
       return session;
     }),
 
@@ -273,9 +245,12 @@ export const sessionRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await assertSessionAccess(ctx, input.sessionId);
       const { data: session } = await ctx.supabase
         .from("sessions")
-        .select("id, status, startedAt, lastActivityAt, activitySegments, interviewId")
+        .select(
+          "id, status, startedAt, lastActivityAt, activitySegments, interviewId",
+        )
         .eq("id", input.sessionId)
         .single();
 
@@ -283,10 +258,7 @@ export const sessionRouter = router({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
-      if (
-        session.status === "COMPLETED" ||
-        session.status === "ABANDONED"
-      ) {
+      if (session.status === "COMPLETED" || session.status === "ABANDONED") {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Session is no longer active",
@@ -325,6 +297,7 @@ export const sessionRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await assertSessionAccess(ctx, input.sessionId);
       const { data: session } = await ctx.supabase
         .from("sessions")
         .select("id")
@@ -386,6 +359,7 @@ export const sessionRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await assertSessionAccess(ctx, input.sessionId);
       await ctx.supabase
         .from("messages")
         .delete()
@@ -406,6 +380,7 @@ export const sessionRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await assertSessionAccess(ctx, input.sessionId);
       const { data: session } = await ctx.supabase
         .from("sessions")
         .select("id")
@@ -465,6 +440,7 @@ export const sessionRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await assertSessionAccess(ctx, input.sessionId);
       await ctx.supabase
         .from("messages")
         .delete()
@@ -483,6 +459,7 @@ export const sessionRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await assertSessionAccess(ctx, input.sessionId);
       await ctx.supabase
         .from("sessions")
         .update({
@@ -496,6 +473,7 @@ export const sessionRouter = router({
   complete: publicProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      await assertSessionAccess(ctx, input.id);
       const { data: session } = await ctx.supabase
         .from("sessions")
         .select("id, startedAt")
@@ -538,13 +516,22 @@ export const sessionRouter = router({
       z.object({
         sessionId: z.string(),
         violation: z.object({
-          type: z.enum(["page_departure", "paste", "multi_screen", "tab_switch", "focus_lost", "copy", "cut"]),
+          type: z.enum([
+            "page_departure",
+            "paste",
+            "multi_screen",
+            "tab_switch",
+            "focus_lost",
+            "copy",
+            "cut",
+          ]),
           timestamp: z.number(),
           detail: z.string().optional(),
         }),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await assertSessionAccess(ctx, input.sessionId);
       const { data: session } = await ctx.supabase
         .from("sessions")
         .select("antiCheatingLog")
@@ -552,10 +539,15 @@ export const sessionRouter = router({
         .single();
 
       if (!session) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Session not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Session not found",
+        });
       }
 
-      const log = Array.isArray(session.antiCheatingLog) ? session.antiCheatingLog : [];
+      const log = Array.isArray(session.antiCheatingLog)
+        ? session.antiCheatingLog
+        : [];
       log.push(input.violation);
 
       await ctx.supabase
@@ -569,9 +561,8 @@ export const sessionRouter = router({
   listAll: protectedProcedure
     .input(
       z.object({
-        status: z
-          .enum(["IN_PROGRESS", "COMPLETED", "ABANDONED"])
-          .optional(),
+        status: z.enum(["IN_PROGRESS", "COMPLETED", "ABANDONED"]).optional(),
+        roleTitle: z.string().trim().max(100).optional(),
         limit: z.number().min(1).max(100).default(50),
       }),
     )
@@ -593,7 +584,11 @@ export const sessionRouter = router({
         .in("organizationId", orgIds);
 
       const allProjIds = (projects ?? []).map((p: { id: string }) => p.id);
-      const projectIds = await filterAccessibleProjectIds(ctx.supabase, allProjIds, ctx.user.id);
+      const projectIds = await filterAccessibleProjectIds(
+        ctx.supabase,
+        allProjIds,
+        ctx.user.id,
+      );
       if (projectIds.length === 0) return { sessions: [] };
 
       const { data: userInterviews } = await ctx.supabase
@@ -601,7 +596,9 @@ export const sessionRouter = router({
         .select("id")
         .in("projectId", projectIds);
 
-      const interviewIds = (userInterviews ?? []).map((i: { id: string }) => i.id);
+      const interviewIds = (userInterviews ?? []).map(
+        (i: { id: string }) => i.id,
+      );
       if (interviewIds.length === 0) return { sessions: [] };
 
       let query = ctx.supabase
@@ -613,6 +610,7 @@ export const sessionRouter = router({
         .order("createdAt", { ascending: false })
         .limit(input.limit);
 
+      if (input.roleTitle) query = query.eq("roleTitle", input.roleTitle);
       if (input.status) {
         query = query.eq("status", input.status);
       }
@@ -633,9 +631,7 @@ export const sessionRouter = router({
     .input(
       z.object({
         interviewId: z.string(),
-        status: z
-          .enum(["IN_PROGRESS", "COMPLETED", "ABANDONED"])
-          .optional(),
+        status: z.enum(["IN_PROGRESS", "COMPLETED", "ABANDONED"]).optional(),
         limit: z.number().min(1).max(100).default(20),
         cursor: z.string().optional(),
       }),
@@ -651,7 +647,9 @@ export const sessionRouter = router({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
-      const project = interview.project as unknown as { organizationId: string };
+      const project = interview.project as unknown as {
+        organizationId: string;
+      };
       const { data: membership } = await ctx.supabase
         .from("organization_members")
         .select("role")
@@ -660,12 +658,22 @@ export const sessionRouter = router({
         .single();
 
       if (!membership) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You are not a member of this organization" });
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You are not a member of this organization",
+        });
       }
 
-      const projAccess = await hasProjectAccess(ctx.supabase, interview.projectId, ctx.user.id);
+      const projAccess = await hasProjectAccess(
+        ctx.supabase,
+        interview.projectId,
+        ctx.user.id,
+      );
       if (!projAccess) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You do not have access to this project" });
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have access to this project",
+        });
       }
 
       const limit = input.limit;
@@ -718,6 +726,7 @@ export const sessionRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await assertSessionAccess(ctx, input.sessionId);
       const updateData: Record<string, unknown> = {};
       if (input.audioRecordingUrl) {
         updateData.audioRecordingUrl = input.audioRecordingUrl;
@@ -753,7 +762,9 @@ export const sessionRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { data: sessions } = await ctx.supabase
         .from("sessions")
-        .select("id, interview:interviews!inner(projectId, project:projects!inner(organizationId))")
+        .select(
+          "id, interview:interviews!inner(projectId, project:projects!inner(organizationId))",
+        )
         .in("id", input.ids);
 
       await Promise.all(
@@ -780,14 +791,18 @@ export const sessionRouter = router({
             });
           }
 
-          const projAccess = await hasProjectAccess(ctx.supabase, interviewData.projectId, ctx.user.id);
+          const projAccess = await hasProjectAccess(
+            ctx.supabase,
+            interviewData.projectId,
+            ctx.user.id,
+          );
           if (!projAccess) {
             throw new TRPCError({
               code: "FORBIDDEN",
               message: "Not authorized to delete these sessions",
             });
           }
-        })
+        }),
       );
 
       await ctx.supabase.from("sessions").delete().in("id", input.ids);

@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { Button } from "@/components/ui/button";
 import { ChatComposer } from "@/components/ui/chat-composer";
 import { useToast } from "@/hooks/use-toast";
@@ -35,6 +37,7 @@ export function PrepFollowUp({
   maxTurns,
   onTurnSaved,
 }: Props) {
+  const ui = useUiTranslation();
   const { toast } = useToast();
   const [activePrompt, setActivePrompt] = useState("");
   const [draft, setDraft] = useState("");
@@ -43,7 +46,8 @@ export function PrepFollowUp({
   // Local snapshot of turns (kept in sync with `existingTurns`, but updated
   // optimistically after a successful submit so the UI stays consistent
   // before the parent's bundle refetch propagates back down).
-  const [localTurns, setLocalTurns] = useState<PrepFollowUpTurn[]>(existingTurns);
+  const [localTurns, setLocalTurns] =
+    useState<PrepFollowUpTurn[]>(existingTurns);
 
   useEffect(() => {
     setLocalTurns((prev) =>
@@ -66,7 +70,8 @@ export function PrepFollowUp({
   const exhausted = completedTurns >= maxTurns;
 
   const submit = async () => {
-    if (!attemptId || !activePrompt || draft.trim().length < 4 || submitting) return;
+    if (!attemptId || !activePrompt || draft.trim().length < 4 || submitting)
+      return;
     setSubmitting(true);
     setStreaming("");
     try {
@@ -112,7 +117,7 @@ export function PrepFollowUp({
     } catch (err) {
       const message = err instanceof Error ? err.message : "Follow-up failed";
       toast({
-        title: "Follow-up failed",
+        title: ui("Follow-up failed"),
         description: message,
         variant: "destructive",
       });
@@ -126,10 +131,12 @@ export function PrepFollowUp({
       <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
         <div className="flex items-center gap-2 text-sm font-medium">
           <MessageSquareText className="h-4 w-4 text-primary" />
-          Coaching follow-up
+          {ui("Coaching follow-up")}
         </div>
         <span className="text-xs text-muted-foreground">
-          {completedTurns}/{maxTurns} turn{maxTurns === 1 ? "" : "s"}
+          {completedTurns}/{maxTurns}
+          {ui("turn")}
+          {maxTurns === 1 ? "" : "s"}
         </span>
       </div>
 
@@ -137,7 +144,8 @@ export function PrepFollowUp({
         {localTurns.map((turn, idx) => (
           <div key={idx} className="space-y-3 rounded-md bg-muted/40 p-3">
             <div className="text-xs uppercase tracking-wide text-muted-foreground">
-              Turn {idx + 1}
+              {ui("Turn")}
+              {idx + 1}
             </div>
             <div className="text-sm font-medium">{turn.prompt}</div>
             <div className="rounded-md bg-background p-2 text-sm">
@@ -158,7 +166,7 @@ export function PrepFollowUp({
               {turn.refinement.stillMissing.length > 0 ? (
                 <div>
                   <div className="mt-2 text-xs font-medium text-muted-foreground">
-                    Still missing
+                    {ui("Still missing")}
                   </div>
                   <ul className="ml-6 list-disc text-muted-foreground">
                     {turn.refinement.stillMissing.map((s) => (
@@ -173,7 +181,7 @@ export function PrepFollowUp({
 
         {exhausted ? (
           <p className="text-sm text-muted-foreground">
-            Follow-up coaching complete for this question.
+            {ui("Follow-up coaching complete for this question.")}
           </p>
         ) : activePrompt ? (
           <div className="space-y-3">
@@ -188,7 +196,7 @@ export function PrepFollowUp({
               isGenerating={submitting}
               submitDisabled={draft.trim().length < 4}
               minLength={4}
-              placeholder="Your answer to the follow-up..."
+              placeholder={ui("Your answer to the follow-up...")}
             />
             {streaming ? (
               <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-md bg-muted/40 p-3 text-xs text-muted-foreground">
@@ -204,13 +212,13 @@ export function PrepFollowUp({
                   setActivePrompt("");
                 }}
               >
-                Skip
+                {ui("Skip")}
               </Button>
             </div>
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">
-            No more follow-ups for this question.
+            {ui("No more follow-ups for this question.")}
           </p>
         )}
       </div>

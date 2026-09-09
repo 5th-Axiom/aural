@@ -1,3 +1,4 @@
+import { questionsForCandidate } from "@/lib/session-question-scope";
 import { svgDataUrlToPng } from "@/lib/ai/convert-svg";
 import { extractJson } from "@/lib/ai/extract-json";
 import { createLogger } from "@/lib/logger";
@@ -21,10 +22,13 @@ export async function POST(req: Request) {
     const { data: interviewSession } = await supabaseAdmin
       .from("sessions")
       .select(
-        `*, interview:interviews!inner(title, userId, projectId, objective, language, assessmentCriteria, questions(text, order, type)), messages(*)`,
+        `*, interview:interviews!inner(title, userId, projectId, objective, language, assessmentCriteria, questions(text, order, type, candidateId)), messages(*)`,
       )
       .eq("id", sessionId)
-      .order("order", { referencedTable: "interviews.questions", ascending: true })
+      .order("order", {
+        referencedTable: "interviews.questions",
+        ascending: true,
+      })
       .order("timestamp", { referencedTable: "messages", ascending: true })
       .single();
 
@@ -45,6 +49,10 @@ export async function POST(req: Request) {
       questions: { text: string; order: number; type?: string }[];
     };
 
+    interview.questions = questionsForCandidate(
+      interview.questions,
+      interviewSession.candidateId,
+    );
     const msgs = (interviewSession.messages ?? []) as {
       contentType: string;
       whiteboardData: Record<string, unknown> | null;

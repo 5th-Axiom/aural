@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import confetti from "canvas-confetti";
 import { PartyPopper } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -52,6 +54,7 @@ function fireConfetti() {
 }
 
 export function TourCelebration() {
+  const ui = useUiTranslation();
   const tour = useTourSafe();
   const [mounted, setMounted] = useState(false);
   const firedRef = useRef(false);
@@ -81,18 +84,20 @@ export function TourCelebration() {
           </div>
 
           <h2 className="text-xl font-bold text-gray-900">
-            Congratulations!
+            {ui("Congratulations!")}
           </h2>
 
           <p className="text-sm text-gray-600 leading-relaxed max-w-[280px]">
-            You&apos;ve created your first interview! Open the copied invite link to experience it yourself, then share it with candidates.
+            {ui(
+              "You've created your first interview! Open the copied invite link to experience it yourself, then share it with candidates.",
+            )}
           </p>
 
           <button
             onClick={handleDismiss}
             className="mt-2 w-full inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 transition-colors shadow-sm"
           >
-            Start exploring
+            {ui("Start exploring")}
           </button>
         </div>
       </div>

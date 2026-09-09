@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { useAppLocale } from "@/components/app-locale-provider";
 import { useOrg } from "@/components/org-provider";
 import { Badge } from "@/components/ui/badge";
@@ -7,33 +9,33 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc/client";
 import {
-    ChevronLeft,
-    ChevronRight,
-    Clock,
-    ExternalLink,
-    FileText,
-    MessageSquare,
-    Users,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  ExternalLink,
+  FileText,
+  MessageSquare,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import {
-    Bar,
-    BarChart,
-    ResponsiveContainer,
-    Tooltip,
-    XAxis,
-    YAxis,
+  Bar,
+  BarChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from "recharts";
 
 type PeriodValue = "last7" | "last30" | "last90" | "thisMonth";
@@ -104,6 +106,7 @@ function UsageRing({
   totalSeconds?: number;
   hideProgress?: boolean;
 }) {
+  const ui = useUiTranslation();
   const { locale } = useAppLocale();
   const isZh = locale === "zh";
   const isUnlimited = limit === null || hideProgress;
@@ -170,7 +173,7 @@ function UsageRing({
                 {limit === null
                   ? isZh
                     ? "无限制"
-                    : "No limit"
+                    : ui("No limit")
                   : isZh
                     ? `已使用 ${pct.toFixed(1)}%`
                     : `${pct.toFixed(1)}% used`}
@@ -182,14 +185,14 @@ function UsageRing({
                       variant="destructive"
                       className="text-[10px] px-1.5 py-0"
                     >
-                      {isZh ? "已达上限" : "Limit reached"}
+                      {isZh ? "已达上限" : ui("Limit reached")}
                     </Badge>
                   ) : isHigh ? (
                     <Badge
                       variant="secondary"
                       className="text-[10px] px-1.5 py-0 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400"
                     >
-                      {isZh ? "接近上限" : "Approaching limit"}
+                      {isZh ? "接近上限" : ui("Approaching limit")}
                     </Badge>
                   ) : null}
                 </span>
@@ -243,6 +246,7 @@ function UsageDetailSection({
   yLabel: string;
   children?: React.ReactNode;
 }) {
+  const ui = useUiTranslation();
   return (
     <Card>
       <CardContent className="grid gap-6 pt-6 md:grid-cols-[2fr_3fr]">
@@ -258,7 +262,7 @@ function UsageDetailSection({
           {infoLinks && infoLinks.length > 0 && (
             <div className="mt-6">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                More Information
+                {ui("More Information")}
               </p>
               <div className="mt-2 space-y-1.5">
                 {infoLinks.map((link) => (
@@ -494,6 +498,7 @@ function CollapsibleDetailTable<T extends { id: string }>({
 /* ───────────────────────── Main page ───────────────────────── */
 
 export default function UsagePage() {
+  const ui = useUiTranslation();
   const { locale } = useAppLocale();
   const { currentOrg } = useOrg();
   const isZh = locale === "zh";
@@ -637,11 +642,11 @@ export default function UsagePage() {
   return (
     <div className="mx-auto max-w-5xl space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">Usage</h1>
+        <h1 className="text-2xl font-bold">{ui("Usage")}</h1>
         <p className="text-muted-foreground">
           {isZh
             ? "查看组织的资源使用统计"
-            : "View your organization's resource usage statistics"}
+            : ui("View your organization's resource usage statistics")}
         </p>
       </div>
 
@@ -669,7 +674,7 @@ export default function UsagePage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">
-              {isZh ? "全部项目" : "All projects"}
+              {isZh ? "全部项目" : ui("All projects")}
             </SelectItem>
             {(projects ?? []).map((p) => (
               <SelectItem key={p.id} value={p.id}>
@@ -691,7 +696,9 @@ export default function UsagePage() {
       <Separator />
 
       <div>
-        <h2 className="text-lg font-semibold">{isZh ? "使用概览" : "Usage Overview"}</h2>
+        <h2 className="text-lg font-semibold">
+          {isZh ? "使用概览" : ui("Usage Overview")}
+        </h2>
       </div>
 
       {/* Usage Cards */}
@@ -706,14 +713,14 @@ export default function UsagePage() {
           <UsageRing
             used={data.templates.used}
             limit={null}
-            label={isZh ? "面试模板" : "Interview Templates"}
+            label={isZh ? "面试模板" : ui("Interview Templates")}
             icon={FileText}
             hideProgress
           />
           <UsageRing
             used={Math.round((data.sessionTime.usedSeconds / 3600) * 10) / 10}
             limit={null}
-            label={isZh ? "会话时长" : "Session Time"}
+            label={isZh ? "会话时长" : ui("Session Time")}
             icon={Clock}
             format="hours"
             totalSeconds={data.sessionTime.usedSeconds}
@@ -722,7 +729,7 @@ export default function UsagePage() {
           <UsageRing
             used={data.seats.used}
             limit={null}
-            label={isZh ? "席位" : "Seats"}
+            label={isZh ? "席位" : ui("Seats")}
             icon={Users}
             hideProgress
           />
@@ -741,7 +748,7 @@ export default function UsagePage() {
       ) : data?.daily ? (
         <div className="space-y-8">
           <UsageDetailSection
-            title={isZh ? "会话时长" : "Session Time"}
+            title={isZh ? "会话时长" : ui("Session Time")}
             description={
               isZh
                 ? "会话时长会统计组织内所有面试会话的总持续时间，包括实时和异步会话。"
@@ -760,7 +767,7 @@ export default function UsagePage() {
             yLabel={isZh ? "分钟" : "min"}
           >
             <CollapsibleDetailTable
-              title={isZh ? "会话记录" : "Session History"}
+              title={isZh ? "会话记录" : ui("Session History")}
               subtitle={
                 isZh
                   ? "所选时段内的面试会话"
@@ -769,7 +776,9 @@ export default function UsagePage() {
               emptyMessage={
                 isZh
                   ? "暂无会话记录。面试开始后，这里会显示会话数据。"
-                  : "No sessions recorded yet. Sessions will appear here as interviews are conducted."
+                  : ui(
+                      "No sessions recorded yet. Sessions will appear here as interviews are conducted.",
+                    )
               }
               rows={sessionTxns}
               columns={sessionColumns}
@@ -778,7 +787,7 @@ export default function UsagePage() {
           </UsageDetailSection>
 
           <UsageDetailSection
-            title={isZh ? "面试模板" : "Interview Templates"}
+            title={isZh ? "面试模板" : ui("Interview Templates")}
             description={
               isZh
                 ? "面试模板用于定义面试结构、题目和配置。每个模板都可以在多场会话中复用。"
@@ -795,7 +804,7 @@ export default function UsagePage() {
             yLabel={isZh ? "个模板" : "templates"}
           >
             <CollapsibleDetailTable
-              title={isZh ? "模板记录" : "Template History"}
+              title={isZh ? "模板记录" : ui("Template History")}
               subtitle={
                 isZh
                   ? "所选时段内创建的面试模板"
@@ -804,7 +813,9 @@ export default function UsagePage() {
               emptyMessage={
                 isZh
                   ? "暂无模板。创建新面试后，这里会显示模板记录。"
-                  : "No templates created yet. Templates will appear here as you create new interviews."
+                  : ui(
+                      "No templates created yet. Templates will appear here as you create new interviews.",
+                    )
               }
               rows={templateTxns}
               columns={templateColumns}

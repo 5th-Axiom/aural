@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { useAppLocale } from "@/components/app-locale-provider";
 import { useOrg } from "@/components/org-provider";
 import { useProject } from "@/components/project-provider";
@@ -80,6 +82,7 @@ const TOOLTIP_STYLE = {
 /* ------------------------------------------------------------------ */
 
 export default function DashboardPage() {
+  const ui = useUiTranslation();
   const router = useRouter();
   const { currentOrg, isLoading: orgLoading } = useOrg();
   const { currentProject, isLoading: projectLoading } = useProject();
@@ -341,8 +344,8 @@ export default function DashboardPage() {
                     <p className="font-medium">{interview.title}</p>
                     <p className="text-sm text-muted-foreground">
                       {interview._count.questions}{" "}
-                      {t("dashboard.questions").toLowerCase()} &middot;{" "}
-                      {interview._count.sessions}{" "}
+                      {t("dashboard.questions").toLowerCase()}
+                      {ui("·")} {interview._count.sessions}{" "}
                       {t("sidebar.sessions").toLowerCase()}
                     </p>
                   </div>
@@ -434,6 +437,7 @@ function DailyChart({
   yLabel: string;
   loading: boolean;
 }) {
+  const ui = useUiTranslation();
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -444,7 +448,7 @@ function DailyChart({
           <Skeleton className="h-48 w-full" />
         ) : data.length === 0 ? (
           <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
-            No data yet
+            {ui("No data yet")}
           </div>
         ) : (
           <div className="h-48">
@@ -504,6 +508,7 @@ function DailyDoubleChart({
   }[];
   loading: boolean;
 }) {
+  const ui = useUiTranslation();
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -514,7 +519,7 @@ function DailyDoubleChart({
           <Skeleton className="h-48 w-full" />
         ) : data.length === 0 ? (
           <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
-            No data yet
+            {ui("No data yet")}
           </div>
         ) : (
           <div className="h-48">
@@ -582,6 +587,7 @@ function PieCard({
   data: { name: string; value: number }[];
   loading: boolean;
 }) {
+  const ui = useUiTranslation();
   const total = data.reduce((s, d) => s + d.value, 0);
   const filtered = data.filter((d) => d.value > 0);
   const [hovered, setHovered] = useState<number | null>(null);
@@ -596,7 +602,7 @@ function PieCard({
           <Skeleton className="h-80 w-full" />
         ) : total === 0 ? (
           <div className="flex h-80 items-center justify-center text-sm text-muted-foreground">
-            No data yet
+            {ui("No data yet")}
           </div>
         ) : (
           <div>

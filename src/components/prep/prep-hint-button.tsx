@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { AiButton } from "@/components/ui/ai-button";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -13,7 +15,12 @@ type Props = {
   disabledReason?: string;
 };
 
-export function PrepHintButton({ interviewId, questionId, disabledReason }: Props) {
+export function PrepHintButton({
+  interviewId,
+  questionId,
+  disabledReason,
+}: Props) {
+  const ui = useUiTranslation();
   const { toast } = useToast();
   const [hint, setHint] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,7 +40,11 @@ export function PrepHintButton({ interviewId, questionId, disabledReason }: Prop
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Hint failed";
-      toast({ title: "Hint failed", description: message, variant: "destructive" });
+      toast({
+        title: ui("Hint failed"),
+        description: message,
+        variant: "destructive",
+      });
       setHint("");
     } finally {
       setLoading(false);
@@ -52,7 +63,7 @@ export function PrepHintButton({ interviewId, questionId, disabledReason }: Prop
         title={disabledReason}
       >
         <Lightbulb className="h-4 w-4" />
-        Show suggested answer
+        {ui("Show suggested answer")}
       </AiButton>
     );
   }
@@ -62,7 +73,7 @@ export function PrepHintButton({ interviewId, questionId, disabledReason }: Prop
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 text-sm font-medium text-amber-900 dark:text-amber-300">
           <Lightbulb className="h-4 w-4" />
-          Suggested answer
+          {ui("Suggested answer")}
         </div>
         <Button
           variant="ghost"
@@ -71,7 +82,7 @@ export function PrepHintButton({ interviewId, questionId, disabledReason }: Prop
           onClick={() => {
             setHint("");
           }}
-          aria-label="Hide suggested answer"
+          aria-label={ui("Hide suggested answer")}
         >
           <X className="h-4 w-4" />
         </Button>

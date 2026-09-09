@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { useOrg } from "@/components/org-provider";
 import { AiButton } from "@/components/ui/ai-button";
 import { Button } from "@/components/ui/button";
@@ -41,7 +43,14 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const EDUCATION_OPTIONS = ["College", "Bachelor", "Master", "PhD", "MBA", "Other"];
+const EDUCATION_OPTIONS = [
+  "College",
+  "Bachelor",
+  "Master",
+  "PhD",
+  "MBA",
+  "Other",
+];
 const WORK_EXPERIENCE_OPTIONS = [
   "Less than one year",
   "1 - 3 years",
@@ -52,11 +61,24 @@ const WORK_EXPERIENCE_OPTIONS = [
 const GENDER_OPTIONS = ["Male", "Female", "Other"];
 
 const currentYear = new Date().getFullYear();
-const GRADUATION_YEARS = Array.from({ length: 50 }, (_, i) => currentYear - 40 + i);
+const GRADUATION_YEARS = Array.from(
+  { length: 50 },
+  (_, i) => currentYear - 40 + i,
+);
 
 const MONTH_LABELS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 
 const BIRTHDAY_YEAR_MIN = currentYear - 78;
@@ -84,8 +106,7 @@ function MonthYearPicker({
   );
   const [open, setOpen] = useState(false);
 
-  const displayValue =
-    year && month ? `${year}/${month}` : year ? year : "";
+  const displayValue = year && month ? `${year}/${month}` : year ? year : "";
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -162,7 +183,8 @@ function applyParsedData(
     const next = { ...prev };
     if (data.name && typeof data.name === "string") next.name = data.name;
     if (data.email && typeof data.email === "string") next.email = data.email;
-    if (data.phone && typeof data.phone === "string") next.phone = String(data.phone);
+    if (data.phone && typeof data.phone === "string")
+      next.phone = String(data.phone);
     if (typeof data.gender === "string" && GENDER_OPTIONS.includes(data.gender))
       next.gender = data.gender;
     if (typeof data.birthday === "string" && data.birthday) {
@@ -170,9 +192,13 @@ function applyParsedData(
       if (parts[0]) next.birthdayYear = parts[0];
       if (parts[1]) next.birthdayMonth = parts[1].padStart(2, "0");
     }
-    if (typeof data.education === "string" && EDUCATION_OPTIONS.includes(data.education))
+    if (
+      typeof data.education === "string" &&
+      EDUCATION_OPTIONS.includes(data.education)
+    )
       next.education = data.education;
-    if (data.school && typeof data.school === "string") next.school = data.school;
+    if (data.school && typeof data.school === "string")
+      next.school = data.school;
     if (data.major && typeof data.major === "string") next.major = data.major;
     if (data.graduationYear != null)
       next.graduationYear = String(data.graduationYear);
@@ -215,6 +241,7 @@ export function CandidateCreateDialog({
   onOpenChange,
   onCreated,
 }: CandidateCreateDialogProps) {
+  const ui = useUiTranslation();
   const { toast } = useToast();
   const { currentOrg } = useOrg();
   const [form, setForm] = useState({ ...EMPTY_FORM });
@@ -229,7 +256,10 @@ export function CandidateCreateDialog({
     if (streamRef.current) {
       streamRef.current.scrollTop = streamRef.current.scrollHeight;
     }
-    streamEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    streamEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+    });
   }, [streamText]);
 
   const createMutation = trpc.candidate.create.useMutation({
@@ -238,11 +268,11 @@ export function CandidateCreateDialog({
         const link = `${window.location.origin}/i/invite/${data.inviteToken}`;
         navigator.clipboard.writeText(link).catch(() => {});
         toast({
-          title: "Session added",
-          description: "Invite link copied to clipboard",
+          title: ui("Session added"),
+          description: ui("Invite link copied to clipboard"),
         });
       } else {
-        toast({ title: "Session added" });
+        toast({ title: ui("Session added") });
       }
       setForm({ ...EMPTY_FORM });
       setResumeFile("");
@@ -252,7 +282,7 @@ export function CandidateCreateDialog({
     },
     onError: (err) => {
       toast({
-        title: "Failed to add session",
+        title: ui("Failed to add session"),
         description: err.message,
         variant: "destructive",
       });
@@ -315,7 +345,7 @@ export function CandidateCreateDialog({
         if (!res.ok) {
           const errData = await res.json();
           toast({
-            title: "Failed to parse resume",
+            title: ui("Failed to parse resume"),
             description: errData.error,
             variant: "destructive",
           });
@@ -327,8 +357,8 @@ export function CandidateCreateDialog({
         const reader = res.body?.getReader();
         if (!reader) {
           toast({
-            title: "Failed to parse resume",
-            description: "No response stream",
+            title: ui("Failed to parse resume"),
+            description: ui("No response stream"),
             variant: "destructive",
           });
           setParsingResume(false);
@@ -356,7 +386,7 @@ export function CandidateCreateDialog({
               const { token, error } = JSON.parse(payload);
               if (error) {
                 toast({
-                  title: "Parse error",
+                  title: ui("Parse error"),
                   description: error,
                   variant: "destructive",
                 });
@@ -381,25 +411,27 @@ export function CandidateCreateDialog({
         try {
           const parsed = JSON.parse(cleaned);
           applyParsedData(parsed, setForm);
-          toast({ title: "Resume parsed successfully" });
+          toast({ title: ui("Resume parsed successfully") });
         } catch {
           toast({
-            title: "Failed to parse resume result",
-            description: "AI response was not valid JSON. Please try again.",
+            title: ui("Failed to parse resume result"),
+            description: ui(
+              "AI response was not valid JSON. Please try again.",
+            ),
             variant: "destructive",
           });
         }
       } catch {
         toast({
-          title: "Failed to parse resume",
-          description: "Network error. Please try again.",
+          title: ui("Failed to parse resume"),
+          description: ui("Network error. Please try again."),
           variant: "destructive",
         });
       } finally {
         setParsingResume(false);
       }
     },
-    [toast, currentOrg?.id, interviewId],
+    [ui, toast, currentOrg?.id, interviewId],
   );
 
   return (
@@ -410,9 +442,9 @@ export function CandidateCreateDialog({
         data-tour="save-candidate"
       >
         <SheetHeader>
-          <SheetTitle>Create individually</SheetTitle>
+          <SheetTitle>{ui("Create individually")}</SheetTitle>
           <SheetDescription>
-            Add session details manually or extract from a resume.
+            {ui("Add session details manually or extract from a resume.")}
           </SheetDescription>
         </SheetHeader>
 
@@ -421,11 +453,12 @@ export function CandidateCreateDialog({
           <div className="grid grid-cols-2 gap-x-3 gap-y-2">
             <div className="space-y-1">
               <Label htmlFor="c-name" className="text-xs">
-                Name <span className="text-destructive">*</span>
+                {ui("Name")}
+                <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="c-name"
-                placeholder="Enter name"
+                placeholder={ui("Enter name")}
                 required
                 value={form.name}
                 onChange={(e) => update("name", e.target.value)}
@@ -433,127 +466,145 @@ export function CandidateCreateDialog({
               />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="c-email" className="text-xs">Email</Label>
+              <Label htmlFor="c-email" className="text-xs">
+                {ui("Email")}
+              </Label>
               <Input
                 id="c-email"
                 type="email"
-                placeholder="Enter email"
+                placeholder={ui("Enter email")}
                 value={form.email}
                 onChange={(e) => update("email", e.target.value)}
                 className="h-8 text-sm"
               />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="c-phone" className="text-xs">Phone</Label>
+              <Label htmlFor="c-phone" className="text-xs">
+                {ui("Phone")}
+              </Label>
               <Input
                 id="c-phone"
-                placeholder="Enter phone"
+                placeholder={ui("Enter phone")}
                 value={form.phone}
                 onChange={(e) => update("phone", e.target.value)}
                 className="h-8 text-sm"
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Gender</Label>
+              <Label className="text-xs">{ui("Gender")}</Label>
               <Select
                 value={form.gender || undefined}
                 onValueChange={(v) => update("gender", v)}
               >
                 <SelectTrigger className="h-8 text-sm">
-                  <SelectValue placeholder="Select gender" />
+                  <SelectValue placeholder={ui("Select gender")} />
                 </SelectTrigger>
                 <SelectContent>
                   {GENDER_OPTIONS.map((g) => (
-                    <SelectItem key={g} value={g}>{g}</SelectItem>
+                    <SelectItem key={g} value={g}>
+                      {g}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Birth Date</Label>
+              <Label className="text-xs">{ui("Birth Date")}</Label>
               <MonthYearPicker
                 year={form.birthdayYear}
                 month={form.birthdayMonth}
                 onChangeYear={(y) => update("birthdayYear", y)}
                 onChangeMonth={(m) => update("birthdayMonth", m)}
-                placeholder="Select birth date"
+                placeholder={ui("Select birth date")}
                 yearMin={BIRTHDAY_YEAR_MIN}
                 yearMax={BIRTHDAY_YEAR_MAX}
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Degree</Label>
+              <Label className="text-xs">{ui("Degree")}</Label>
               <Select
                 value={form.education || undefined}
                 onValueChange={(v) => update("education", v)}
               >
                 <SelectTrigger className="h-8 text-sm">
-                  <SelectValue placeholder="Select degree" />
+                  <SelectValue placeholder={ui("Select degree")} />
                 </SelectTrigger>
                 <SelectContent>
                   {EDUCATION_OPTIONS.map((e) => (
-                    <SelectItem key={e} value={e}>{e}</SelectItem>
+                    <SelectItem key={e} value={e}>
+                      {e}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1">
-              <Label htmlFor="c-school" className="text-xs">School</Label>
+              <Label htmlFor="c-school" className="text-xs">
+                {ui("School")}
+              </Label>
               <Input
                 id="c-school"
-                placeholder="Enter school"
+                placeholder={ui("Enter school")}
                 value={form.school}
                 onChange={(e) => update("school", e.target.value)}
                 className="h-8 text-sm"
               />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="c-major" className="text-xs">Major</Label>
+              <Label htmlFor="c-major" className="text-xs">
+                {ui("Major")}
+              </Label>
               <Input
                 id="c-major"
-                placeholder="Enter major"
+                placeholder={ui("Enter major")}
                 value={form.major}
                 onChange={(e) => update("major", e.target.value)}
                 className="h-8 text-sm"
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Graduation Year</Label>
+              <Label className="text-xs">{ui("Graduation Year")}</Label>
               <Select
                 value={form.graduationYear || undefined}
                 onValueChange={(v) => update("graduationYear", v)}
               >
                 <SelectTrigger className="h-8 text-sm">
-                  <SelectValue placeholder="Select year" />
+                  <SelectValue placeholder={ui("Select year")} />
                 </SelectTrigger>
                 <SelectContent>
                   {GRADUATION_YEARS.map((y) => (
-                    <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                    <SelectItem key={y} value={y.toString()}>
+                      {y}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Work Experience</Label>
+              <Label className="text-xs">{ui("Work Experience")}</Label>
               <Select
                 value={form.workExperience || undefined}
                 onValueChange={(v) => update("workExperience", v)}
               >
                 <SelectTrigger className="h-8 text-sm">
-                  <SelectValue placeholder="Select work experience" />
+                  <SelectValue placeholder={ui("Select work experience")} />
                 </SelectTrigger>
                 <SelectContent>
                   {WORK_EXPERIENCE_OPTIONS.map((w) => (
-                    <SelectItem key={w} value={w}>{w}</SelectItem>
+                    <SelectItem key={w} value={w}>
+                      {w}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="col-span-2 space-y-1">
-              <Label htmlFor="c-notes" className="text-xs">Notes</Label>
+              <Label htmlFor="c-notes" className="text-xs">
+                {ui("Notes")}
+              </Label>
               <Textarea
                 id="c-notes"
-                placeholder="Enter notes"
+                placeholder={ui("Enter notes")}
                 value={form.notes}
                 onChange={(e) => update("notes", e.target.value)}
                 rows={2}
@@ -565,7 +616,9 @@ export function CandidateCreateDialog({
           {/* ── Or divider ── */}
           <div className="my-1 flex items-center gap-3">
             <div className="h-px flex-1 bg-border" />
-            <span className="text-xs text-muted-foreground">or extract from resume</span>
+            <span className="text-xs text-muted-foreground">
+              {ui("or extract from resume")}
+            </span>
             <div className="h-px flex-1 bg-border" />
           </div>
 
@@ -574,9 +627,11 @@ export function CandidateCreateDialog({
             <div className="flex items-center gap-2.5">
               <Sparkles className="h-5 w-5 text-foreground" />
               <div>
-                <p className="text-sm font-semibold">Extract from Resume</p>
+                <p className="text-sm font-semibold">
+                  {ui("Extract from Resume")}
+                </p>
                 <p className="text-xs text-muted-foreground">
-                  Upload a PDF and let AI fill in the details.
+                  {ui("Upload a PDF and let AI fill in the details.")}
                 </p>
               </div>
             </div>
@@ -612,7 +667,8 @@ export function CandidateCreateDialog({
                       onClick={() => {
                         setResumeFile("");
                         setStreamText("");
-                        if (fileInputRef.current) fileInputRef.current.value = "";
+                        if (fileInputRef.current)
+                          fileInputRef.current.value = "";
                       }}
                     >
                       <X className="h-3.5 w-3.5" />
@@ -630,13 +686,16 @@ export function CandidateCreateDialog({
                 onClick={() => fileInputRef.current?.click()}
               >
                 {!parsingResume && <Upload className="mr-2 h-3.5 w-3.5" />}
-                Upload resume (.pdf)
+                {ui("Upload resume (.pdf)")}
               </AiButton>
             )}
 
             {/* Streaming output */}
             {parsingResume && streamText && (
-              <div ref={streamRef} className="mt-2 max-h-24 overflow-y-auto rounded-md bg-muted p-2 code-scrollbar">
+              <div
+                ref={streamRef}
+                className="mt-2 max-h-24 overflow-y-auto rounded-md bg-muted p-2 code-scrollbar"
+              >
                 <pre className="whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-muted-foreground">
                   {streamText}
                   <span className="animate-pulse text-foreground">|</span>
@@ -646,7 +705,7 @@ export function CandidateCreateDialog({
 
             {parsingResume && !streamText && (
               <p className="mt-2 text-center text-xs text-muted-foreground">
-                Uploading and analyzing...
+                {ui("Uploading and analyzing...")}
               </p>
             )}
             <div ref={streamEndRef} />
@@ -659,7 +718,7 @@ export function CandidateCreateDialog({
               size="sm"
               onClick={() => onOpenChange(false)}
             >
-              Cancel
+              {ui("Cancel")}
             </Button>
             <Button
               type="submit"
@@ -669,7 +728,7 @@ export function CandidateCreateDialog({
               {createMutation.isLoading && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Save and add
+              {ui("Save and add")}
             </Button>
           </SheetFooter>
         </form>

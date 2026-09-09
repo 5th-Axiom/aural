@@ -1,7 +1,12 @@
 "use client";
+import { useUiTranslation } from "@/hooks/use-ui-translation";
 
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useRelayAsrInput } from "@/hooks/use-relay-asr-input";
 import { useToast } from "@/hooks/use-toast";
 import { Mic, Square } from "lucide-react";
@@ -49,13 +54,14 @@ export function PrepVoiceInput({
   onTranscript,
   disabled,
 }: Props) {
+  const ui = useUiTranslation();
   const { toast } = useToast();
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const baseTextRef = useRef(baseText);
-  const relayStartRef = useRef<
-    (baseText: string) => Promise<boolean>
-  >(() => Promise.resolve(false));
+  const relayStartRef = useRef<(baseText: string) => Promise<boolean>>(() =>
+    Promise.resolve(false),
+  );
   const relayStopRef = useRef<() => void>(() => undefined);
   const relayAvailableRef = useRef(false);
 
@@ -92,8 +98,8 @@ export function PrepVoiceInput({
       speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
     if (!Recognition) {
       toast({
-        title: "Voice input unavailable",
-        description: "Use Chrome or Edge for speech recognition.",
+        title: ui("Voice input unavailable"),
+        description: ui("Use Chrome or Edge for speech recognition."),
         variant: "destructive",
       });
       return;
@@ -111,16 +117,14 @@ export function PrepVoiceInput({
       for (let i = event.resultIndex; i < event.results.length; i++) {
         transcript += event.results[i][0].transcript;
       }
-      onTranscript(
-        [initialBase, transcript.trim()].filter(Boolean).join(" "),
-      );
+      onTranscript([initialBase, transcript.trim()].filter(Boolean).join(" "));
     };
     recognition.onerror = () => setListening(false);
     recognition.onend = () => setListening(false);
     recognitionRef.current = recognition;
     recognition.start();
     setListening(true);
-  }, [language, onTranscript, toast]);
+  }, [ui, language, onTranscript, toast]);
 
   const start = useCallback(async () => {
     if (relayAvailableRef.current) {
@@ -130,12 +134,12 @@ export function PrepVoiceInput({
         return;
       }
       toast({
-        title: "Voice relay unavailable",
-        description: "Falling back to browser speech recognition.",
+        title: ui("Voice relay unavailable"),
+        description: ui("Falling back to browser speech recognition."),
       });
     }
     startBrowser();
-  }, [startBrowser, toast]);
+  }, [ui, startBrowser, toast]);
 
   return (
     <Tooltip>
@@ -148,11 +152,15 @@ export function PrepVoiceInput({
           disabled={disabled}
           onClick={listening ? stop : start}
         >
-          {listening ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+          {listening ? (
+            <Square className="h-4 w-4" />
+          ) : (
+            <Mic className="h-4 w-4" />
+          )}
         </Button>
       </TooltipTrigger>
       <TooltipContent>
-        {listening ? "Stop voice input" : "Start voice input"}
+        {listening ? ui("Stop voice input") : ui("Start voice input")}
       </TooltipContent>
     </Tooltip>
   );

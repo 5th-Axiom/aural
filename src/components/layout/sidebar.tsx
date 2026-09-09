@@ -10,37 +10,37 @@ import { AuralLogo } from "@/components/ui/aural-logo";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import {
-    ArrowUpRight,
-    BookMarked,
-    BrainCircuit,
-    ChevronUp,
-    FolderKanban,
-    Gauge,
-    HelpCircle,
-    Languages,
-    LayoutDashboard,
-    LifeBuoy,
-    Loader2,
-    LogOut,
-    MessageSquare,
-    Monitor,
-    Moon,
-    Palette,
-    PanelLeftClose,
-    PanelLeftOpen,
-    PlayCircle,
-    Plus,
-    Settings,
-    Sun
+  ArrowUpRight,
+  BookMarked,
+  BrainCircuit,
+  ChevronUp,
+  FolderKanban,
+  Gauge,
+  HelpCircle,
+  Languages,
+  LayoutDashboard,
+  LifeBuoy,
+  Loader2,
+  LogOut,
+  MessageSquare,
+  Monitor,
+  Moon,
+  Palette,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PlayCircle,
+  Plus,
+  Settings,
+  Sun,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
@@ -233,7 +233,7 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "flex flex-col border-r bg-background transition-all duration-200",
+        "flex shrink-0 flex-col border-r bg-background transition-all duration-200",
         collapsed ? "w-16" : "w-52",
       )}
     >
@@ -388,7 +388,7 @@ export function Sidebar({
                       {displayName}
                     </span>
                     <span className="truncate w-full text-xs text-muted-foreground">
-                      {user?.email ?? ""}
+                      {user?.app_metadata?.phone ?? user?.email ?? ""}
                     </span>
                   </div>
                   <ChevronUp className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" />
@@ -409,7 +409,7 @@ export function Sidebar({
                   {displayName}
                 </span>
                 <span className="truncate text-[11px] text-muted-foreground">
-                  {user?.email ?? ""}
+                  {user?.app_metadata?.phone ?? user?.email ?? ""}
                 </span>
               </div>
             </div>
@@ -481,28 +481,46 @@ export function SidebarToggle({
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <TourProvider>
       <div className="dashboard-shell flex h-screen overflow-hidden">
-        <Sidebar
-          collapsed={collapsed}
-          onToggle={() => setCollapsed(!collapsed)}
+        <div
+          className={`${mobileOpen ? "fixed inset-y-0 left-0 z-50 flex" : "hidden"} md:static md:flex`}
+        >
+          <Sidebar
+            collapsed={collapsed}
+            onToggle={() => {
+              if (window.innerWidth < 768) setMobileOpen(!mobileOpen);
+              else setCollapsed(!collapsed);
+            }}
           />
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <Header
-              sidebarToggle={
-                <SidebarToggle
-                  collapsed={collapsed}
-                  onToggle={() => setCollapsed(!collapsed)}
-                />
-              }
-            />
-            <main className="flex-1 overflow-y-auto p-6 code-scrollbar">
-              {children}
-            </main>
-          </div>
         </div>
+        {mobileOpen && (
+          <button
+            aria-label="关闭导航"
+            className="fixed inset-0 z-40 bg-black/40 md:hidden"
+            onClick={() => setMobileOpen(false)}
+          />
+        )}
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          <Header
+            sidebarToggle={
+              <SidebarToggle
+                collapsed={collapsed}
+                onToggle={() => {
+                  if (window.innerWidth < 768) setMobileOpen(!mobileOpen);
+                  else setCollapsed(!collapsed);
+                }}
+              />
+            }
+          />
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 code-scrollbar">
+            {children}
+          </main>
+        </div>
+      </div>
       <TourOverlay />
       <TourWelcome />
       <TourCelebration />

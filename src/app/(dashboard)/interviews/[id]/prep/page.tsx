@@ -1,18 +1,17 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { PracticeCompletedScreen } from "@/components/prep/practice-completed-screen";
 import { PracticeSessionChat } from "@/components/prep/practice-session-chat";
 import {
-    type PrepAttempt,
-    type PrepQuestion,
-    normalizeAttempt,
+  type PrepAttempt,
+  type PrepQuestion,
+  normalizeAttempt,
 } from "@/components/prep/prep-types";
 import { PreparingScreen } from "@/components/session/preparing-screen";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { usePrepSessionLeave } from "@/hooks/use-prep-session-leave";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +24,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 const DEFAULT_MODE = "VOICE" as const;
 
 export default function FocusedPrepPage() {
+  const ui = useUiTranslation();
   const params = useParams();
   const searchParams = useSearchParams();
   const interviewId = params.id as string;
@@ -56,21 +56,22 @@ export default function FocusedPrepPage() {
     [bundleQuery.data?.attempts],
   );
   const planTier = bundleQuery.data?.planTier ?? "Free";
-  const mediaRetentionDays = bundleQuery.data?.mediaRetention?.retentionDays ?? 7;
+  const mediaRetentionDays =
+    bundleQuery.data?.mediaRetention?.retentionDays ?? 7;
 
   const startSession = trpc.prep.startSession.useMutation({
     onSuccess: (session) => {
       setSessionId(session.id);
       timerCompletedRef.current = false;
       setRemainingSeconds(null);
-      toast({ title: "Practice started" });
+      toast({ title: ui("Practice started") });
     },
     onError: (err) => {
       startAttemptedRef.current = false;
       setActiveQuestions([]);
       const message = err.message;
       toast({
-        title: "Could not start practice",
+        title: ui("Could not start practice"),
         description: message,
         variant: "destructive",
       });
@@ -90,7 +91,7 @@ export default function FocusedPrepPage() {
     },
     onError: (err) => {
       toast({
-        title: "Could not end session",
+        title: ui("Could not end session"),
         description: err.message,
         variant: "destructive",
       });
@@ -146,7 +147,7 @@ export default function FocusedPrepPage() {
   if (bundleQuery.isLoading) {
     return (
       <PreparingScreen
-        title="Loading practice..."
+        title={ui("Loading practice...")}
         description="Setting up your coaching session."
       />
     );
@@ -171,9 +172,11 @@ export default function FocusedPrepPage() {
     return (
       <Card>
         <CardContent className="flex h-[400px] flex-col items-center justify-center gap-3">
-          <p className="text-sm text-muted-foreground">Interview not found.</p>
+          <p className="text-sm text-muted-foreground">
+            {ui("Interview not found.")}
+          </p>
           <Button asChild>
-            <Link href="/interviews">Back to interviews</Link>
+            <Link href="/interviews">{ui("Back to interviews")}</Link>
           </Button>
         </CardContent>
       </Card>
@@ -186,10 +189,12 @@ export default function FocusedPrepPage() {
         <CardContent className="flex h-[400px] flex-col items-center justify-center gap-3">
           <BrainCircuit className="h-10 w-10 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">
-            This interview has no questions yet.
+            {ui("This interview has no questions yet.")}
           </p>
           <Button asChild>
-            <Link href={`/interviews/${interviewId}/edit`}>Add questions</Link>
+            <Link href={`/interviews/${interviewId}/edit`}>
+              {ui("Add questions")}
+            </Link>
           </Button>
         </CardContent>
       </Card>
@@ -215,7 +220,7 @@ export default function FocusedPrepPage() {
               });
             }}
           >
-            Retry
+            {ui("Retry")}
           </Button>
         </CardContent>
       </Card>
@@ -225,7 +230,7 @@ export default function FocusedPrepPage() {
   if (isStartingSession || !sessionId) {
     return (
       <PreparingScreen
-        title="Starting practice..."
+        title={ui("Starting practice...")}
         description="Setting up your coaching session."
       />
     );

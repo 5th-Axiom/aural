@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -169,6 +171,7 @@ export function QuestionCard({
   dragProps,
   className,
 }: QuestionCardProps) {
+  const ui = useUiTranslation();
   const [local, setLocal] = useState<QuestionCardData>(() =>
     structuredClone(data),
   );
@@ -214,13 +217,13 @@ export function QuestionCard({
             <div className="flex-1 space-y-3">
               {/* Question text */}
               <div className="space-y-1">
-                <Label className="text-xs">Question text</Label>
+                <Label className="text-xs">{ui("Question text")}</Label>
                 <Textarea
                   value={local.text}
                   onChange={(e) => update({ text: e.target.value })}
                   rows={2}
                   className="resize-y"
-                  placeholder="Enter the question..."
+                  placeholder={ui("Enter the question...")}
                   autoFocus
                 />
               </div>
@@ -228,7 +231,7 @@ export function QuestionCard({
               {/* Type + Description */}
               <div className="flex gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs">Type</Label>
+                  <Label className="text-xs">{ui("Type")}</Label>
                   <Select
                     value={local.type}
                     onValueChange={(v) => {
@@ -243,12 +246,23 @@ export function QuestionCard({
                         };
                       }
                       if (v === "SINGLE_CHOICE" && local.options) {
-                        updates.options = { ...local.options, allowMultiple: false };
+                        updates.options = {
+                          ...local.options,
+                          allowMultiple: false,
+                        };
                       }
                       if (v === "MULTIPLE_CHOICE" && local.options) {
-                        updates.options = { ...local.options, allowMultiple: true };
+                        updates.options = {
+                          ...local.options,
+                          allowMultiple: true,
+                        };
                       }
-                      if (v === "OPEN_ENDED" || v === "CODING" || v === "WHITEBOARD" || v === "RESEARCH") {
+                      if (
+                        v === "OPEN_ENDED" ||
+                        v === "CODING" ||
+                        v === "WHITEBOARD" ||
+                        v === "RESEARCH"
+                      ) {
                         updates.options = undefined;
                       }
                       update(updates);
@@ -260,20 +274,22 @@ export function QuestionCard({
                     <SelectContent>
                       {QUESTION_TYPES.map((t) => (
                         <SelectItem key={t.value} value={t.value}>
-                          {t.label}
+                          {ui(t.label)}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="flex-1 space-y-1">
-                  <Label className="text-xs">Description (optional)</Label>
+                  <Label className="text-xs">
+                    {ui("Description (optional)")}
+                  </Label>
                   <Input
                     value={local.description ?? ""}
                     onChange={(e) =>
                       update({ description: e.target.value || undefined })
                     }
-                    placeholder="Helper text for the interviewee..."
+                    placeholder={ui("Helper text for the interviewee...")}
                   />
                 </div>
               </div>
@@ -282,7 +298,7 @@ export function QuestionCard({
               {(local.type === "SINGLE_CHOICE" ||
                 local.type === "MULTIPLE_CHOICE") && (
                 <div className="space-y-2">
-                  <Label className="text-xs">Options</Label>
+                  <Label className="text-xs">{ui("Options")}</Label>
                   <div className="space-y-1.5">
                     {(local.options?.options ?? []).map(
                       (opt: string, oi: number) => (
@@ -293,13 +309,16 @@ export function QuestionCard({
                           <Input
                             value={opt}
                             onChange={(e) => {
-                              const newOpts = [...(local.options?.options ?? [])];
+                              const newOpts = [
+                                ...(local.options?.options ?? []),
+                              ];
                               newOpts[oi] = e.target.value;
                               update({
                                 options: {
                                   ...local.options,
                                   options: newOpts,
-                                  allowMultiple: local.options?.allowMultiple ?? false,
+                                  allowMultiple:
+                                    local.options?.allowMultiple ?? false,
                                 },
                               });
                             }}
@@ -313,14 +332,17 @@ export function QuestionCard({
                               size="icon"
                               className="h-7 w-7 shrink-0"
                               onClick={() => {
-                                const newOpts = (local.options?.options ?? []).filter(
+                                const newOpts = (
+                                  local.options?.options ?? []
+                                ).filter(
                                   (_: string, idx: number) => idx !== oi,
                                 );
                                 update({
                                   options: {
                                     ...local.options,
                                     options: newOpts,
-                                    allowMultiple: local.options?.allowMultiple ?? false,
+                                    allowMultiple:
+                                      local.options?.allowMultiple ?? false,
                                   },
                                 });
                               }}
@@ -349,7 +371,7 @@ export function QuestionCard({
                     }}
                   >
                     <Plus className="mr-1 h-3 w-3" />
-                    Add Option
+                    {ui("Add Option")}
                   </Button>
                 </div>
               )}
@@ -357,13 +379,16 @@ export function QuestionCard({
               {/* Starter code editor */}
               {local.type === "CODING" && (
                 <div className="space-y-2">
-                  <Label className="text-xs">Starter Code</Label>
+                  <Label className="text-xs">{ui("Starter Code")}</Label>
                   <div
                     className="overflow-auto rounded-md border border-zinc-800 code-scrollbar"
                     style={{
                       height: `${Math.max(
                         200,
-                        ((local.starterCode?.code ?? "").split("\n").length + 2) * 20 + 40,
+                        ((local.starterCode?.code ?? "").split("\n").length +
+                          2) *
+                          20 +
+                          40,
                       )}px`,
                       minHeight: 120,
                     }}
@@ -404,7 +429,7 @@ export function QuestionCard({
                   id={`required-${index}`}
                 />
                 <Label htmlFor={`required-${index}`} className="text-xs">
-                  Required
+                  {ui("Required")}
                 </Label>
               </div>
             </div>
@@ -426,24 +451,27 @@ export function QuestionCard({
                     ) : (
                       <Trash2 className="mr-1 h-3 w-3" />
                     )}
-                    Delete
+                    {ui("Delete")}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Delete question?</AlertDialogTitle>
+                    <AlertDialogTitle>
+                      {ui("Delete question?")}
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will permanently remove this question. This action
-                      cannot be undone.
+                      {ui(
+                        "This will permanently remove this question. This action cannot be undone.",
+                      )}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>{ui("Cancel")}</AlertDialogCancel>
                     <AlertDialogAction
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       onClick={onDelete}
                     >
-                      Delete
+                      {ui("Delete")}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -457,7 +485,7 @@ export function QuestionCard({
               disabled={saving || deleting}
             >
               <X className="mr-1 h-3 w-3" />
-              Cancel
+              {ui("Cancel")}
             </Button>
             <Button
               size="sm"
@@ -469,7 +497,7 @@ export function QuestionCard({
               ) : (
                 <Check className="mr-1 h-3 w-3" />
               )}
-              Done
+              {ui("Done")}
             </Button>
           </div>
         </div>
@@ -491,7 +519,7 @@ export function QuestionCard({
             <p className="font-medium">
               {data.text || (
                 <span className="italic text-muted-foreground">
-                  Empty question — click to edit
+                  {ui("Empty question — click to edit")}
                 </span>
               )}
             </p>
@@ -500,7 +528,8 @@ export function QuestionCard({
                 {data.description}
               </p>
             )}
-            {(data.type === "SINGLE_CHOICE" || data.type === "MULTIPLE_CHOICE") &&
+            {(data.type === "SINGLE_CHOICE" ||
+              data.type === "MULTIPLE_CHOICE") &&
               (data.options?.options?.length ?? 0) > 0 && (
                 <div className="mt-1.5 flex flex-wrap gap-1">
                   {(data.options?.options ?? [])
@@ -518,7 +547,8 @@ export function QuestionCard({
                     ))}
                   {(data.options?.options?.length ?? 0) > 4 && (
                     <span className="text-xs text-muted-foreground">
-                      +{(data.options?.options?.length ?? 0) - 4} more
+                      +{(data.options?.options?.length ?? 0) - 4}
+                      {ui("more")}
                     </span>
                   )}
                 </div>
@@ -539,17 +569,26 @@ export function QuestionCard({
               </div>
             )}
             <div className="flex items-center gap-2 mt-2">
-              <Badge variant="outline" className={cn("text-xs", style.badgeClass)}>
+              <Badge
+                variant="outline"
+                className={cn("text-xs", style.badgeClass)}
+              >
                 <TypeIcon className="mr-1 h-3 w-3" />
-                {style.label}
+                {ui(style.label)}
               </Badge>
               {data.isRequired ? (
-                <Badge variant="outline" className="text-xs text-muted-foreground">
-                  Required
+                <Badge
+                  variant="outline"
+                  className="text-xs text-muted-foreground"
+                >
+                  {ui("Required")}
                 </Badge>
               ) : (
-                <Badge variant="outline" className="text-xs text-muted-foreground">
-                  Optional
+                <Badge
+                  variant="outline"
+                  className="text-xs text-muted-foreground"
+                >
+                  {ui("Optional")}
                 </Badge>
               )}
             </div>
@@ -558,7 +597,10 @@ export function QuestionCard({
             <button
               type="button"
               className="p-0.5 text-muted-foreground/80 hover:text-foreground transition-colors"
-              onClick={(e) => { e.stopPropagation(); onStartEdit(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onStartEdit();
+              }}
             >
               <Pencil className="h-3 w-3" />
             </button>
@@ -575,19 +617,22 @@ export function QuestionCard({
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Delete question?</AlertDialogTitle>
+                    <AlertDialogTitle>
+                      {ui("Delete question?")}
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will permanently remove this question. This action
-                      cannot be undone.
+                      {ui(
+                        "This will permanently remove this question. This action cannot be undone.",
+                      )}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>{ui("Cancel")}</AlertDialogCancel>
                     <AlertDialogAction
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       onClick={onDelete}
                     >
-                      Delete
+                      {ui("Delete")}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

@@ -1,46 +1,49 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
 } from "@/components/ui/popover";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { exportToXlsx } from "@/lib/export-xlsx";
@@ -48,31 +51,31 @@ import { buildReopenSessionUrl, canReopenSession } from "@/lib/session-reopen";
 import { getSessionOverallScore } from "@/lib/session-score";
 import { trpc } from "@/lib/trpc/client";
 import {
-    ArrowDown,
-    ArrowUp,
-    ArrowUpDown,
-    Calendar,
-    Check,
-    ChevronLeft,
-    ChevronRight,
-    CircleDot,
-    ClipboardList,
-    Clock,
-    Download,
-    FileSpreadsheet,
-    FileText,
-    GripVertical,
-    Link as LinkIcon,
-    Loader2,
-    PlayCircle,
-    Plus,
-    Search,
-    Settings,
-    Trash2,
-    UserCheck,
-    UserPlus,
-    Users,
-    X,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Calendar,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  CircleDot,
+  ClipboardList,
+  Clock,
+  Download,
+  FileSpreadsheet,
+  FileText,
+  GripVertical,
+  Link as LinkIcon,
+  Loader2,
+  PlayCircle,
+  Plus,
+  Search,
+  Settings,
+  Trash2,
+  UserCheck,
+  UserPlus,
+  Users,
+  X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CandidateCreateDialog } from "./candidate-create-dialog";
@@ -160,8 +163,8 @@ const COLUMNS: ColumnDef[] = [
     defaultVisible: true,
     alwaysVisible: true,
   },
-  { key: "email", label: "Email", sortKey: "email", defaultVisible: true },
-  { key: "phone", label: "Phone", sortKey: "phone", defaultVisible: false },
+  { key: "email", label: "Email", sortKey: "email", defaultVisible: false },
+  { key: "phone", label: "Phone", sortKey: "phone", defaultVisible: true },
   { key: "gender", label: "Gender", sortKey: "gender", defaultVisible: false },
   {
     key: "birthday",
@@ -408,6 +411,7 @@ export function CandidateManager({
   interview,
   onViewSession,
 }: CandidateManagerProps) {
+  const ui = useUiTranslation();
   const { toast } = useToast();
   const utils = trpc.useUtils();
 
@@ -520,7 +524,7 @@ export function CandidateManager({
     onSuccess: () => invalidateAll(),
     onError: (err) => {
       toast({
-        title: "Failed to remove sessions",
+        title: ui("Failed to remove sessions"),
         description: err.message,
         variant: "destructive",
       });
@@ -530,7 +534,7 @@ export function CandidateManager({
     onSuccess: () => invalidateAll(),
     onError: (err) => {
       toast({
-        title: "Failed to remove sessions",
+        title: ui("Failed to remove sessions"),
         description: err.message,
         variant: "destructive",
       });
@@ -546,9 +550,9 @@ export function CandidateManager({
     (inviteToken: string) => {
       const link = `${window.location.origin}/i/invite/${inviteToken}`;
       navigator.clipboard.writeText(link);
-      toast({ title: "Invite link copied!" });
+      toast({ title: ui("Invite link copied!") });
     },
-    [toast],
+    [ui, toast],
   );
 
   const handleReopenSession = useCallback(
@@ -643,7 +647,15 @@ export function CandidateManager({
     }
 
     return result;
-  }, [candidates, walkIns, searchQuery, statusFilter, timeRange, sortKey, sortDir]);
+  }, [
+    candidates,
+    walkIns,
+    searchQuery,
+    statusFilter,
+    timeRange,
+    sortKey,
+    sortDir,
+  ]);
 
   // ── Pagination ──
   const totalPages = Math.max(1, Math.ceil(processedRows.length / pageSize));
@@ -711,7 +723,7 @@ export function CandidateManager({
       pending--;
       if (pending === 0) {
         toast({
-          title: `${selectedIds.size} entry${selectedIds.size > 1 ? "s" : ""} removed`,
+          title: ui("Removed {count} entries", {count: selectedIds.size}),
         });
         setSelectedIds(new Set());
       }
@@ -728,7 +740,7 @@ export function CandidateManager({
       pending++;
       removeSessionsMutation.mutate({ ids: sessionIds }, { onSuccess: onDone });
     }
-  }, [selectedIds, removeCandidatesMutation, removeSessionsMutation, toast]);
+  }, [ui, selectedIds, removeCandidatesMutation, removeSessionsMutation, toast]);
 
   // Clear selection when data changes
   useEffect(() => {
@@ -835,7 +847,9 @@ export function CandidateManager({
           <CardContent className="flex items-center gap-4 p-6">
             <Users className="h-8 w-8 text-primary" />
             <div>
-              <p className="text-sm text-muted-foreground">Total Sessions</p>
+              <p className="text-sm text-muted-foreground">
+                {ui("Total Sessions")}
+              </p>
               <p className="text-2xl font-bold">{totalCandidates}</p>
             </div>
           </CardContent>
@@ -844,7 +858,7 @@ export function CandidateManager({
           <CardContent className="flex items-center gap-4 p-6">
             <UserCheck className="h-8 w-8 text-primary" />
             <div>
-              <p className="text-sm text-muted-foreground">Completed</p>
+              <p className="text-sm text-muted-foreground">{ui("Completed")}</p>
               <p className="text-2xl font-bold">{completedCount}</p>
             </div>
           </CardContent>
@@ -853,7 +867,9 @@ export function CandidateManager({
           <CardContent className="flex items-center gap-4 p-6">
             <Clock className="h-8 w-8 text-primary" />
             <div>
-              <p className="text-sm text-muted-foreground">Avg Duration</p>
+              <p className="text-sm text-muted-foreground">
+                {ui("Avg Duration")}
+              </p>
               <p className="text-2xl font-bold">
                 {insights.data?.avgDurationSeconds
                   ? `${Math.round(insights.data.avgDurationSeconds / 60)}m`
@@ -869,7 +885,7 @@ export function CandidateManager({
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search by name or email..."
+            placeholder={ui("Search by name or email...")}
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
@@ -893,7 +909,7 @@ export function CandidateManager({
           <SelectContent>
             {TIME_RANGE_OPTIONS.map((opt) => (
               <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
+                {ui(opt.label)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -911,10 +927,10 @@ export function CandidateManager({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">All Status</SelectItem>
-            <SelectItem value="COMPLETED">Completed</SelectItem>
-            <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-            <SelectItem value="NOT_STARTED">Not Started</SelectItem>
+            <SelectItem value="ALL">{ui("All Status")}</SelectItem>
+            <SelectItem value="COMPLETED">{ui("Completed")}</SelectItem>
+            <SelectItem value="IN_PROGRESS">{ui("In Progress")}</SelectItem>
+            <SelectItem value="NOT_STARTED">{ui("Not Started")}</SelectItem>
           </SelectContent>
         </Select>
 
@@ -924,7 +940,7 @@ export function CandidateManager({
           disabled={processedRows.length === 0}
         >
           <Download className="mr-2 h-4 w-4" />
-          Export
+          {ui("Export")}
         </Button>
 
         {/* Bulk actions / Import+Add */}
@@ -940,11 +956,12 @@ export function CandidateManager({
               ) : (
                 <Trash2 className="mr-2 h-4 w-4" />
               )}
-              Delete ({selectedIds.size})
+              {ui("Delete (")}
+              {selectedIds.size})
             </Button>
             <Button variant="outline" onClick={() => setSelectedIds(new Set())}>
               <X className="mr-1 h-4 w-4" />
-              Cancel
+              {ui("Cancel")}
             </Button>
           </>
         ) : (
@@ -952,7 +969,7 @@ export function CandidateManager({
             <DropdownMenuTrigger asChild>
               <Button data-tour="add-session">
                 <Plus className="mr-2 h-4 w-4" />
-                Add
+                {ui("Add")}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
@@ -961,15 +978,15 @@ export function CandidateManager({
                 onClick={() => setCreateOpen(true)}
               >
                 <UserPlus className="mr-2 h-4 w-4" />
-                Create individually
+                {ui("Create individually")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setImportOpen(true)}>
                 <FileSpreadsheet className="mr-2 h-4 w-4" />
-                Import by Excel
+                {ui("Import by Excel")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setResumeImportOpen(true)}>
                 <FileText className="mr-2 h-4 w-4" />
-                Import by resumes
+                {ui("Import by resumes")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -985,8 +1002,10 @@ export function CandidateManager({
         ) : processedRows.length === 0 ? (
           <p className="py-8 text-center text-muted-foreground">
             {isFiltering
-              ? "No sessions match your filters."
-              : "No sessions yet. Add sessions individually or import them in bulk."}
+              ? ui("No sessions match your filters.")
+              : ui(
+                  "No sessions yet. Add sessions individually or import them in bulk.",
+                )}
           </p>
         ) : (
           <>
@@ -1011,7 +1030,7 @@ export function CandidateManager({
                           className="inline-flex cursor-pointer items-center gap-1 select-none whitespace-nowrap hover:text-foreground"
                           onClick={() => handleSort("name")}
                         >
-                          Name
+                          {ui("Name")}
                           {sortKey === "name" ? (
                             sortDir === "asc" ? (
                               <ArrowUp className="h-3.5 w-3.5" />
@@ -1034,7 +1053,7 @@ export function CandidateManager({
                         col.sortKey ? (
                           <SortableHead
                             key={col.key}
-                            label={col.label}
+                            label={ui(col.label)}
                             sortKey={col.sortKey}
                             activeKey={sortKey}
                             direction={sortDir}
@@ -1045,7 +1064,7 @@ export function CandidateManager({
                             key={col.key}
                             className="whitespace-nowrap"
                           >
-                            {col.label}
+                            {ui(col.label)}
                           </TableHead>
                         ),
                       )}
@@ -1089,7 +1108,7 @@ export function CandidateManager({
                                       if (!draggingCol) toggleColumn(col.key);
                                     }}
                                   >
-                                    {col.label}
+                                    {ui(col.label)}
                                   </span>
                                   {visibleColumns.has(col.key) && (
                                     <Check className="h-4 w-4 shrink-0 text-primary" />
@@ -1221,14 +1240,14 @@ export function CandidateManager({
                             variant="secondary"
                             className="whitespace-nowrap text-xs"
                           >
-                            Walk-in
+                            {ui("Walk-in")}
                           </Badge>
                         ) : (
                           <Badge
                             variant="outline"
                             className="whitespace-nowrap border-transparent bg-primary/5 text-xs text-primary"
                           >
-                            Invited
+                            {ui("Invited")}
                           </Badge>
                         ),
                       status: (
@@ -1237,7 +1256,7 @@ export function CandidateManager({
                           className="whitespace-nowrap"
                         >
                           {status === "Not Started"
-                            ? "NOT STARTED"
+                            ? ui("NOT STARTED")
                             : status.replace("_", " ")}
                         </Badge>
                       ),
@@ -1295,7 +1314,7 @@ export function CandidateManager({
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7"
-                              title="View report"
+                              title={ui("View report")}
                               onClick={() => onViewSession(session.id)}
                             >
                               <ClipboardList className="h-3.5 w-3.5 text-muted-foreground" />
@@ -1305,7 +1324,7 @@ export function CandidateManager({
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7"
-                              title="Reopen session"
+                              title={ui("Reopen session")}
                               onClick={() => handleReopenSession(session.id)}
                             >
                               <PlayCircle className="h-3.5 w-3.5 text-muted-foreground" />
@@ -1315,7 +1334,7 @@ export function CandidateManager({
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7"
-                              title="Copy invite link"
+                              title={ui("Copy invite link")}
                               data-tour="copy-link"
                               onClick={() =>
                                 handleCopyInviteLink(row.inviteToken!)
@@ -1336,7 +1355,7 @@ export function CandidateManager({
             {processedRows.length > PAGE_SIZE_OPTIONS[0] && (
               <div className="flex items-center justify-between border-t px-4 py-3">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>Rows per page</span>
+                  <span>{ui("Rows per page")}</span>
                   <select
                     className="rounded border bg-background px-2 py-1 text-sm"
                     value={pageSize}
@@ -1354,7 +1373,8 @@ export function CandidateManager({
                   <span className="ml-2">
                     {safePage * pageSize + 1}–
                     {Math.min((safePage + 1) * pageSize, processedRows.length)}{" "}
-                    of {processedRows.length}
+                    {ui("of")}
+                    {processedRows.length}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1390,16 +1410,19 @@ export function CandidateManager({
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Sessions</AlertDialogTitle>
+            <AlertDialogTitle>{ui("Delete Sessions")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete {selectedIds.size} session
-              {selectedIds.size > 1 ? "s" : ""}? This will permanently remove
-              the selected entries and any associated data. This action cannot
-              be undone.
+              {ui("Are you sure you want to delete")}
+              {selectedIds.size}
+              {ui("session")}
+              {selectedIds.size > 1 ? "s" : ""}
+              {ui(
+                "? This will permanently remove the selected entries and any associated data. This action cannot be undone.",
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{ui("Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
@@ -1407,7 +1430,7 @@ export function CandidateManager({
                 setConfirmDelete(false);
               }}
             >
-              Delete
+              {ui("Delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

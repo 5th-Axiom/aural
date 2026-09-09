@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertDialog,
@@ -66,6 +68,8 @@ export interface SessionRow {
   id: string;
   participantName: string | null;
   participantEmail: string | null;
+  participantPhone?: string | null;
+  roleTitle?: string | null;
   status: string;
   totalDurationSeconds: number | null;
   createdAt: string | Date;
@@ -74,6 +78,8 @@ export interface SessionRow {
 }
 
 type SortKey =
+  | "phone"
+  | "roleTitle"
   | "interview"
   | "participant"
   | "email"
@@ -111,13 +117,42 @@ type ColumnDef = {
 };
 
 const COLUMNS: ColumnDef[] = [
-  { key: "interview",  label: "Interview",   sortKey: "interview",   defaultVisible: true,  alwaysVisible: true, interviewOnly: true },
-  { key: "participant", label: "Participant", sortKey: "participant", defaultVisible: true },
-  { key: "email",      label: "Email",       sortKey: "email",       defaultVisible: true },
-  { key: "status",     label: "Status",      sortKey: "status",      defaultVisible: true },
-  { key: "messages",   label: "Messages",    sortKey: "messages",    defaultVisible: true },
-  { key: "duration",   label: "Duration",    sortKey: "duration",    defaultVisible: true },
-  { key: "date",       label: "Date",        sortKey: "date",        defaultVisible: true },
+  {
+    key: "roleTitle",
+    label: "岗位",
+    sortKey: "roleTitle",
+    defaultVisible: true,
+  },
+  { key: "phone", label: "手机号", sortKey: "phone", defaultVisible: true },
+  {
+    key: "interview",
+    label: "Interview",
+    sortKey: "interview",
+    defaultVisible: true,
+    alwaysVisible: true,
+    interviewOnly: true,
+  },
+  {
+    key: "participant",
+    label: "Participant",
+    sortKey: "participant",
+    defaultVisible: true,
+  },
+  { key: "email", label: "Email", sortKey: "email", defaultVisible: false },
+  { key: "status", label: "Status", sortKey: "status", defaultVisible: true },
+  {
+    key: "messages",
+    label: "Messages",
+    sortKey: "messages",
+    defaultVisible: true,
+  },
+  {
+    key: "duration",
+    label: "Duration",
+    sortKey: "duration",
+    defaultVisible: true,
+  },
+  { key: "date", label: "Date", sortKey: "date", defaultVisible: true },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -162,6 +197,10 @@ function getTimeRangeCutoff(value: string): Date | null {
 
 function getSortValue(session: SessionRow, key: SortKey): string | number {
   switch (key) {
+    case "phone":
+      return session.participantPhone ?? "";
+    case "roleTitle":
+      return session.roleTitle ?? "";
     case "interview":
       return (session.interview?.title ?? "").toLowerCase();
     case "participant":
@@ -233,11 +272,13 @@ export function SessionsTable({
   emptyFilterMessage = "No sessions match your search.",
   emptyMessage = "No sessions found.",
 }: SessionsTableProps) {
+  const ui = useUiTranslation();
   const { toast } = useToast();
 
   // ── State ──
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [timeRange, setTimeRange] = useState<string>("ALL");
+  const [roleFilter, setRoleFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey | null>("date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -248,8 +289,8 @@ export function SessionsTable({
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
     () => new Set(COLUMNS.filter((c) => c.defaultVisible).map((c) => c.key)),
   );
-  const [columnOrder, setColumnOrder] = useState<string[]>(
-    () => COLUMNS.map((c) => c.key),
+  const [columnOrder, setColumnOrder] = useState<string[]>(() =>
+    COLUMNS.map((c) => c.key),
   );
 
   const toggleColumn = useCallback((key: string) => {
@@ -267,14 +308,17 @@ export function SessionsTable({
   const draggingColRef = useRef<string | null>(null);
   const dragOverColRef = useRef<string | null>(null);
 
-  const handleGripPointerDown = useCallback((key: string, e: React.PointerEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    draggingColRef.current = key;
-    dragOverColRef.current = null;
-    setDraggingCol(key);
-    setDragOverCol(null);
-  }, []);
+  const handleGripPointerDown = useCallback(
+    (key: string, e: React.PointerEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      draggingColRef.current = key;
+      dragOverColRef.current = null;
+      setDraggingCol(key);
+      setDragOverCol(null);
+    },
+    [],
+  );
 
   useEffect(() => {
     const onPointerMove = (e: PointerEvent) => {
@@ -282,7 +326,11 @@ export function SessionsTable({
       const el = document.elementFromPoint(e.clientX, e.clientY);
       const row = el?.closest<HTMLElement>("[data-col-key]");
       const key = row?.dataset.colKey ?? null;
-      if (key && key !== draggingColRef.current && key !== dragOverColRef.current) {
+      if (
+        key &&
+        key !== draggingColRef.current &&
+        key !== dragOverColRef.current
+      ) {
         dragOverColRef.current = key;
         setDragOverCol(key);
       } else if (!key && dragOverColRef.current) {
@@ -320,19 +368,16 @@ export function SessionsTable({
   }, []);
 
   // Active columns depending on context, sorted by columnOrder
-  const activeColumns = useMemo(
-    () => {
-      const filtered = COLUMNS.filter((col) => {
-        if (col.interviewOnly && !showInterviewColumn) return false;
-        return true;
-      });
-      const orderMap = new Map(columnOrder.map((key, idx) => [key, idx]));
-      return [...filtered].sort(
-        (a, b) => (orderMap.get(a.key) ?? 0) - (orderMap.get(b.key) ?? 0),
-      );
-    },
-    [showInterviewColumn, columnOrder],
-  );
+  const activeColumns = useMemo(() => {
+    const filtered = COLUMNS.filter((col) => {
+      if (col.interviewOnly && !showInterviewColumn) return false;
+      return true;
+    });
+    const orderMap = new Map(columnOrder.map((key, idx) => [key, idx]));
+    return [...filtered].sort(
+      (a, b) => (orderMap.get(a.key) ?? 0) - (orderMap.get(b.key) ?? 0),
+    );
+  }, [showInterviewColumn, columnOrder]);
 
   // The first always-visible column is the frozen left column
   const frozenCol = activeColumns.find((c) => c.alwaysVisible);
@@ -343,7 +388,7 @@ export function SessionsTable({
   // ── Mutations ──
   const deleteMutation = trpc.session.deleteMany.useMutation({
     onSuccess: ({ deleted }) => {
-      toast({ title: `${deleted} session${deleted > 1 ? "s" : ""} deleted` });
+      toast({ title: ui("Deleted {count} sessions", {count: deleted}) });
       setSelectedIds(new Set());
       onDeleteSuccess?.();
     },
@@ -370,16 +415,23 @@ export function SessionsTable({
   }, []);
 
   const isFiltering =
-    searchQuery.trim() || timeRange !== "ALL" || statusFilter !== "ALL";
+    roleFilter ||
+    searchQuery.trim() ||
+    timeRange !== "ALL" ||
+    statusFilter !== "ALL";
 
   // ── Filter + Sort ──
   const processedSessions = useMemo(() => {
-    let result = sessions;
+    let result = roleFilter
+      ? sessions.filter((s) => s.roleTitle === roleFilter)
+      : sessions;
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
         (s) =>
+          (s.roleTitle ?? "").toLowerCase().includes(q) ||
+          (s.participantPhone ?? "").toLowerCase().includes(q) ||
           (s.interview?.title ?? "").toLowerCase().includes(q) ||
           (s.participantName ?? "").toLowerCase().includes(q) ||
           (s.participantEmail ?? "").toLowerCase().includes(q),
@@ -410,7 +462,15 @@ export function SessionsTable({
     }
 
     return result;
-  }, [sessions, searchQuery, statusFilter, timeRange, sortKey, sortDir]);
+  }, [
+    sessions,
+    roleFilter,
+    searchQuery,
+    statusFilter,
+    timeRange,
+    sortKey,
+    sortDir,
+  ]);
 
   // ── Pagination ──
   const totalPages = Math.max(
@@ -447,6 +507,10 @@ export function SessionsTable({
     key: string,
   ): React.JSX.Element | string {
     switch (key) {
+      case "phone":
+        return session.participantPhone || "—";
+      case "roleTitle":
+        return session.roleTitle || "未设置";
       case "participant":
         return <span>{session.participantName || "Anonymous"}</span>;
       case "email":
@@ -506,20 +570,45 @@ export function SessionsTable({
     const visibleCols = [...(frozenCol ? [frozenCol] : []), ...dynamicColumns];
     const formatDate = (d: string | Date) =>
       new Date(d).toLocaleString(undefined, {
-        year: "numeric", month: "numeric", day: "numeric",
-        hour: "2-digit", minute: "2-digit",
+        year: "numeric",
+        month: "numeric",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
     const rows = processedSessions.map((s) => {
       const record: Record<string, string | number | null> = {};
       for (const col of visibleCols) {
         switch (col.key) {
-          case "interview": record[col.label] = s.interview?.title ?? ""; break;
-          case "participant": record[col.label] = s.participantName || "Anonymous"; break;
-          case "email": record[col.label] = s.participantEmail || ""; break;
-          case "status": record[col.label] = s.status; break;
-          case "messages": record[col.label] = s._count.messages; break;
-          case "duration": record[col.label] = s.totalDurationSeconds ? `${Math.round(s.totalDurationSeconds / 60)}m` : ""; break;
-          case "date": record[col.label] = formatDate(s.createdAt); break;
+          case "phone":
+            record[col.label] = s.participantPhone || "";
+            break;
+          case "roleTitle":
+            record[col.label] = s.roleTitle || "";
+            break;
+          case "interview":
+            record[col.label] = s.interview?.title ?? "";
+            break;
+          case "participant":
+            record[col.label] = s.participantName || "Anonymous";
+            break;
+          case "email":
+            record[col.label] = s.participantEmail || "";
+            break;
+          case "status":
+            record[col.label] = s.status;
+            break;
+          case "messages":
+            record[col.label] = s._count.messages;
+            break;
+          case "duration":
+            record[col.label] = s.totalDurationSeconds
+              ? `${Math.round(s.totalDurationSeconds / 60)}m`
+              : "";
+            break;
+          case "date":
+            record[col.label] = formatDate(s.createdAt);
+            break;
         }
       }
       return record;
@@ -544,6 +633,24 @@ export function SessionsTable({
           />
         </div>
 
+        <select
+          aria-label="按岗位筛选"
+          className="h-9 rounded-md border bg-background px-3"
+          value={roleFilter}
+          onChange={(e) => {
+            setRoleFilter(e.target.value);
+            setPage(0);
+          }}
+        >
+          <option value="">全部岗位</option>
+          {Array.from(
+            new Set(sessions.map((s) => s.roleTitle).filter(Boolean)),
+          ).map((role) => (
+            <option key={role} value={role!}>
+              {role}
+            </option>
+          ))}
+        </select>
         <Select
           value={timeRange}
           onValueChange={(v) => {
@@ -558,7 +665,7 @@ export function SessionsTable({
           <SelectContent>
             {TIME_RANGE_OPTIONS.map((opt) => (
               <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
+                {ui(opt.label)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -576,15 +683,19 @@ export function SessionsTable({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">All Status</SelectItem>
-            <SelectItem value="COMPLETED">Completed</SelectItem>
-            <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+            <SelectItem value="ALL">{ui("All Status")}</SelectItem>
+            <SelectItem value="COMPLETED">{ui("Completed")}</SelectItem>
+            <SelectItem value="IN_PROGRESS">{ui("In Progress")}</SelectItem>
           </SelectContent>
         </Select>
 
-        <Button variant="outline" onClick={handleExport} disabled={processedSessions.length === 0}>
+        <Button
+          variant="outline"
+          onClick={handleExport}
+          disabled={processedSessions.length === 0}
+        >
           <Download className="mr-2 h-4 w-4" />
-          Export
+          {ui("Export")}
         </Button>
 
         {selectedIds.size > 0 && (
@@ -599,7 +710,8 @@ export function SessionsTable({
               ) : (
                 <Trash2 className="mr-2 h-4 w-4" />
               )}
-              Delete ({selectedIds.size})
+              {ui("Delete (")}
+              {selectedIds.size})
             </Button>
             <Button
               variant="outline"
@@ -607,7 +719,7 @@ export function SessionsTable({
               onClick={() => setSelectedIds(new Set())}
             >
               <X className="mr-1 h-4 w-4" />
-              Cancel
+              {ui("Cancel")}
             </Button>
           </>
         )}
@@ -646,7 +758,7 @@ export function SessionsTable({
                           className="group inline-flex cursor-pointer items-center gap-1 select-none whitespace-nowrap hover:text-foreground"
                           onClick={() => handleSort(frozenSortKey)}
                         >
-                          {frozenLabel}
+                          {ui(frozenLabel)}
                           {sortKey === frozenSortKey ? (
                             sortDir === "asc" ? (
                               <ArrowUp className="h-3.5 w-3.5" />
@@ -664,7 +776,7 @@ export function SessionsTable({
                     {dynamicColumns.map((col) => (
                       <SortableHead
                         key={col.key}
-                        label={col.label}
+                        label={ui(col.label)}
                         sortKey={col.sortKey}
                         activeKey={sortKey}
                         direction={sortDir}
@@ -702,13 +814,17 @@ export function SessionsTable({
                                 >
                                   <GripVertical
                                     className="h-3.5 w-3.5 shrink-0 cursor-grab touch-none text-muted-foreground/50 active:cursor-grabbing"
-                                    onPointerDown={(e) => handleGripPointerDown(col.key, e)}
+                                    onPointerDown={(e) =>
+                                      handleGripPointerDown(col.key, e)
+                                    }
                                   />
                                   <span
                                     className="flex-1 cursor-pointer select-none text-left"
-                                    onClick={() => { if (!draggingCol) toggleColumn(col.key); }}
+                                    onClick={() => {
+                                      if (!draggingCol) toggleColumn(col.key);
+                                    }}
                                   >
-                                    {col.label}
+                                    {ui(col.label)}
                                   </span>
                                   {visibleColumns.has(col.key) && (
                                     <Check className="h-4 w-4 shrink-0 text-primary" />
@@ -730,22 +846,16 @@ export function SessionsTable({
                         selectedIds.has(session.id) ? "selected" : undefined
                       }
                       onClick={
-                        rowClickable
-                          ? () => onSessionClick(session)
-                          : undefined
+                        rowClickable ? () => onSessionClick(session) : undefined
                       }
                     >
                       {/* Frozen left: checkbox + first column value */}
                       <TableCell className="sticky left-0 z-10 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                         <div className="flex items-center gap-3">
-                          <div
-                            onClick={(e) => e.stopPropagation()}
-                          >
+                          <div onClick={(e) => e.stopPropagation()}>
                             <Checkbox
                               checked={selectedIds.has(session.id)}
-                              onCheckedChange={() =>
-                                toggleSelect(session.id)
-                              }
+                              onCheckedChange={() => toggleSelect(session.id)}
                             />
                           </div>
                           <span className="font-medium">
@@ -773,7 +883,7 @@ export function SessionsTable({
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7"
-                            title="View session details"
+                            title={ui("View session details")}
                             onClick={() => onSessionClick(session)}
                           >
                             <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
@@ -790,7 +900,7 @@ export function SessionsTable({
             {processedSessions.length > PAGE_SIZE_OPTIONS[0] && (
               <div className="flex items-center justify-between border-t px-4 py-3">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>Rows per page</span>
+                  <span>{ui("Rows per page")}</span>
                   <select
                     className="rounded border bg-background px-2 py-1 text-sm"
                     value={pageSize}
@@ -811,7 +921,8 @@ export function SessionsTable({
                       (safePage + 1) * pageSize,
                       processedSessions.length,
                     )}{" "}
-                    of {processedSessions.length}
+                    {ui("of")}
+                    {processedSessions.length}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -847,15 +958,19 @@ export function SessionsTable({
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Sessions</AlertDialogTitle>
+            <AlertDialogTitle>{ui("Delete Sessions")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete {selectedIds.size} session
-              {selectedIds.size > 1 ? "s" : ""}? This will permanently remove
-              all associated messages and data. This action cannot be undone.
+              {ui("Are you sure you want to delete")}
+              {selectedIds.size}
+              {ui("session")}
+              {selectedIds.size > 1 ? "s" : ""}
+              {ui(
+                "? This will permanently remove all associated messages and data. This action cannot be undone.",
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{ui("Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
@@ -863,7 +978,7 @@ export function SessionsTable({
                 setConfirmDelete(false);
               }}
             >
-              Delete
+              {ui("Delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

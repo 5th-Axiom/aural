@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
@@ -24,6 +26,7 @@ interface TourChecklistProps {
 }
 
 export function TourChecklist({ open, onClose }: TourChecklistProps) {
+  const ui = useUiTranslation();
   const tour = useTourSafe();
   const router = useRouter();
   const pathname = usePathname();
@@ -51,8 +54,7 @@ export function TourChecklist({ open, onClose }: TourChecklistProps) {
       document.addEventListener("keydown", handleEsc);
       removePointer = () =>
         document.removeEventListener("pointerdown", handlePointer);
-      removeEsc = () =>
-        document.removeEventListener("keydown", handleEsc);
+      removeEsc = () => document.removeEventListener("keydown", handleEsc);
     });
 
     return () => {
@@ -90,13 +92,19 @@ export function TourChecklist({ open, onClose }: TourChecklistProps) {
   return createPortal(
     <div
       ref={panelRef}
-      style={{ position: "fixed", top: 56, right: 16, width: 320, zIndex: 10003 }}
+      style={{
+        position: "fixed",
+        top: 56,
+        right: 16,
+        width: 320,
+        zIndex: 10003,
+      }}
       className="rounded-xl border bg-popover text-popover-foreground shadow-2xl"
     >
       <div className="px-4 py-3 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-base font-bold text-foreground">
-            Getting Started
+            {ui("Getting Started")}
           </h3>
           <button
             onClick={onClose}
@@ -109,7 +117,8 @@ export function TourChecklist({ open, onClose }: TourChecklistProps) {
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-muted-foreground">
-              {progress}% complete
+              {progress}
+              {ui("% complete")}
             </span>
           </div>
           <div className="mt-1.5 h-1.5 w-full rounded-full bg-muted">
@@ -149,7 +158,7 @@ export function TourChecklist({ open, onClose }: TourChecklistProps) {
                         : "text-muted-foreground/70"
                   }
                 >
-                  {step.title}
+                  {ui(step.title)}
                 </span>
               </li>
             );
@@ -164,22 +173,25 @@ export function TourChecklist({ open, onClose }: TourChecklistProps) {
                 className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors"
               >
                 <RotateCcw className="h-3 w-3" />
-                Restart
+                {ui("Restart")}
               </button>
               <button
                 onClick={handleContinue}
                 className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
               >
                 <Play className="h-3 w-3" />
-                Continue
+                {ui("Continue")}
               </button>
             </div>
             <button
-              onClick={() => { onClose(); tour.dismiss(); }}
+              onClick={() => {
+                onClose();
+                tour.dismiss();
+              }}
               className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
               <EyeOff className="h-3 w-3" />
-              Dismiss tour
+              {ui("Dismiss tour")}
             </button>
           </div>
         ) : (
@@ -189,7 +201,7 @@ export function TourChecklist({ open, onClose }: TourChecklistProps) {
               className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors"
             >
               <RotateCcw className="h-3 w-3" />
-              Restart Tour
+              {ui("Restart Tour")}
             </button>
           </div>
         )}

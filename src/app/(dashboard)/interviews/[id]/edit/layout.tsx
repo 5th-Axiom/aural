@@ -9,15 +9,15 @@ import { useToast } from "@/hooks/use-toast";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import {
-    BrainCircuit,
-    ExternalLink,
-    Link2,
-    ListOrdered,
-    Loader2,
-    Lock,
-    Settings,
-    Share2,
-    Users,
+  BrainCircuit,
+  ExternalLink,
+  Link2,
+  ListOrdered,
+  Loader2,
+  Lock,
+  Settings,
+  Share2,
+  Users,
 } from "lucide-react";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
@@ -65,9 +65,24 @@ const tabSkeletons: Record<string, React.ReactNode> = {
 
 const tabs = [
   { value: "content", labelKey: "header.content", icon: ListOrdered, href: "" },
-  { value: "settings", labelKey: "header.settings", icon: Settings, href: "/settings" },
-  { value: "sessions", labelKey: "header.sessions", icon: Users, href: "/sessions" },
-  { value: "prep", labelKey: "header.practices", icon: BrainCircuit, href: "/prep" },
+  {
+    value: "settings",
+    labelKey: "header.settings",
+    icon: Settings,
+    href: "/settings",
+  },
+  {
+    value: "sessions",
+    labelKey: "header.sessions",
+    icon: Users,
+    href: "/sessions",
+  },
+  {
+    value: "prep",
+    labelKey: "header.practices",
+    icon: BrainCircuit,
+    href: "/prep",
+  },
 ] as const;
 
 export default function EditInterviewLayout({
@@ -99,10 +114,17 @@ export default function EditInterviewLayout({
   const previewMutation = trpc.session.createPreview.useMutation({
     onSuccess: (data) => {
       const slug = (interview.data as any)?.publicSlug; // eslint-disable-line @typescript-eslint/no-explicit-any
-      window.open(`/i/${slug}/session?sid=${data.sessionId}&preview=true`, "_blank");
+      window.open(
+        `/i/${slug}/session?sid=${data.sessionId}&preview=true`,
+        "_blank",
+      );
     },
     onError: (err) => {
-      toast({ title: t("interviewEdit.previewFailed"), description: err.message, variant: "destructive" });
+      toast({
+        title: t("interviewEdit.previewFailed"),
+        description: err.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -135,9 +157,11 @@ export default function EditInterviewLayout({
       <div className="space-y-6">
         {/* Header */}
         <div className="no-print">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">{data.title}</h1>
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h1 className="min-w-0 break-words text-2xl font-bold">
+              {data.title}
+            </h1>
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -161,8 +185,7 @@ export default function EditInterviewLayout({
                   {t("common.practice")}
                 </a>
               </Button>
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              {(data as any).publicSlug && (
+                {data.publicSlug && (
                 <Button
                   size="sm"
                   className="gap-2"
@@ -180,22 +203,21 @@ export default function EditInterviewLayout({
             </div>
           </div>
           <div className="flex items-center gap-2 mt-1">
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {(data as any).publicSlug && (data as any).isActive && !(data as any).requireInvite ? (
+            {data.publicSlug &&
+            data.isActive &&
+            !data.requireInvite ? (
               <Badge
                 variant="outline"
                 className="cursor-pointer gap-1 border-border bg-background text-foreground hover:bg-muted"
                 onClick={() => {
                   navigator.clipboard.writeText(
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    `${window.location.origin}/i/${(data as any).publicSlug}`,
+                                `${window.location.origin}/i/${data.publicSlug}`,
                   );
                   toast({ title: t("interviewEdit.linkCopied") });
                 }}
               >
                 <Link2 className="h-3 w-3" />
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                /i/{(data as any).publicSlug}
+                    /i/{data.publicSlug}
               </Badge>
             ) : (
               <Badge variant="secondary" className="gap-1">
@@ -203,12 +225,15 @@ export default function EditInterviewLayout({
                 {t("dashboard.inviteOnly")}
               </Badge>
             )}
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {(data as any).chatEnabled && <Badge variant="outline">{t("dashboard.chat")}</Badge>}
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {(data as any).voiceEnabled && <Badge variant="outline">{t("dashboard.voice")}</Badge>}
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {(data as any).videoEnabled && <Badge variant="outline">{t("dashboard.video")}</Badge>}
+            {data.chatEnabled && (
+              <Badge variant="outline">{t("dashboard.chat")}</Badge>
+            )}
+            {data.voiceEnabled && (
+              <Badge variant="outline">{t("dashboard.voice")}</Badge>
+            )}
+            {data.videoEnabled && (
+              <Badge variant="outline">{t("dashboard.video")}</Badge>
+            )}
           </div>
         </div>
 
@@ -254,10 +279,12 @@ export default function EditInterviewLayout({
         open={shareOpen}
         onOpenChange={setShareOpen}
         interviewId={id}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        publicSlug={(data as any).publicSlug ?? null}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        isPublic={!!(data as any).publicSlug && (data as any).isActive && !(data as any).requireInvite}
+        publicSlug={data.publicSlug ?? null}
+        isPublic={
+          !!data.publicSlug &&
+          data.isActive &&
+          !data.requireInvite
+        }
       />
     </EditInterviewProvider>
   );

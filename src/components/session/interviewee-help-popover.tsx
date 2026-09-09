@@ -1,25 +1,24 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { Button } from "@/components/ui/button";
 import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, HelpCircle } from "lucide-react";
 import { useState } from "react";
 import {
-    getChatGuideItems,
-    getVoiceGuideItems,
-    GuideStepCard,
+  getChatGuideItems,
+  getVoiceGuideItems,
+  GuideStepCard,
 } from "./interviewee-guide-content";
 
-export function IntervieweeHelpPopover({
-  mode,
-}: {
-  mode: "voice" | "chat";
-}) {
+export function IntervieweeHelpPopover({ mode }: { mode: "voice" | "chat" }) {
+  const ui = useUiTranslation();
   const items = mode === "voice" ? getVoiceGuideItems() : getChatGuideItems();
   const [index, setIndex] = useState(0);
 
@@ -33,22 +32,20 @@ export function IntervieweeHelpPopover({
           variant="ghost"
           size="icon"
           className="h-8 w-8 text-muted-foreground hover:text-foreground"
-          title="How It Works"
+          title={ui("How It Works")}
         >
           <HelpCircle className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent
-        side="bottom"
-        align="end"
-        className="w-[340px] p-0"
-      >
+      <PopoverContent side="bottom" align="end" className="w-[340px] p-0">
         {/* Header with inline navigation */}
         <div className="flex items-center justify-between px-4 py-3">
           <div>
-            <h4 className="text-sm font-semibold">Interface Guide</h4>
+            <h4 className="text-sm font-semibold">{ui("Interface Guide")}</h4>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {index + 1} of {items.length}
+              {index + 1}
+              {ui("of")}
+              {items.length}
             </p>
           </div>
           <div className="flex items-center gap-1">

@@ -1,5 +1,7 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { useOrg } from "@/components/org-provider";
 import { AiButton } from "@/components/ui/ai-button";
 import { Button } from "@/components/ui/button";
@@ -121,6 +123,7 @@ export function ResumeImportDialog({
   onOpenChange,
   onImported,
 }: ResumeImportDialogProps) {
+  const ui = useUiTranslation();
   const { toast } = useToast();
   const { currentOrg } = useOrg();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -138,7 +141,7 @@ export function ResumeImportDialog({
     },
     onError: (err) => {
       toast({
-        title: "Import failed",
+        title: ui("Import failed"),
         description: err.message,
         variant: "destructive",
       });
@@ -185,13 +188,18 @@ export function ResumeImportDialog({
       );
 
       try {
-        const parsed = await parseOneResume(entries[i].file, (text) => {
-          setEntries((prev) =>
-            prev.map((e, idx) =>
-              idx === i ? { ...e, streamText: text } : e,
-            ),
-          );
-        }, currentOrg?.id, interviewId);
+        const parsed = await parseOneResume(
+          entries[i].file,
+          (text) => {
+            setEntries((prev) =>
+              prev.map((e, idx) =>
+                idx === i ? { ...e, streamText: text } : e,
+              ),
+            );
+          },
+          currentOrg?.id,
+          interviewId,
+        );
 
         setEntries((prev) =>
           prev.map((e, idx) =>
@@ -237,9 +245,7 @@ export function ResumeImportDialog({
         education: c.education || undefined,
         school: c.school || undefined,
         major: c.major || undefined,
-        graduationYear: c.graduationYear
-          ? Number(c.graduationYear)
-          : undefined,
+        graduationYear: c.graduationYear ? Number(c.graduationYear) : undefined,
         workExperience: c.workExperience || undefined,
         notes: c.notes || undefined,
       })),
@@ -266,15 +272,15 @@ export function ResumeImportDialog({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Import by Resumes</DialogTitle>
+          <DialogTitle>{ui("Import by Resumes")}</DialogTitle>
           <DialogDescription>
-            Upload PDF resumes and let AI extract session information.
+            {ui("Upload PDF resumes and let AI extract session information.")}
           </DialogDescription>
         </DialogHeader>
 
         {/* Stepper */}
         <div className="flex items-center justify-between px-4 py-3">
-          {["Upload", "Review", "Complete"].map((label, i) => (
+          {[ui("Upload"), ui("Review"), ui("Complete")].map((label, i) => (
             <div key={label} className="flex items-center gap-2">
               <div
                 className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium ${
@@ -283,11 +289,7 @@ export function ResumeImportDialog({
                     : "bg-muted text-muted-foreground"
                 }`}
               >
-                {i < stepIndex ? (
-                  <CheckCircle2 className="h-4 w-4" />
-                ) : (
-                  i + 1
-                )}
+                {i < stepIndex ? <CheckCircle2 className="h-4 w-4" /> : i + 1}
               </div>
               <span
                 className={`text-sm ${
@@ -328,10 +330,12 @@ export function ResumeImportDialog({
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <Upload className="mr-2 h-4 w-4" />
-                    Upload PDF resumes
+                    {ui("Upload PDF resumes")}
                   </Button>
                   <p className="text-center text-xs text-muted-foreground">
-                    You can select multiple resumes at once. Each will be parsed by AI individually.
+                    {ui(
+                      "You can select multiple resumes at once. Each will be parsed by AI individually.",
+                    )}
                   </p>
                 </div>
               ) : (
@@ -365,7 +369,9 @@ export function ResumeImportDialog({
                           {entry.status === "done" && entry.parsed && (
                             <p className="mt-0.5 text-xs text-muted-foreground">
                               {entry.parsed.name}
-                              {entry.parsed.email ? ` · ${entry.parsed.email}` : ""}
+                              {entry.parsed.email
+                                ? ` · ${entry.parsed.email}`
+                                : ""}
                             </p>
                           )}
                           {entry.status === "error" && (
@@ -397,7 +403,7 @@ export function ResumeImportDialog({
                       onClick={() => fileInputRef.current?.click()}
                     >
                       <Upload className="mr-2 h-3.5 w-3.5" />
-                      Add more files
+                      {ui("Add more files")}
                     </Button>
                   )}
                 </div>
@@ -405,12 +411,13 @@ export function ResumeImportDialog({
 
               <div className="flex items-center justify-between pt-2">
                 <Button variant="outline" onClick={handleClose}>
-                  Cancel
+                  {ui("Cancel")}
                 </Button>
                 <div className="flex items-center gap-2">
                   {allDone && successEntries.length > 0 && (
                     <Button onClick={() => setStep("preview")}>
-                      Review ({successEntries.length})
+                      {ui("Review (")}
+                      {successEntries.length})
                     </Button>
                   )}
                   {!allDone && entries.length > 0 && (
@@ -427,11 +434,15 @@ export function ResumeImportDialog({
                 </div>
               </div>
 
-              {allDone && errorEntries.length > 0 && successEntries.length === 0 && (
-                <p className="text-center text-sm text-destructive">
-                  All resumes failed to parse. Please check the files and try again.
-                </p>
-              )}
+              {allDone &&
+                errorEntries.length > 0 &&
+                successEntries.length === 0 && (
+                  <p className="text-center text-sm text-destructive">
+                    {ui(
+                      "All resumes failed to parse. Please check the files and try again.",
+                    )}
+                  </p>
+                )}
             </>
           )}
 
@@ -443,9 +454,15 @@ export function ResumeImportDialog({
                     <thead className="sticky top-0 bg-muted/80 backdrop-blur">
                       <tr>
                         <th className="px-3 py-2 text-left font-medium">#</th>
-                        <th className="px-3 py-2 text-left font-medium">Name</th>
-                        <th className="px-3 py-2 text-left font-medium">Email</th>
-                        <th className="px-3 py-2 text-left font-medium">Phone</th>
+                        <th className="px-3 py-2 text-left font-medium">
+                          {ui("Name")}
+                        </th>
+                        <th className="px-3 py-2 text-left font-medium">
+                          {ui("Email")}
+                        </th>
+                        <th className="px-3 py-2 text-left font-medium">
+                          {ui("Phone")}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -453,10 +470,16 @@ export function ResumeImportDialog({
                         const c = entry.parsed!;
                         return (
                           <tr key={i} className="border-t">
-                            <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
+                            <td className="px-3 py-2 text-muted-foreground">
+                              {i + 1}
+                            </td>
                             <td className="px-3 py-2">{c.name}</td>
-                            <td className="px-3 py-2 text-muted-foreground">{c.email || "-"}</td>
-                            <td className="px-3 py-2 text-muted-foreground">{c.phone || "-"}</td>
+                            <td className="px-3 py-2 text-muted-foreground">
+                              {c.email || "-"}
+                            </td>
+                            <td className="px-3 py-2 text-muted-foreground">
+                              {c.phone || "-"}
+                            </td>
                           </tr>
                         );
                       })}
@@ -466,17 +489,22 @@ export function ResumeImportDialog({
               </div>
 
               <p className="text-sm text-muted-foreground">
-                {successEntries.length} session{successEntries.length !== 1 ? "s" : ""} ready to import.
+                {successEntries.length}
+                {ui("session")}
+                {successEntries.length !== 1 ? "s" : ""}
+                {ui("ready to import.")}
                 {errorEntries.length > 0 && (
                   <span className="text-destructive">
-                    {" "}{errorEntries.length} failed.
+                    {" "}
+                    {errorEntries.length}
+                    {ui("failed.")}
                   </span>
                 )}
               </p>
 
               <div className="flex justify-between pt-2">
                 <Button variant="outline" onClick={() => setStep("upload")}>
-                  Back
+                  {ui("Back")}
                 </Button>
                 <Button
                   onClick={handleImport}
@@ -485,7 +513,8 @@ export function ResumeImportDialog({
                   {bulkCreate.isLoading && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  Import ({successEntries.length})
+                  {ui("Import (")}
+                  {successEntries.length})
                 </Button>
               </div>
             </>
@@ -494,13 +523,18 @@ export function ResumeImportDialog({
           {step === "complete" && (
             <div className="flex flex-col items-center py-8">
               <CheckCircle2 className="h-12 w-12 text-secondary-500" />
-              <h3 className="mt-4 text-lg font-semibold">Import Complete</h3>
+              <h3 className="mt-4 text-lg font-semibold">
+                {ui("Import Complete")}
+              </h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Successfully imported {importedCount} session
-                {importedCount !== 1 ? "s" : ""} from resumes.
+                {ui("Successfully imported")}
+                {importedCount}
+                {ui("session")}
+                {importedCount !== 1 ? "s" : ""}
+                {ui("from resumes.")}
               </p>
               <Button className="mt-6" onClick={handleClose}>
-                Done
+                {ui("Done")}
               </Button>
             </div>
           )}

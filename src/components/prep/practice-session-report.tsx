@@ -1,41 +1,43 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import {
-    Bookmark,
-    BookmarkCheck,
-    BookOpenText,
-    BrainCircuit,
-    CheckCircle2,
-    ChevronDown,
-    Clock,
-    Mic,
-    RotateCcw,
-    Sparkles,
-    Target,
-    TrendingUp,
+  Bookmark,
+  BookmarkCheck,
+  BookOpenText,
+  BrainCircuit,
+  CheckCircle2,
+  ChevronDown,
+  Clock,
+  Mic,
+  RotateCcw,
+  Sparkles,
+  Target,
+  TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
-    normalizePrepQuestionOptions,
-    normalizeAttempt,
-    scoreTone,
-    type PrepAttempt,
-    type PrepQuestion,
-    type PrepQuestionOption,
+  normalizePrepQuestionOptions,
+  normalizeAttempt,
+  scoreTone,
+  type PrepAttempt,
+  type PrepQuestion,
+  type PrepQuestionOption,
 } from "./prep-types";
 import { VoiceDeliveryTimeline } from "./voice-delivery-timeline";
 
@@ -78,7 +80,9 @@ function StatTile({
         <Icon className="h-3.5 w-3.5" aria-hidden />
         {label}
       </div>
-      <p className={cn("mt-1.5 text-2xl font-bold tabular-nums", tone)}>{value}</p>
+      <p className={cn("mt-1.5 text-2xl font-bold tabular-nums", tone)}>
+        {value}
+      </p>
     </div>
   );
 }
@@ -109,6 +113,7 @@ function BookmarkButton({
   pending: boolean;
   onToggle: () => void;
 }) {
+  const ui = useUiTranslation();
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -125,7 +130,9 @@ function BookmarkButton({
           disabled={pending}
           onClick={onToggle}
           aria-label={
-            bookmarked ? "Remove from answer bank" : "Save to answer bank"
+            bookmarked
+              ? ui("Remove from answer bank")
+              : ui("Save to answer bank")
           }
         >
           {bookmarked ? (
@@ -136,7 +143,7 @@ function BookmarkButton({
         </Button>
       </TooltipTrigger>
       <TooltipContent side="top" className="text-xs">
-        {bookmarked ? "Remove from answer bank" : "Save to answer bank"}
+        {bookmarked ? ui("Remove from answer bank") : ui("Save to answer bank")}
       </TooltipContent>
     </Tooltip>
   );
@@ -149,6 +156,7 @@ function QuestionOptionsBlock({
   type?: string | null;
   options: PrepQuestionOption[];
 }) {
+  const ui = useUiTranslation();
   if (options.length === 0) return null;
 
   const isMultiple = type === "MULTIPLE_CHOICE";
@@ -156,7 +164,7 @@ function QuestionOptionsBlock({
   return (
     <div className="mt-3 rounded-lg border bg-muted/20 p-3">
       <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-        {isMultiple ? "Choose one or more" : "Choose one"}
+        {isMultiple ? ui("Choose one or more") : ui("Choose one")}
       </div>
       <ol className="grid gap-2 md:grid-cols-2">
         {options.map((option, index) => (
@@ -188,6 +196,7 @@ function AttemptRow({
   bookmarkPending: boolean;
   onToggleBookmark: (attemptId: string) => void;
 }) {
+  const ui = useUiTranslation();
   const [expanded, setExpanded] = useState(false);
   const feedback = attempt.feedback;
   const contentId = `practice-attempt-${attempt.id}`;
@@ -218,7 +227,8 @@ function AttemptRow({
       >
         <div className="flex shrink-0 flex-wrap items-center gap-1.5">
           <Badge variant="outline" className="font-normal">
-            Attempt {attempt.attemptNumber}
+            {ui("Attempt")}
+            {attempt.attemptNumber}
           </Badge>
           <ScoreChip score={attempt.score} />
         </div>
@@ -249,12 +259,17 @@ function AttemptRow({
               toggleExpanded();
             }}
             onKeyDown={(event) => event.stopPropagation()}
-            aria-label={expanded ? "Collapse attempt" : "Expand attempt"}
+            aria-label={
+              expanded ? ui("Collapse attempt") : ui("Expand attempt")
+            }
             aria-expanded={expanded}
             aria-controls={contentId}
           >
             <ChevronDown
-              className={cn("h-4 w-4 transition-transform", expanded && "rotate-180")}
+              className={cn(
+                "h-4 w-4 transition-transform",
+                expanded && "rotate-180",
+              )}
             />
           </Button>
         </div>
@@ -273,7 +288,7 @@ function AttemptRow({
               {attempt.inputMode === "VOICE" ? (
                 <Mic className="h-3 w-3" aria-hidden />
               ) : null}
-              Your answer
+              {ui("Your answer")}
             </div>
             <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-foreground/85">
               {attempt.answerText}
@@ -288,17 +303,21 @@ function AttemptRow({
             ) : null}
           </div>
 
-          {(feedback.strengths.length > 0 || feedback.improvements.length > 0) && (
+          {(feedback.strengths.length > 0 ||
+            feedback.improvements.length > 0) && (
             <div className="grid gap-3 sm:grid-cols-2">
               {feedback.strengths.length > 0 ? (
                 <div className="rounded-md border border-emerald-200/70 bg-emerald-50/50 p-3 dark:border-emerald-900/40 dark:bg-emerald-950/20">
                   <p className="flex items-center gap-1.5 text-xs font-semibold">
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                    What worked
+                    {ui("What worked")}
                   </p>
                   <ul className="mt-2 space-y-1">
                     {feedback.strengths.map((item) => (
-                      <li key={item} className="text-xs leading-relaxed text-muted-foreground">
+                      <li
+                        key={item}
+                        className="text-xs leading-relaxed text-muted-foreground"
+                      >
                         • {item}
                       </li>
                     ))}
@@ -309,11 +328,14 @@ function AttemptRow({
                 <div className="rounded-md border border-orange-200/70 bg-orange-50/40 p-3 dark:border-orange-900/40 dark:bg-orange-950/20">
                   <p className="flex items-center gap-1.5 text-xs font-semibold">
                     <TrendingUp className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
-                    Improve next
+                    {ui("Improve next")}
                   </p>
                   <ul className="mt-2 space-y-1">
                     {feedback.improvements.map((item) => (
-                      <li key={item} className="text-xs leading-relaxed text-muted-foreground">
+                      <li
+                        key={item}
+                        className="text-xs leading-relaxed text-muted-foreground"
+                      >
                         • {item}
                       </li>
                     ))}
@@ -326,7 +348,9 @@ function AttemptRow({
           {feedback.voiceDelivery?.timeline?.length ? (
             <VoiceDeliveryTimeline
               delivery={feedback.voiceDelivery}
-              durationSeconds={attempt.audioDurationSeconds ?? attempt.durationSeconds}
+              durationSeconds={
+                attempt.audioDurationSeconds ?? attempt.durationSeconds
+              }
               compact
               className="rounded-md border border-violet-200/60 bg-violet-50/40 p-3 dark:border-violet-900/40 dark:bg-violet-950/20"
             />
@@ -351,6 +375,7 @@ export function PracticeSessionReport({
   /** When provided, "Practice again" resets in place instead of navigating. */
   onPracticeAgain?: () => void;
 }) {
+  const ui = useUiTranslation();
   const { toast } = useToast();
   const utils = trpc.useUtils();
   const reportQuery = trpc.prep.getSessionReport.useQuery({ sessionId });
@@ -367,7 +392,7 @@ export function PracticeSessionReport({
     },
     onError: (err) => {
       toast({
-        title: "Could not update answer bank",
+        title: ui("Could not update answer bank"),
         description: err.message,
         variant: "destructive",
       });
@@ -416,7 +441,8 @@ export function PracticeSessionReport({
   }, [attempts]);
 
   const nextRun = useMemo(() => {
-    const weak: Array<{ question: PrepQuestion; bestScore: number | null }> = [];
+    const weak: Array<{ question: PrepQuestion; bestScore: number | null }> =
+      [];
     for (const question of questions) {
       const rows = byQuestion.get(question.id) ?? [];
       const scores = rows
@@ -448,10 +474,11 @@ export function PracticeSessionReport({
       <Card className={className}>
         <CardContent className="flex h-[200px] flex-col items-center justify-center gap-3">
           <p className="text-sm text-muted-foreground">
-            {reportQuery.error?.message ?? "Could not load this practice report."}
+            {reportQuery.error?.message ??
+              "Could not load this practice report."}
           </p>
           <Button asChild variant="outline">
-            <Link href="/practices">All practices</Link>
+            <Link href="/practices">{ui("All practices")}</Link>
           </Button>
         </CardContent>
       </Card>
@@ -463,7 +490,10 @@ export function PracticeSessionReport({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className={cn("space-y-5", className)} data-testid="practice-session-report">
+      <div
+        className={cn("space-y-5", className)}
+        data-testid="practice-session-report"
+      >
         <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
           <Badge variant="outline" className="gap-1">
             <BrainCircuit className="h-3 w-3" />
@@ -480,21 +510,33 @@ export function PracticeSessionReport({
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <StatTile
             icon={Target}
-            label="Questions answered"
+            label={ui("Questions answered")}
             value={`${stats.answered}/${questions.length || "—"}`}
           />
-          <StatTile icon={BrainCircuit} label="Attempts" value={`${stats.attempts}`} />
+          <StatTile
+            icon={BrainCircuit}
+            label={ui("Attempts")}
+            value={`${stats.attempts}`}
+          />
           <StatTile
             icon={Sparkles}
-            label="Avg score"
-            value={stats.averageScore != null ? stats.averageScore.toFixed(1) : "—"}
-            tone={stats.averageScore != null ? scoreTone(stats.averageScore) : undefined}
+            label={ui("Avg score")}
+            value={
+              stats.averageScore != null ? stats.averageScore.toFixed(1) : "—"
+            }
+            tone={
+              stats.averageScore != null
+                ? scoreTone(stats.averageScore)
+                : undefined
+            }
           />
           <StatTile
             icon={TrendingUp}
-            label="Best score"
+            label={ui("Best score")}
             value={stats.bestScore != null ? stats.bestScore.toFixed(1) : "—"}
-            tone={stats.bestScore != null ? scoreTone(stats.bestScore) : undefined}
+            tone={
+              stats.bestScore != null ? scoreTone(stats.bestScore) : undefined
+            }
           />
         </div>
 
@@ -503,7 +545,7 @@ export function PracticeSessionReport({
             <div className="min-w-0">
               <p className="flex items-center gap-2 text-sm font-semibold">
                 <Sparkles className="h-4 w-4 text-primary" aria-hidden />
-                Suggested next run
+                {ui("Suggested next run")}
               </p>
               {nextRun.length > 0 ? (
                 <ul className="mt-2 space-y-1">
@@ -512,19 +554,26 @@ export function PracticeSessionReport({
                       key={question.id}
                       className="flex items-baseline gap-2 text-sm text-muted-foreground"
                     >
-                      <RotateCcw className="h-3 w-3 shrink-0 translate-y-0.5 text-orange-500" aria-hidden />
+                      <RotateCcw
+                        className="h-3 w-3 shrink-0 translate-y-0.5 text-orange-500"
+                        aria-hidden
+                      />
                       <span className="min-w-0 flex-1 truncate">
                         Q{questions.indexOf(question) + 1}: {question.text}
                       </span>
                       <span className="shrink-0 text-xs">
-                        {bestScore != null ? `best ${bestScore.toFixed(1)}` : "unanswered"}
+                        {bestScore != null
+                          ? `best ${bestScore.toFixed(1)}`
+                          : "unanswered"}
                       </span>
                     </li>
                   ))}
                 </ul>
               ) : (
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Every question scored 7+ — run the full set again to lock it in.
+                  {ui(
+                    "Every question scored 7+ — run the full set again to lock it in.",
+                  )}
                 </p>
               )}
             </div>
@@ -532,20 +581,20 @@ export function PracticeSessionReport({
               {onPracticeAgain ? (
                 <Button size="sm" onClick={onPracticeAgain}>
                   <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                  Practice again
+                  {ui("Practice again")}
                 </Button>
               ) : (
                 <Button asChild size="sm">
                   <Link href={`/practice/${interviewId}`}>
                     <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                    Practice again
+                    {ui("Practice again")}
                   </Link>
                 </Button>
               )}
               <Button asChild size="sm" variant="outline">
                 <Link href={`/interviews/${interviewId}/edit/prep`}>
                   <BookOpenText className="mr-1.5 h-3.5 w-3.5" />
-                  Back to prep
+                  {ui("Back to prep")}
                 </Link>
               </Button>
             </div>
@@ -555,7 +604,7 @@ export function PracticeSessionReport({
         {attempts.length === 0 ? (
           <Card>
             <CardContent className="py-10 text-center text-sm text-muted-foreground">
-              No answers were graded in this session.
+              {ui("No answers were graded in this session.")}
             </CardContent>
           </Card>
         ) : (
@@ -563,13 +612,18 @@ export function PracticeSessionReport({
             {questions.map((question, index) => {
               const rows = byQuestion.get(question.id) ?? [];
               if (rows.length === 0) return null;
-              const questionOptions = normalizePrepQuestionOptions(question.options);
+              const questionOptions = normalizePrepQuestionOptions(
+                question.options,
+              );
               const scores = rows
                 .map((row) => row.score)
                 .filter((score): score is number => typeof score === "number");
               const best = scores.length > 0 ? Math.max(...scores) : null;
               return (
-                <section key={question.id} className="rounded-xl border bg-card p-4">
+                <section
+                  key={question.id}
+                  className="rounded-xl border bg-card p-4"
+                >
                   <div className="flex flex-wrap items-start gap-2">
                     <Badge variant="secondary" className="shrink-0">
                       Q{index + 1}
@@ -587,7 +641,7 @@ export function PracticeSessionReport({
                           className="gap-1 border-orange-300 font-normal text-orange-600 dark:border-orange-900 dark:text-orange-400"
                         >
                           <RotateCcw className="h-3 w-3" />
-                          Needs retry
+                          {ui("Needs retry")}
                         </Badge>
                       ) : null}
                       <ScoreChip score={best} />

@@ -1,10 +1,12 @@
 "use client";
 
+import { useUiTranslation } from "@/hooks/use-ui-translation";
+
 import { Badge } from "@/components/ui/badge";
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { buildAnswerTarget } from "@/lib/prep/answer-targets";
 import { cn } from "@/lib/utils";
@@ -26,6 +28,7 @@ export function AnswerTargetChips({
   className?: string;
   "data-tour"?: string;
 }) {
+  const ui = useUiTranslation();
   const target = useMemo(
     () => buildAnswerTarget(questionType, questionText),
     [questionType, questionText],
@@ -40,11 +43,14 @@ export function AnswerTargetChips({
       )}
     >
       <span className="mr-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-        Aim for
+        {ui("Aim for")}
       </span>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Badge variant="secondary" className="cursor-default gap-1 font-normal">
+          <Badge
+            variant="secondary"
+            className="cursor-default gap-1 font-normal"
+          >
             <Crosshair className="h-3 w-3 text-primary" aria-hidden />
             {target.structureLabel}
           </Badge>
@@ -55,13 +61,18 @@ export function AnswerTargetChips({
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Badge variant="secondary" className="cursor-default gap-1 font-normal">
+          <Badge
+            variant="secondary"
+            className="cursor-default gap-1 font-normal"
+          >
             <Clock className="h-3 w-3" aria-hidden />
             {target.lengthLabel}
           </Badge>
         </TooltipTrigger>
         <TooltipContent side="top" className="text-xs">
-          About {target.wordsLabel} spoken
+          {ui("About")}
+          {target.wordsLabel}
+          {ui("spoken")}
         </TooltipContent>
       </Tooltip>
       <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
