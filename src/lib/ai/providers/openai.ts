@@ -6,7 +6,7 @@ export class OpenAIProvider implements LLMProvider {
   id = "openai";
   name = "OpenAI";
   models = ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo", "o3-mini"];
-  defaultModel = "gpt-4o-mini";
+  defaultModel = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
   private client: OpenAI;
 
@@ -30,6 +30,7 @@ export class OpenAIProvider implements LLMProvider {
     const model = params.model ?? this.defaultModel;
     const response = await this.client.chat.completions.create({
       model,
+      ...(model.startsWith("deepseek") ? { thinking: { type: "disabled" } } : {}),
       messages: this.toOpenAIMessages(params.messages),
       temperature: params.temperature ?? 0.7,
       max_tokens: params.maxTokens ?? 2048,
@@ -55,6 +56,7 @@ export class OpenAIProvider implements LLMProvider {
     const model = params.model ?? this.defaultModel;
     const stream = await this.client.chat.completions.create({
       model,
+      ...(model.startsWith("deepseek") ? { thinking: { type: "disabled" } } : {}),
       messages: this.toOpenAIMessages(params.messages),
       temperature: params.temperature ?? 0.7,
       max_tokens: params.maxTokens ?? 2048,

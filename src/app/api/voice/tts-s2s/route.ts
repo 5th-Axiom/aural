@@ -14,7 +14,10 @@ const log = createLogger("api/voice/tts-s2s");
 
 const TTS_APP_ID = process.env.DOUBAO_APP_ID || "";
 const TTS_ACCESS_TOKEN = process.env.DOUBAO_ACCESS_TOKEN || "";
-const TTS_API_KEY = process.env.DOUBAO_API_KEY || "";
+const TTS_PROVIDER = process.env.TTS_PROVIDER || "volcengine";
+const TTS_API_KEY = TTS_PROVIDER === "tokendance"
+  ? process.env.TOKENDANCE_API_KEY || ""
+  : process.env.DOUBAO_API_KEY || "";
 const TTS_RESOURCE_ID = process.env.DOUBAO_TTS_RESOURCE_ID || "seed-tts-2.0";
 const TTS_VOICE_ZH = process.env.DOUBAO_VOICE_ZH || "";
 const TTS_VOICE_EN = process.env.DOUBAO_VOICE_EN || "";
@@ -58,6 +61,7 @@ function getTtsAuth() {
     accessToken: TTS_ACCESS_TOKEN,
     apiKey: TTS_API_KEY,
     resourceId: TTS_RESOURCE_ID,
+    provider: TTS_PROVIDER,
   });
 }
 
@@ -149,6 +153,7 @@ export async function POST(req: Request) {
       appId: TTS_APP_ID,
       accessToken: TTS_ACCESS_TOKEN,
       apiKey: TTS_API_KEY,
+      provider: TTS_PROVIDER,
     })
   ) {
     return NextResponse.json(

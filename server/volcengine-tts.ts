@@ -59,6 +59,7 @@ export interface TtsAuthConfig {
   accessToken: string;
   resourceId: string;
   apiKey?: string;
+  provider?: "volcengine" | "tokendance";
 }
 
 /**
@@ -71,7 +72,15 @@ export function resolveTtsAuthConfig(input: {
   accessToken: string;
   apiKey: string;
   resourceId: string;
+  provider?: string;
 }): TtsAuthConfig {
+  if (input.provider && !["volcengine", "tokendance"].includes(input.provider)) {
+    throw new Error("Unsupported TTS_PROVIDER");
+  }
+  if (input.provider === "tokendance") {
+    return { appId: "", accessToken: "", apiKey: input.apiKey.trim(),
+      resourceId: input.resourceId.trim() || "seed-tts-2.0", provider: "tokendance" };
+  }
   const appId = input.appId.trim();
   const accessToken = input.accessToken.trim();
   const apiKey = input.apiKey.trim();
@@ -88,11 +97,13 @@ export function resolveTtsAuthConfig(input: {
 export function isTtsAuthConfigured(input: {
   appId: string;
   accessToken: string;
-  apiKey: string;
+  apiKey?: string;
+  provider?: string;
 }): boolean {
+  if (input.provider === "tokendance") return !!input.apiKey?.trim();
   const appId = input.appId.trim();
   const accessToken = input.accessToken.trim();
-  const apiKey = input.apiKey.trim();
+  const apiKey = input.apiKey?.trim();
   return !!(appId && accessToken) || !!apiKey;
 }
 
@@ -302,7 +313,13 @@ export async function* synthesizeSpeech(
     "X-Api-Request-Id": randomUUID(),
   };
 
-  if (auth.apiKey) {
+  if (auth.provider === "tokendance") {
+    if (!auth.apiKey?.trim()) {
+      yield { type: "error", error: "TOKENDANCE_API_KEY is not configured" };
+      return;
+    }
+    headers.Authorization = `Bearer ${auth.apiKey}`;
+  } else if (auth.apiKey) {
     headers["X-Api-Key"] = auth.apiKey;
   } else {
     headers["X-Api-App-Id"] = auth.appId;
@@ -358,7 +375,9 @@ export async function* synthesizeSpeech(
 
     let res: Response;
     try {
-      res = await fetch(TTS_API_URL, {
+      res = await fetch(auth.provider === "tokendance"
+        ? "https://tokendance.space/gateway/ark/v3/tts/unidirectional"
+        : TTS_API_URL, {
         method: "POST",
         headers,
         body: JSON.stringify(body),

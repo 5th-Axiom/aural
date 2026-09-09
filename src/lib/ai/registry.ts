@@ -42,24 +42,24 @@ export function listProviders(): LLMProvider[] {
  * Model used for post-interview report generation.
  * Falls back through available providers.
  */
-export const REPORT_MODEL = process.env.OPENAI_API_KEY
+export const REPORT_MODEL = process.env.REPORT_MODEL || (process.env.OPENAI_API_KEY
   ? "gpt-4o"
   : process.env.GEMINI_API_KEY
     ? "gemini-3.1-flash-lite"
     : process.env.KIMI_API_KEY
       ? "kimi-k2.5"
-      : "MiniMax-M2.1-lightning";
+      : "MiniMax-M2.1-lightning");
 
 /**
  * Model used for interview question generation and refinement.
  */
-export const GENERATOR_MODEL = process.env.OPENAI_API_KEY
+export const GENERATOR_MODEL = process.env.GENERATOR_MODEL || (process.env.OPENAI_API_KEY
   ? "gpt-4o-mini"
   : process.env.GEMINI_API_KEY
     ? "gemini-3.1-flash-lite"
     : process.env.KIMI_API_KEY
       ? "moonshot-v1-8k"
-      : "MiniMax-M2.1-lightning";
+      : "MiniMax-M2.1-lightning");
 
 export const PRIMARY_GENERATOR_MODEL = GENERATOR_MODEL;
 

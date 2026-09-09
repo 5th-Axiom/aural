@@ -208,6 +208,7 @@ async function callOpenAICompatible(
       messages: [{ role: "user", content: prompt }],
       temperature: endpoint.temperature,
       max_tokens: maxTokens,
+      ...(endpoint.model.startsWith("deepseek") ? { thinking: { type: "disabled" } } : {}),
     }),
   });
 
